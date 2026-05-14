@@ -1,0 +1,2439 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CAFAM DOMICILIOS — Centro de Analítica Corporativa</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/css/bootstrap.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<style>
+:root {
+  --bg-primary: #050c1a;
+  --bg-secondary: #071224;
+  --bg-card: rgba(10, 25, 55, 0.85);
+  --bg-card-hover: rgba(14, 35, 75, 0.95);
+  --blue-deep: #0a1628;
+  --blue-corp: #1a4fd6;
+  --blue-electric: #2563eb;
+  --blue-bright: #3b82f6;
+  --blue-light: #60a5fa;
+  --cyan: #06b6d4;
+  --cyan-light: #22d3ee;
+  --teal: #0d9488;
+  --text-primary: #f0f6ff;
+  --text-secondary: #94a3b8;
+  --text-muted: #475569;
+  --border: rgba(59, 130, 246, 0.15);
+  --border-bright: rgba(59, 130, 246, 0.4);
+  --glow: 0 0 20px rgba(37, 99, 235, 0.3);
+  --glow-strong: 0 0 40px rgba(37, 99, 235, 0.5);
+  --shadow-card: 0 8px 32px rgba(0,0,0,0.4), 0 0 0 1px rgba(59,130,246,0.1);
+  --sidebar-w: 260px;
+  --header-h: 72px;
+  --radius: 14px;
+  --radius-sm: 8px;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: 'Inter', sans-serif;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* ── SCROLLBAR ── */
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: var(--bg-primary); }
+::-webkit-scrollbar-thumb { background: var(--blue-corp); border-radius: 3px; }
+
+/* ── SIDEBAR ── */
+#sidebar {
+  position: fixed; top: 0; left: 0;
+  width: var(--sidebar-w);
+  height: 100vh;
+  background: linear-gradient(180deg, #071220 0%, #050c1a 100%);
+  border-right: 1px solid var(--border);
+  z-index: 1000;
+  display: flex; flex-direction: column;
+  transition: transform .3s ease;
+  overflow-y: auto;
+}
+
+.sidebar-logo {
+  padding: 22px 20px 16px;
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; gap: 12px;
+}
+
+.sidebar-logo img { height: 40px; filter: brightness(1.1); }
+
+.sidebar-brand {
+  font-size: 11px; font-weight: 700; letter-spacing: 1.5px;
+  text-transform: uppercase; color: var(--cyan-light);
+  line-height: 1.3;
+}
+.sidebar-brand span { display: block; color: var(--text-secondary); font-weight: 400; font-size: 10px; }
+
+.sidebar-section-label {
+  font-size: 9px; font-weight: 700; letter-spacing: 2px;
+  text-transform: uppercase; color: var(--text-muted);
+  padding: 16px 20px 6px;
+}
+
+.nav-item-custom {
+  display: flex; align-items: center; gap: 12px;
+  padding: 11px 20px; margin: 2px 10px;
+  border-radius: var(--radius-sm);
+  cursor: pointer; transition: all .25s;
+  font-size: 13px; font-weight: 500; color: var(--text-secondary);
+  position: relative; text-decoration: none;
+}
+
+.nav-item-custom i { width: 18px; text-align: center; font-size: 14px; }
+
+.nav-item-custom:hover {
+  background: rgba(37,99,235,0.15);
+  color: var(--text-primary);
+  box-shadow: inset 3px 0 0 var(--blue-electric);
+}
+
+.nav-item-custom.active {
+  background: linear-gradient(135deg, rgba(37,99,235,0.25), rgba(6,182,212,0.1));
+  color: var(--cyan-light);
+  box-shadow: inset 3px 0 0 var(--cyan), var(--glow);
+}
+
+.nav-item-custom .badge-nav {
+  margin-left: auto; background: var(--blue-corp);
+  font-size: 9px; padding: 2px 7px; border-radius: 20px;
+}
+
+.sidebar-footer {
+  margin-top: auto; padding: 16px 20px;
+  border-top: 1px solid var(--border);
+  display: flex; align-items: center; gap: 10px;
+}
+
+.sidebar-footer img { height: 24px; opacity: 0.7; border-radius: 4px; }
+.sidebar-footer span { font-size: 10px; color: var(--text-muted); }
+
+/* ── HEADER ── */
+#header {
+  position: fixed; top: 0; left: var(--sidebar-w);
+  right: 0; height: var(--header-h);
+  background: rgba(5,12,26,0.92);
+  backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border);
+  z-index: 999;
+  display: flex; align-items: center;
+  padding: 0 28px; gap: 16px;
+}
+
+.header-title { font-size: 18px; font-weight: 700; color: var(--text-primary); }
+.header-title span { color: var(--cyan-light); }
+
+.header-search {
+  flex: 1; max-width: 380px; margin: 0 24px;
+  position: relative;
+}
+
+.header-search input {
+  width: 100%; background: rgba(255,255,255,0.05);
+  border: 1px solid var(--border); border-radius: 25px;
+  padding: 9px 16px 9px 40px;
+  color: var(--text-primary); font-size: 13px; font-family: 'Inter',sans-serif;
+  transition: all .25s;
+}
+
+.header-search input:focus {
+  outline: none; border-color: var(--blue-electric);
+  background: rgba(37,99,235,0.08);
+  box-shadow: 0 0 0 3px rgba(37,99,235,0.15);
+}
+
+.header-search i {
+  position: absolute; left: 14px; top: 50%; transform: translateY(-50%);
+  color: var(--text-muted); font-size: 13px;
+}
+
+.search-results-dropdown {
+  position: absolute; top: calc(100% + 6px); left: 0; right: 0;
+  background: var(--bg-card); border: 1px solid var(--border-bright);
+  border-radius: var(--radius-sm); z-index: 9999;
+  max-height: 300px; overflow-y: auto; display: none;
+}
+
+.search-results-dropdown.active { display: block; }
+.search-result-item {
+  padding: 10px 16px; cursor: pointer; font-size: 12px;
+  border-bottom: 1px solid var(--border); transition: background .15s;
+}
+.search-result-item:hover { background: rgba(37,99,235,0.15); }
+.search-result-item .tag { font-size: 10px; color: var(--cyan); font-weight: 600; }
+
+.header-right { display: flex; align-items: center; gap: 14px; margin-left: auto; }
+
+.status-online {
+  display: flex; align-items: center; gap: 6px;
+  font-size: 11px; font-weight: 600; color: #10b981;
+  background: rgba(16,185,129,0.12); border: 1px solid rgba(16,185,129,0.3);
+  padding: 4px 12px; border-radius: 20px;
+}
+
+.status-online::before {
+  content: ''; width: 7px; height: 7px;
+  background: #10b981; border-radius: 50%;
+  animation: pulse-green 2s infinite;
+}
+
+@keyframes pulse-green {
+  0%,100% { opacity:1; transform:scale(1); }
+  50% { opacity:.5; transform:scale(1.3); }
+}
+
+.header-datetime {
+  font-size: 12px; color: var(--text-secondary); text-align: right;
+  line-height: 1.4;
+}
+.header-datetime .date { font-weight: 600; color: var(--text-primary); }
+
+.btn-icon {
+  width: 38px; height: 38px; border-radius: 50%;
+  background: rgba(255,255,255,0.05); border: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; color: var(--text-secondary); transition: all .2s;
+  font-size: 14px;
+}
+.btn-icon:hover { background: rgba(37,99,235,0.2); color: var(--text-primary); border-color: var(--blue-electric); }
+
+.avatar {
+  width: 38px; height: 38px; border-radius: 50%;
+  background: linear-gradient(135deg, var(--blue-corp), var(--cyan));
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px; font-weight: 700; color: white; cursor: pointer;
+  border: 2px solid var(--border-bright);
+}
+
+/* ── MAIN CONTENT ── */
+#main {
+  margin-left: var(--sidebar-w);
+  padding-top: var(--header-h);
+  min-height: 100vh;
+}
+
+.content-area { padding: 24px 28px; }
+
+/* ── SECTION HEADER ── */
+.section-header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 20px;
+}
+.section-title { font-size: 20px; font-weight: 700; }
+.section-title span { color: var(--cyan-light); }
+.section-subtitle { font-size: 13px; color: var(--text-secondary); margin-top: 2px; }
+
+/* ── FILTER BAR ── */
+.filter-bar {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 18px 22px;
+  margin-bottom: 22px;
+  backdrop-filter: blur(10px);
+}
+
+.filter-bar-header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.filter-bar-title {
+  font-size: 13px; font-weight: 600; color: var(--cyan-light);
+  display: flex; align-items: center; gap: 8px;
+}
+
+.filter-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 12px;
+  align-items: end;
+}
+
+.filter-group { display: flex; flex-direction: column; gap: 5px; }
+.filter-label { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; color: var(--text-muted); }
+
+.filter-control {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 8px 12px;
+  color: var(--text-primary);
+  font-size: 12px; font-family: 'Inter',sans-serif;
+  transition: all .2s;
+  -webkit-appearance: none;
+}
+
+.filter-control:focus { outline: none; border-color: var(--blue-electric); background: rgba(37,99,235,0.08); }
+.filter-control option { background: #0a1628; }
+
+.filter-actions { display: flex; gap: 8px; align-items: flex-end; flex-wrap: wrap; }
+
+.btn-filter {
+  padding: 8px 18px; border-radius: var(--radius-sm); font-size: 12px; font-weight: 600;
+  cursor: pointer; transition: all .2s; border: none; font-family: 'Inter',sans-serif;
+  display: flex; align-items: center; gap: 6px;
+}
+
+.btn-primary-filter {
+  background: linear-gradient(135deg, var(--blue-corp), var(--blue-electric));
+  color: white;
+}
+.btn-primary-filter:hover { transform: translateY(-1px); box-shadow: var(--glow); }
+
+.btn-secondary-filter {
+  background: rgba(255,255,255,0.06); color: var(--text-secondary);
+  border: 1px solid var(--border);
+}
+.btn-secondary-filter:hover { background: rgba(255,255,255,0.1); color: var(--text-primary); }
+
+.btn-export {
+  background: linear-gradient(135deg, #0d9488, #0891b2);
+  color: white; padding: 8px 16px;
+}
+.btn-export:hover { transform: translateY(-1px); box-shadow: 0 0 20px rgba(6,182,212,0.4); }
+
+.btn-pdf {
+  background: linear-gradient(135deg, #7c3aed, #6d28d9);
+  color: white; padding: 8px 16px;
+}
+.btn-pdf:hover { transform: translateY(-1px); box-shadow: 0 0 20px rgba(124,58,237,0.4); }
+
+.active-filters {
+  display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px;
+}
+
+.filter-tag {
+  background: rgba(37,99,235,0.2); border: 1px solid rgba(37,99,235,0.4);
+  color: var(--blue-light); font-size: 10px; font-weight: 600;
+  padding: 3px 10px; border-radius: 20px;
+  display: flex; align-items: center; gap: 5px;
+}
+
+.filter-tag .remove { cursor: pointer; opacity: .7; }
+.filter-tag .remove:hover { opacity: 1; }
+
+/* ── KPI CARDS ── */
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.kpi-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px;
+  position: relative; overflow: hidden;
+  transition: all .3s; cursor: default;
+  backdrop-filter: blur(10px);
+}
+
+.kpi-card::before {
+  content: ''; position: absolute;
+  top: 0; left: 0; right: 0; height: 2px;
+  background: linear-gradient(90deg, var(--blue-corp), var(--cyan));
+  opacity: 0; transition: opacity .3s;
+}
+
+.kpi-card:hover {
+  border-color: var(--border-bright);
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-card), var(--glow);
+  background: var(--bg-card-hover);
+}
+
+.kpi-card:hover::before { opacity: 1; }
+
+.kpi-icon {
+  width: 44px; height: 44px; border-radius: 11px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px; margin-bottom: 14px;
+}
+
+.kpi-value {
+  font-size: 28px; font-weight: 800;
+  background: linear-gradient(135deg, var(--text-primary), var(--blue-light));
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  line-height: 1;
+}
+
+.kpi-label { font-size: 11px; color: var(--text-secondary); margin-top: 4px; font-weight: 500; text-transform: uppercase; letter-spacing: .5px; }
+
+.kpi-trend {
+  display: flex; align-items: center; gap: 4px;
+  font-size: 11px; font-weight: 600; margin-top: 10px;
+}
+
+.kpi-trend.up { color: #10b981; }
+.kpi-trend.down { color: #f87171; }
+.kpi-trend.neutral { color: var(--text-muted); }
+
+.sparkline-canvas { width: 100% !important; height: 40px !important; margin-top: 10px; }
+
+.kpi-bg-icon {
+  position: absolute; right: -10px; bottom: -10px;
+  font-size: 64px; opacity: .04;
+}
+
+/* ── CHART CARDS ── */
+.chart-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 22px;
+  backdrop-filter: blur(10px);
+  transition: border-color .3s;
+  height: 100%;
+}
+
+.chart-card:hover { border-color: var(--border-bright); }
+
+.chart-title {
+  font-size: 14px; font-weight: 700; margin-bottom: 4px;
+  display: flex; align-items: center; gap: 8px;
+}
+.chart-title i { color: var(--cyan-light); }
+.chart-subtitle { font-size: 11px; color: var(--text-muted); margin-bottom: 18px; }
+
+.chart-wrapper { position: relative; }
+
+/* ── TABLES ── */
+.table-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden; backdrop-filter: blur(10px);
+}
+
+.table-card-header {
+  padding: 18px 22px;
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+  flex-wrap: wrap; gap: 10px;
+}
+
+.table-search {
+  background: rgba(255,255,255,0.05);
+  border: 1px solid var(--border); border-radius: 20px;
+  padding: 7px 14px 7px 36px;
+  color: var(--text-primary); font-size: 12px; font-family: 'Inter',sans-serif;
+  width: 240px; position: relative; transition: all .2s;
+}
+.table-search:focus { outline: none; border-color: var(--blue-electric); }
+.table-search-wrap { position: relative; }
+.table-search-wrap i { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--text-muted); font-size: 12px; }
+
+.data-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+.data-table thead th {
+  padding: 12px 16px; background: rgba(37,99,235,0.1);
+  color: var(--text-muted); font-weight: 700; text-transform: uppercase;
+  font-size: 10px; letter-spacing: 1px; text-align: left;
+  border-bottom: 1px solid var(--border); white-space: nowrap;
+  cursor: pointer; user-select: none; transition: color .2s;
+}
+.data-table thead th:hover { color: var(--cyan-light); }
+.data-table thead th .sort-icon { margin-left: 4px; opacity: .5; }
+.data-table tbody tr { border-bottom: 1px solid var(--border); transition: background .15s; }
+.data-table tbody tr:hover { background: rgba(37,99,235,0.08); }
+.data-table tbody td { padding: 12px 16px; color: var(--text-secondary); vertical-align: middle; }
+.data-table tbody td:first-child { color: var(--text-primary); font-weight: 500; }
+
+.badge-status {
+  padding: 3px 10px; border-radius: 20px; font-size: 10px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: .5px;
+}
+.badge-active { background: rgba(16,185,129,0.15); color: #10b981; border: 1px solid rgba(16,185,129,0.3); }
+.badge-route { background: rgba(251,191,36,0.15); color: #fbbf24; border: 1px solid rgba(251,191,36,0.3); }
+.badge-done { background: rgba(59,130,246,0.15); color: #60a5fa; border: 1px solid rgba(59,130,246,0.3); }
+.badge-novedad { background: rgba(248,113,113,0.15); color: #f87171; border: 1px solid rgba(248,113,113,0.3); }
+.badge-risk { background: rgba(239,68,68,0.2); color: #ef4444; border: 1px solid rgba(239,68,68,0.4); }
+
+.pagination-wrap {
+  padding: 14px 22px;
+  border-top: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+  font-size: 12px;
+}
+.pagination-wrap span { color: var(--text-muted); }
+.pagination-btns { display: flex; gap: 4px; }
+.page-btn {
+  width: 30px; height: 30px; border-radius: 6px;
+  background: rgba(255,255,255,0.05); border: 1px solid var(--border);
+  color: var(--text-secondary); font-size: 12px; cursor: pointer;
+  display: flex; align-items: center; justify-content: center; transition: all .2s;
+}
+.page-btn:hover, .page-btn.active { background: var(--blue-corp); color: white; border-color: var(--blue-corp); }
+
+/* ── AI MODULE ── */
+.ai-card {
+  background: linear-gradient(135deg, rgba(10,22,55,0.95), rgba(7,18,42,0.95));
+  border: 1px solid rgba(59,130,246,0.3);
+  border-radius: var(--radius);
+  padding: 26px;
+  position: relative; overflow: hidden;
+  backdrop-filter: blur(20px);
+}
+
+.ai-card::before {
+  content: ''; position: absolute;
+  top: 0; left: 0; right: 0; height: 1px;
+  background: linear-gradient(90deg, transparent, var(--blue-electric), var(--cyan), transparent);
+}
+
+.ai-header {
+  display: flex; align-items: center; gap: 14px; margin-bottom: 20px;
+}
+
+.ai-icon {
+  width: 52px; height: 52px; border-radius: 14px;
+  background: linear-gradient(135deg, var(--blue-corp), var(--cyan));
+  display: flex; align-items: center; justify-content: center;
+  font-size: 22px; animation: ai-pulse 3s infinite;
+  box-shadow: 0 0 20px rgba(37,99,235,0.5);
+}
+
+@keyframes ai-pulse {
+  0%,100% { box-shadow: 0 0 20px rgba(37,99,235,0.5); }
+  50% { box-shadow: 0 0 35px rgba(6,182,212,0.7); }
+}
+
+.ai-badge {
+  background: linear-gradient(135deg, rgba(37,99,235,0.3), rgba(6,182,212,0.2));
+  border: 1px solid rgba(6,182,212,0.4);
+  color: var(--cyan-light); font-size: 10px; font-weight: 700;
+  padding: 3px 10px; border-radius: 20px; letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+.ai-content {
+  font-size: 13.5px; line-height: 1.85; color: var(--text-secondary);
+  border-left: 3px solid var(--blue-corp);
+  padding-left: 16px;
+}
+
+.ai-content strong { color: var(--text-primary); }
+.ai-content .highlight { color: var(--cyan-light); font-weight: 600; }
+
+.ai-metrics {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 12px; margin-top: 20px;
+}
+
+.ai-metric-item {
+  background: rgba(37,99,235,0.08); border: 1px solid var(--border);
+  border-radius: var(--radius-sm); padding: 12px;
+  text-align: center;
+}
+
+.ai-metric-val { font-size: 22px; font-weight: 800; color: var(--cyan-light); }
+.ai-metric-label { font-size: 10px; color: var(--text-muted); margin-top: 3px; }
+
+/* ── LOADING ── */
+.loading-overlay {
+  position: fixed; inset: 0;
+  background: var(--bg-primary);
+  z-index: 9999; display: flex;
+  flex-direction: column; align-items: center; justify-content: center;
+  gap: 20px; transition: opacity .5s;
+}
+
+.loading-logo { height: 60px; filter: brightness(1.2); animation: float 3s ease-in-out infinite; }
+@keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-10px)} }
+
+.loading-bar-wrap {
+  width: 300px; height: 4px; background: rgba(255,255,255,0.1);
+  border-radius: 2px; overflow: hidden;
+}
+.loading-bar {
+  height: 100%; width: 0;
+  background: linear-gradient(90deg, var(--blue-corp), var(--cyan));
+  border-radius: 2px; animation: load-progress 2.5s ease forwards;
+}
+@keyframes load-progress { to { width: 100%; } }
+
+.loading-text { font-size: 12px; color: var(--text-muted); letter-spacing: 2px; text-transform: uppercase; }
+
+/* ── TOAST ── */
+.toast-container {
+  position: fixed; bottom: 24px; right: 24px; z-index: 9998;
+  display: flex; flex-direction: column; gap: 8px;
+}
+
+.toast-item {
+  background: var(--bg-card); border: 1px solid var(--border);
+  border-radius: 10px; padding: 12px 18px;
+  font-size: 13px; display: flex; align-items: center; gap: 10px;
+  min-width: 280px; backdrop-filter: blur(20px);
+  animation: slideInRight .3s ease;
+  box-shadow: var(--shadow-card);
+}
+@keyframes slideInRight { from { transform: translateX(100%); opacity:0; } to { transform:translateX(0); opacity:1; } }
+
+/* ── SECTION TABS ── */
+.section-content { display: none; }
+.section-content.active { display: block; animation: fadeInUp .3s ease; }
+@keyframes fadeInUp { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
+
+/* ── DIVIDER ── */
+.section-divider {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--border-bright), transparent);
+  margin: 28px 0;
+}
+
+/* ── RESPONSIVE ── */
+@media (max-width: 1024px) {
+  :root { --sidebar-w: 70px; }
+  .sidebar-brand, .nav-item-custom span, .sidebar-section-label, .sidebar-footer span { display: none; }
+  .nav-item-custom { justify-content: center; padding: 12px; margin: 2px 6px; }
+  .nav-item-custom i { width: auto; }
+  .sidebar-logo { justify-content: center; }
+  .sidebar-logo img { height: 32px; }
+}
+
+@media (max-width: 768px) {
+  :root { --sidebar-w: 0px; --header-h: 60px; }
+  #sidebar { transform: translateX(-260px); width: 260px; }
+  #sidebar.mobile-open { transform: translateX(0); }
+  #header { left: 0; }
+  #main { margin-left: 0; }
+  .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+  .filter-grid { grid-template-columns: repeat(2, 1fr); }
+}
+
+/* ── MISC ── */
+.row-gap { gap: 20px; }
+.g-16 { gap: 16px; }
+.text-cyan { color: var(--cyan-light); }
+.text-dim { color: var(--text-muted); }
+.fw-700 { font-weight: 700; }
+.empty-state { padding: 40px; text-align: center; color: var(--text-muted); font-size: 13px; }
+.empty-state i { font-size: 36px; margin-bottom: 10px; opacity: .4; }
+
+.stat-row {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 10px 0; border-bottom: 1px solid var(--border); font-size: 13px;
+}
+.stat-row:last-child { border-bottom: none; }
+.stat-row .label { color: var(--text-secondary); }
+.stat-row .value { font-weight: 700; color: var(--text-primary); }
+
+/* Sidebar overlay for mobile */
+.sidebar-overlay {
+  display: none; position: fixed; inset: 0;
+  background: rgba(0,0,0,0.6); z-index: 999;
+}
+.sidebar-overlay.active { display: block; }
+
+.hamburger {
+  display: none; background: none; border: none;
+  color: var(--text-primary); font-size: 20px; cursor: pointer; padding: 4px;
+}
+@media (max-width: 768px) { .hamburger { display: block; } }
+
+.progress-bar-custom {
+  height: 6px; background: rgba(255,255,255,0.08); border-radius: 3px; overflow: hidden;
+}
+.progress-fill {
+  height: 100%; border-radius: 3px;
+  background: linear-gradient(90deg, var(--blue-corp), var(--cyan));
+  transition: width 1s ease;
+}
+</style>
+</head>
+<body>
+
+<!-- LOADING -->
+<div class="loading-overlay" id="loadingOverlay">
+  <img src="https://i.ibb.co/Tq23KgR9/download-removebg-preview.png" class="loading-logo" alt="Cafam">
+  <div class="loading-bar-wrap"><div class="loading-bar"></div></div>
+  <div class="loading-text">Cargando plataforma analítica...</div>
+</div>
+
+<!-- SIDEBAR OVERLAY (mobile) -->
+<div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
+
+<!-- SIDEBAR -->
+<nav id="sidebar">
+  <div class="sidebar-logo">
+    <img src="https://i.ibb.co/Tq23KgR9/download-removebg-preview.png" alt="Cafam">
+    <div class="sidebar-brand">CAFAM<span>INSTITUCIONAL</span></div>
+  </div>
+
+  <div class="sidebar-section-label">Principal</div>
+  <a class="nav-item-custom active" onclick="showSection('dashboard')">
+    <i class="fas fa-chart-line"></i><span>Dashboard</span>
+  </a>
+  <a class="nav-item-custom" onclick="showSection('operacion')">
+    <i class="fas fa-truck-fast"></i><span>Operación</span>
+  </a>
+  <a class="nav-item-custom" onclick="showSection('mensajeros')">
+    <i class="fas fa-motorcycle"></i><span>Mensajeros</span>
+  </a>
+
+  <div class="sidebar-section-label">Analítica</div>
+  <a class="nav-item-custom" onclick="showSection('cumplimiento')">
+    <i class="fas fa-shield-check"></i><span>Cumplimiento</span>
+  </a>
+  <a class="nav-item-custom" onclick="showSection('productividad')">
+    <i class="fas fa-bolt"></i><span>Productividad</span>
+  </a>
+  <a class="nav-item-custom" onclick="showSection('ventas')">
+    <i class="fas fa-dollar-sign"></i><span>Ventas</span>
+  </a>
+
+  <div class="sidebar-section-label">Gestión</div>
+  <a class="nav-item-custom" onclick="showSection('novedades')">
+    <i class="fas fa-triangle-exclamation"></i><span>Novedades</span>
+    <span class="badge-nav" id="novedadesBadge">—</span>
+  </a>
+  <a class="nav-item-custom" onclick="showSection('administrativo')">
+    <i class="fas fa-users-gear"></i><span>Administrativo</span>
+  </a>
+  <a class="nav-item-custom" onclick="showSection('ia')">
+    <i class="fas fa-brain"></i><span>IA Analytics</span>
+  </a>
+
+  <div class="sidebar-footer">
+    <img src="https://i.ibb.co/KjmjjvNZ/Captura-de-pantalla-2025-09-15-161315.jpg" alt="Quick" onerror="this.style.display='none'">
+    <span>Powered by Quick</span>
+  </div>
+</nav>
+
+<!-- HEADER -->
+<header id="header">
+  <button class="hamburger" onclick="toggleSidebar()"><i class="fas fa-bars"></i></button>
+  <div class="header-title">CAFAM <span>DOMICILIOS</span></div>
+
+  <div class="header-search">
+    <i class="fas fa-search"></i>
+    <input type="text" id="globalSearch" placeholder="Buscar mensajero, ciudad, punto de venta..." autocomplete="off">
+    <div class="search-results-dropdown" id="searchDropdown"></div>
+  </div>
+
+  <div class="header-right">
+    <div class="status-online">EN VIVO</div>
+    <div class="header-datetime">
+      <div class="date" id="clockDate">—</div>
+      <div id="clockTime" style="color:var(--cyan-light);font-weight:700">—</div>
+    </div>
+    <div class="btn-icon" onclick="refreshAllData()" title="Actualizar datos"><i class="fas fa-rotate"></i></div>
+    <div class="btn-icon"><i class="fas fa-bell"></i></div>
+    <div class="avatar">CF</div>
+  </div>
+</header>
+
+<!-- MAIN -->
+<main id="main">
+  <div class="content-area">
+
+    <!-- ════════ DASHBOARD ════════ -->
+    <div class="section-content active" id="sec-dashboard">
+      <div class="section-header">
+        <div>
+          <div class="section-title">Centro de <span>Monitoreo Ejecutivo</span></div>
+          <div class="section-subtitle" id="lastUpdateLabel">Cargando datos en tiempo real...</div>
+        </div>
+        <div class="d-flex gap-2 flex-wrap">
+          <button class="btn-filter btn-export" onclick="exportCSV()"><i class="fas fa-file-excel"></i> Exportar CSV</button>
+          <button class="btn-filter btn-pdf" onclick="exportPDF()"><i class="fas fa-file-pdf"></i> Exportar PDF</button>
+        </div>
+      </div>
+
+      <!-- FILTERS -->
+      <div class="filter-bar">
+        <div class="filter-bar-header">
+          <div class="filter-bar-title"><i class="fas fa-sliders"></i> Filtros de Consulta</div>
+          <button class="btn-filter btn-secondary-filter" onclick="clearFilters()"><i class="fas fa-xmark"></i> Limpiar</button>
+        </div>
+        <div class="filter-grid">
+          <div class="filter-group">
+            <label class="filter-label">Mes</label>
+            <select class="filter-control" id="filterMes" onchange="applyFilters()">
+              <option value="">Todos los meses</option>
+            </select>
+          </div>
+          <div class="filter-group">
+            <label class="filter-label">Día #</label>
+            <input type="number" class="filter-control" id="filterDia" placeholder="Ej: 15" min="1" max="31" onchange="applyFilters()">
+          </div>
+          <div class="filter-group">
+            <label class="filter-label">Fecha desde</label>
+            <input type="date" class="filter-control" id="filterFechaDesde" onchange="applyFilters()">
+          </div>
+          <div class="filter-group">
+            <label class="filter-label">Fecha hasta</label>
+            <input type="date" class="filter-control" id="filterFechaHasta" onchange="applyFilters()">
+          </div>
+          <div class="filter-group">
+            <label class="filter-label">Ciudad</label>
+            <select class="filter-control" id="filterCiudad" onchange="applyFilters()">
+              <option value="">Todas las ciudades</option>
+            </select>
+          </div>
+          <div class="filter-group">
+            <label class="filter-label">Punto de Venta / Drogería</label>
+            <select class="filter-control" id="filterPdv" onchange="applyFilters()">
+              <option value="">Todos los puntos</option>
+            </select>
+          </div>
+          <div class="filter-group">
+            <label class="filter-label">Mensajero</label>
+            <input type="text" class="filter-control" id="filterMensajero" placeholder="Nombre..." oninput="applyFilters()">
+          </div>
+          <div class="filter-group">
+            <label class="filter-label">Estado</label>
+            <select class="filter-control" id="filterEstado" onchange="applyFilters()">
+              <option value="">Todos</option>
+              <option value="Activo">Activo</option>
+              <option value="En Ruta">En Ruta</option>
+              <option value="Finalizado">Finalizado</option>
+              <option value="Novedad">Novedad</option>
+            </select>
+          </div>
+          <div class="filter-group" style="align-self:end">
+            <label class="filter-label">Tipo Gestión</label>
+            <select class="filter-control" id="filterTipoGestion" onchange="applyFilters()">
+              <option value="">Todos</option>
+            </select>
+          </div>
+        </div>
+        <div class="active-filters" id="activeFiltersWrap"></div>
+      </div>
+
+      <!-- KPIs -->
+      <div class="kpi-grid" id="kpiGrid">
+        <!-- Generated by JS -->
+      </div>
+
+      <!-- CHARTS ROW 1 -->
+      <div class="row g-16 mb-4">
+        <div class="col-lg-8">
+          <div class="chart-card">
+            <div class="chart-title"><i class="fas fa-chart-bar"></i> Entregas por Día</div>
+            <div class="chart-subtitle">Volumen diario de domicilios completados</div>
+            <div class="chart-wrapper"><canvas id="chartEntregasDia" height="90"></canvas></div>
+          </div>
+        </div>
+        <div class="col-lg-4">
+          <div class="chart-card">
+            <div class="chart-title"><i class="fas fa-circle-notch"></i> Cumplimiento Operativo</div>
+            <div class="chart-subtitle">Distribución global</div>
+            <div class="chart-wrapper"><canvas id="chartCumplimiento" height="160"></canvas></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- CHARTS ROW 2 -->
+      <div class="row g-16 mb-4">
+        <div class="col-lg-6">
+          <div class="chart-card">
+            <div class="chart-title"><i class="fas fa-chart-area"></i> Productividad por Ciudad</div>
+            <div class="chart-subtitle">Índice de rendimiento mensual</div>
+            <div class="chart-wrapper"><canvas id="chartProductividad" height="110"></canvas></div>
+          </div>
+        </div>
+        <div class="col-lg-6">
+          <div class="chart-card">
+            <div class="chart-title"><i class="fas fa-chart-line"></i> Ventas vs Entregas</div>
+            <div class="chart-subtitle">Comparativa de indicadores clave</div>
+            <div class="chart-wrapper"><canvas id="chartVentasEntregas" height="110"></canvas></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- CHARTS ROW 3 -->
+      <div class="row g-16 mb-4">
+        <div class="col-lg-5">
+          <div class="chart-card">
+            <div class="chart-title"><i class="fas fa-spider"></i> Indicadores Radar</div>
+            <div class="chart-subtitle">Visión 360° del desempeño</div>
+            <div class="chart-wrapper"><canvas id="chartRadar" height="200"></canvas></div>
+          </div>
+        </div>
+        <div class="col-lg-7">
+          <div class="chart-card">
+            <div class="chart-title"><i class="fas fa-layer-group"></i> Novedades por Tipo</div>
+            <div class="chart-subtitle">Clasificación de incidencias registradas</div>
+            <div class="chart-wrapper"><canvas id="chartNovedades" height="120"></canvas></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- CHART ROW 4 -->
+      <div class="row g-16 mb-4">
+        <div class="col-12">
+          <div class="chart-card">
+            <div class="chart-title"><i class="fas fa-users"></i> Gestión Administrativa — Inasistencias y Desvinculaciones</div>
+            <div class="chart-subtitle">Comportamiento por mes y ciudad</div>
+            <div class="chart-wrapper"><canvas id="chartAdmin" height="80"></canvas></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ════════ MENSAJEROS ════════ -->
+    <div class="section-content" id="sec-mensajeros">
+      <div class="section-header">
+        <div>
+          <div class="section-title">Gestión de <span>Mensajeros</span></div>
+          <div class="section-subtitle">Personal activo en campo</div>
+        </div>
+        <div class="d-flex gap-2">
+          <button class="btn-filter btn-export" onclick="exportTableCSV('tablaMensajeros','mensajeros')"><i class="fas fa-file-excel"></i> Exportar</button>
+          <button class="btn-filter btn-pdf" onclick="exportTablePDF('tablaMensajeros','Mensajeros')"><i class="fas fa-file-pdf"></i> PDF</button>
+        </div>
+      </div>
+
+      <!-- Filters mensajeros -->
+      <div class="filter-bar mb-3">
+        <div class="filter-grid">
+          <div class="filter-group">
+            <label class="filter-label">Ciudad</label>
+            <select class="filter-control" id="fmCiudad" onchange="filterTableMensajeros()">
+              <option value="">Todas</option>
+            </select>
+          </div>
+          <div class="filter-group">
+            <label class="filter-label">Drogería / PDV</label>
+            <select class="filter-control" id="fmPdv" onchange="filterTableMensajeros()">
+              <option value="">Todos</option>
+            </select>
+          </div>
+          <div class="filter-group">
+            <label class="filter-label">Estado</label>
+            <select class="filter-control" id="fmEstado" onchange="filterTableMensajeros()">
+              <option value="">Todos</option>
+              <option value="Activo">Activo</option>
+              <option value="En Ruta">En Ruta</option>
+              <option value="Finalizado">Finalizado</option>
+            </select>
+          </div>
+          <div class="filter-group">
+            <label class="filter-label">Buscar nombre</label>
+            <input type="text" class="filter-control" id="fmNombre" placeholder="Nombre mensajero..." oninput="filterTableMensajeros()">
+          </div>
+        </div>
+      </div>
+
+      <div class="table-card">
+        <div class="table-card-header">
+          <div class="fw-700" style="font-size:14px">Lista de Mensajeros <span id="mensajerosCount" class="text-cyan"></span></div>
+          <div class="table-search-wrap">
+            <i class="fas fa-search"></i>
+            <input type="text" class="table-search" id="searchMensajeros" placeholder="Buscar..." oninput="filterTableMensajeros()">
+          </div>
+        </div>
+        <div style="overflow-x:auto">
+          <table class="data-table" id="tablaMensajeros">
+            <thead>
+              <tr>
+                <th onclick="sortTable('tablaMensajeros',0)">Mensajero <i class="fas fa-sort sort-icon"></i></th>
+                <th onclick="sortTable('tablaMensajeros',1)">Ciudad <i class="fas fa-sort sort-icon"></i></th>
+                <th onclick="sortTable('tablaMensajeros',2)">Drogería <i class="fas fa-sort sort-icon"></i></th>
+                <th onclick="sortTable('tablaMensajeros',3)">Entregas <i class="fas fa-sort sort-icon"></i></th>
+                <th onclick="sortTable('tablaMensajeros',4)">Tiempo <i class="fas fa-sort sort-icon"></i></th>
+                <th onclick="sortTable('tablaMensajeros',5)">Tipo Gestión <i class="fas fa-sort sort-icon"></i></th>
+                <th>Estado</th>
+                <th onclick="sortTable('tablaMensajeros',7)">Productividad <i class="fas fa-sort sort-icon"></i></th>
+              </tr>
+            </thead>
+            <tbody id="bodyMensajeros">
+              <tr><td colspan="8" class="empty-state"><i class="fas fa-spinner fa-spin d-block mb-2"></i>Cargando datos...</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="pagination-wrap">
+          <span id="paginationInfoM">—</span>
+          <div class="pagination-btns" id="paginationM"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ════════ NOVEDADES ════════ -->
+    <div class="section-content" id="sec-novedades">
+      <div class="section-header">
+        <div>
+          <div class="section-title">Registro de <span>Novedades</span></div>
+          <div class="section-subtitle">Incidencias operativas registradas</div>
+        </div>
+        <div class="d-flex gap-2">
+          <button class="btn-filter btn-export" onclick="exportTableCSV('tablaNovedades','novedades')"><i class="fas fa-file-excel"></i> Exportar</button>
+          <button class="btn-filter btn-pdf" onclick="exportTablePDF('tablaNovedades','Novedades')"><i class="fas fa-file-pdf"></i> PDF</button>
+        </div>
+      </div>
+
+      <div class="filter-bar mb-3">
+        <div class="filter-grid">
+          <div class="filter-group">
+            <label class="filter-label">Fecha desde</label>
+            <input type="date" class="filter-control" id="fnFechaDesde" onchange="filterTableNovedades()">
+          </div>
+          <div class="filter-group">
+            <label class="filter-label">Fecha hasta</label>
+            <input type="date" class="filter-control" id="fnFechaHasta" onchange="filterTableNovedades()">
+          </div>
+          <div class="filter-group">
+            <label class="filter-label">Ciudad</label>
+            <select class="filter-control" id="fnCiudad" onchange="filterTableNovedades()">
+              <option value="">Todas</option>
+            </select>
+          </div>
+          <div class="filter-group">
+            <label class="filter-label">Tipificación</label>
+            <select class="filter-control" id="fnTipo" onchange="filterTableNovedades()">
+              <option value="">Todas</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div class="table-card">
+        <div class="table-card-header">
+          <div class="fw-700" style="font-size:14px">Novedades <span id="novedadesCount" class="text-cyan"></span></div>
+          <div class="table-search-wrap">
+            <i class="fas fa-search"></i>
+            <input type="text" class="table-search" id="searchNovedades" placeholder="Buscar..." oninput="filterTableNovedades()">
+          </div>
+        </div>
+        <div style="overflow-x:auto">
+          <table class="data-table" id="tablaNovedades">
+            <thead>
+              <tr>
+                <th onclick="sortTable('tablaNovedades',0)">Fecha <i class="fas fa-sort sort-icon"></i></th>
+                <th onclick="sortTable('tablaNovedades',1)">Ciudad <i class="fas fa-sort sort-icon"></i></th>
+                <th>Tipificación</th>
+                <th>Observación</th>
+                <th onclick="sortTable('tablaNovedades',4)">Hrs Descontar <i class="fas fa-sort sort-icon"></i></th>
+                <th onclick="sortTable('tablaNovedades',5)">Total Descontar <i class="fas fa-sort sort-icon"></i></th>
+              </tr>
+            </thead>
+            <tbody id="bodyNovedades">
+              <tr><td colspan="6" class="empty-state"><i class="fas fa-spinner fa-spin d-block mb-2"></i>Cargando datos...</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="pagination-wrap">
+          <span id="paginationInfoN">—</span>
+          <div class="pagination-btns" id="paginationN"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ════════ ADMINISTRATIVO ════════ -->
+    <div class="section-content" id="sec-administrativo">
+      <div class="section-header">
+        <div>
+          <div class="section-title">Gestión <span>Administrativa</span></div>
+          <div class="section-subtitle">Desvinculaciones e inasistencias por ciudad</div>
+        </div>
+        <div class="d-flex gap-2">
+          <button class="btn-filter btn-export" onclick="exportTableCSV('tablaAdmin','administrativo')"><i class="fas fa-file-excel"></i> Exportar</button>
+          <button class="btn-filter btn-pdf" onclick="exportTablePDF('tablaAdmin','Administrativo')"><i class="fas fa-file-pdf"></i> PDF</button>
+        </div>
+      </div>
+
+      <div class="filter-bar mb-3">
+        <div class="filter-grid">
+          <div class="filter-group">
+            <label class="filter-label">Mes</label>
+            <select class="filter-control" id="fasMes" onchange="filterTableAdmin()">
+              <option value="">Todos</option>
+            </select>
+          </div>
+          <div class="filter-group">
+            <label class="filter-label">Ciudad</label>
+            <select class="filter-control" id="fasCiudad" onchange="filterTableAdmin()">
+              <option value="">Todas</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div class="table-card">
+        <div class="table-card-header">
+          <div class="fw-700" style="font-size:14px">Registros Administrativos</div>
+          <div class="table-search-wrap">
+            <i class="fas fa-search"></i>
+            <input type="text" class="table-search" id="searchAdmin" placeholder="Buscar..." oninput="filterTableAdmin()">
+          </div>
+        </div>
+        <div style="overflow-x:auto">
+          <table class="data-table" id="tablaAdmin">
+            <thead>
+              <tr>
+                <th>Mes</th><th>Ciudad</th><th>Renuncias</th>
+                <th>Terminaciones</th><th>Total Desvinc.</th>
+                <th>Aus. Injust.</th><th>Calamidad</th><th>Incapacidad</th>
+                <th>Luto</th><th>No Remunerado</th><th>Perm. Remun.</th><th>Total Inasist.</th>
+              </tr>
+            </thead>
+            <tbody id="bodyAdmin">
+              <tr><td colspan="12" class="empty-state"><i class="fas fa-spinner fa-spin d-block mb-2"></i>Cargando datos...</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="pagination-wrap">
+          <span id="paginationInfoA">—</span>
+          <div class="pagination-btns" id="paginationA"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ════════ VENTAS ════════ -->
+    <div class="section-content" id="sec-ventas">
+      <div class="section-header">
+        <div>
+          <div class="section-title">Análisis de <span>Ventas</span></div>
+          <div class="section-subtitle">Rendimiento comercial por ciudad y período</div>
+        </div>
+        <div class="d-flex gap-2">
+          <button class="btn-filter btn-export" onclick="exportTableCSV('tablaVentas','ventas')"><i class="fas fa-file-excel"></i> Exportar</button>
+          <button class="btn-filter btn-pdf" onclick="exportTablePDF('tablaVentas','Ventas')"><i class="fas fa-file-pdf"></i> PDF</button>
+        </div>
+      </div>
+      <div class="filter-bar mb-3">
+        <div class="filter-grid">
+          <div class="filter-group">
+            <label class="filter-label">Ciudad</label>
+            <select class="filter-control" id="fvCiudad" onchange="filterTableVentas()"><option value="">Todas</option></select>
+          </div>
+          <div class="filter-group">
+            <label class="filter-label">Buscar</label>
+            <input type="text" class="filter-control" id="fvSearch" placeholder="Texto libre..." oninput="filterTableVentas()">
+          </div>
+        </div>
+      </div>
+      <div class="table-card">
+        <div class="table-card-header">
+          <div class="fw-700" style="font-size:14px">Datos de Ventas</div>
+        </div>
+        <div style="overflow-x:auto">
+          <table class="data-table" id="tablaVentas">
+            <thead id="headVentas"><tr><th>Cargando...</th></tr></thead>
+            <tbody id="bodyVentas">
+              <tr><td class="empty-state"><i class="fas fa-spinner fa-spin d-block mb-2"></i>Cargando datos...</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="pagination-wrap">
+          <span id="paginationInfoV">—</span>
+          <div class="pagination-btns" id="paginationV"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ════════ IA ════════ -->
+    <div class="section-content" id="sec-ia">
+      <div class="section-header">
+        <div>
+          <div class="section-title">Resumen <span>Inteligente IA</span></div>
+          <div class="section-subtitle">Análisis ejecutivo generado automáticamente con inteligencia artificial</div>
+        </div>
+        <button class="btn-filter btn-pdf" onclick="exportPDF()"><i class="fas fa-file-pdf"></i> Exportar Informe</button>
+      </div>
+
+      <div class="ai-card mb-4" id="aiReportCard">
+        <div class="ai-header">
+          <div class="ai-icon"><i class="fas fa-brain"></i></div>
+          <div>
+            <div style="font-size:16px;font-weight:800">Informe Ejecutivo Automatizado</div>
+            <div class="ai-badge mt-1">CAFAM DOMICILIOS · IA Analytics</div>
+          </div>
+        </div>
+        <div class="ai-content" id="aiContent">
+          <i class="fas fa-spinner fa-spin"></i> Procesando datos y generando análisis inteligente...
+        </div>
+        <div class="ai-metrics" id="aiMetrics"></div>
+      </div>
+    </div>
+
+    <!-- Otros secciones placeholder -->
+    <div class="section-content" id="sec-operacion">
+      <div class="section-header"><div><div class="section-title">Vista de <span>Operación</span></div></div></div>
+      <div class="filter-bar mb-3">
+        <div class="filter-grid">
+          <div class="filter-group">
+            <label class="filter-label">Día</label>
+            <input type="number" class="filter-control" id="fopDia" placeholder="Día" min="1" max="31" onchange="filterOperacion()">
+          </div>
+          <div class="filter-group">
+            <label class="filter-label">Ciudad</label>
+            <select class="filter-control" id="fopCiudad" onchange="filterOperacion()"><option value="">Todas</option></select>
+          </div>
+          <div class="filter-group">
+            <label class="filter-label">Punto de venta</label>
+            <select class="filter-control" id="fopPdv" onchange="filterOperacion()"><option value="">Todos</option></select>
+          </div>
+        </div>
+      </div>
+      <div class="table-card">
+        <div class="table-card-header"><div class="fw-700" style="font-size:14px">Datos de Cantidad / Operación</div></div>
+        <div style="overflow-x:auto">
+          <table class="data-table" id="tablaCantidad">
+            <thead id="headCantidad"><tr><th>Cargando...</th></tr></thead>
+            <tbody id="bodyCantidad"><tr><td class="empty-state"><i class="fas fa-spinner fa-spin d-block mb-2"></i>Cargando...</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div class="section-content" id="sec-cumplimiento">
+      <div class="section-header"><div><div class="section-title">Análisis de <span>Cumplimiento</span></div></div></div>
+      <div class="table-card">
+        <div class="table-card-header"><div class="fw-700" style="font-size:14px">Datos Per Cápita / Cumplimiento</div></div>
+        <div style="overflow-x:auto">
+          <table class="data-table" id="tablaPercapita">
+            <thead id="headPercapita"><tr><th>Cargando...</th></tr></thead>
+            <tbody id="bodyPercapita"><tr><td class="empty-state"><i class="fas fa-spinner fa-spin d-block mb-2"></i>Cargando...</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div class="section-content" id="sec-productividad">
+      <div class="section-header"><div><div class="section-title">Análisis de <span>Productividad</span></div></div></div>
+      <div class="table-card">
+        <div class="table-card-header"><div class="fw-700" style="font-size:14px">Tiempos y Productividad</div></div>
+        <div style="overflow-x:auto">
+          <table class="data-table" id="tablaTiempos">
+            <thead id="headTiempos"><tr><th>Cargando...</th></tr></thead>
+            <tbody id="bodyTiempos"><tr><td class="empty-state"><i class="fas fa-spinner fa-spin d-block mb-2"></i>Cargando...</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /content-area -->
+</main>
+
+<!-- TOAST CONTAINER -->
+<div class="toast-container" id="toastContainer"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/js/bootstrap.bundle.min.js"></script>
+<script>
+// ═══════════════════════════════════
+// GLOBAL STATE
+// ═══════════════════════════════════
+const CSV_URLS = {
+  administrativo: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQNfxBykrkeBy4J4jvi2-nDNkMfDMbm-jbwgmBz9FjNUIBQGk257yuU1PH_QmXi0rV0AervZoNyJ9XO/pub?gid=1268086895&single=true&output=csv',
+  novedades: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQNfxBykrkeBy4J4jvi2-nDNkMfDMbm-jbwgmBz9FjNUIBQGk257yuU1PH_QmXi0rV0AervZoNyJ9XO/pub?gid=1091468477&single=true&output=csv',
+  cantidad: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQNfxBykrkeBy4J4jvi2-nDNkMfDMbm-jbwgmBz9FjNUIBQGk257yuU1PH_QmXi0rV0AervZoNyJ9XO/pub?gid=0&single=true&output=csv',
+  percapita: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQNfxBykrkeBy4J4jvi2-nDNkMfDMbm-jbwgmBz9FjNUIBQGk257yuU1PH_QmXi0rV0AervZoNyJ9XO/pub?gid=276501764&single=true&output=csv',
+  tiempos: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQNfxBykrkeBy4J4jvi2-nDNkMfDMbm-jbwgmBz9FjNUIBQGk257yuU1PH_QmXi0rV0AervZoNyJ9XO/pub?gid=1183579745&single=true&output=csv',
+  ventas: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQNfxBykrkeBy4J4jvi2-nDNkMfDMbm-jbwgmBz9FjNUIBQGk257yuU1PH_QmXi0rV0AervZoNyJ9XO/pub?gid=41915920&single=true&output=csv',
+  mensajeros: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQNfxBykrkeBy4J4jvi2-nDNkMfDMbm-jbwgmBz9FjNUIBQGk257yuU1PH_QmXi0rV0AervZoNyJ9XO/pub?gid=1152602474&single=true&output=csv'
+};
+
+let DATA = { administrativo:[], novedades:[], cantidad:[], percapita:[], tiempos:[], ventas:[], mensajeros:[] };
+let FILTERED = { mensajeros:[], novedades:[], administrativo:[], ventas:[], cantidad:[], percapita:[], tiempos:[] };
+let CHARTS = {};
+let PAGES = { mensajeros:1, novedades:1, administrativo:1, ventas:1 };
+const PAGE_SIZE = 15;
+let currentSection = 'dashboard';
+let activeFilters = {};
+
+// ═══════════════════════════════════
+// CLOCK
+// ═══════════════════════════════════
+function updateClock() {
+  const now = new Date();
+  const d = now.toLocaleDateString('es-CO', {weekday:'short', day:'2-digit', month:'short', year:'numeric'});
+  const t = now.toLocaleTimeString('es-CO', {hour:'2-digit', minute:'2-digit', second:'2-digit', hour12:false});
+  document.getElementById('clockDate').textContent = d.toUpperCase();
+  document.getElementById('clockTime').textContent = t;
+}
+setInterval(updateClock, 1000);
+updateClock();
+
+// ═══════════════════════════════════
+// TOAST
+// ═══════════════════════════════════
+function showToast(msg, type='info') {
+  const icons = {info:'circle-info', success:'circle-check', error:'circle-xmark', warning:'triangle-exclamation'};
+  const colors = {info:'#3b82f6', success:'#10b981', error:'#ef4444', warning:'#f59e0b'};
+  const el = document.createElement('div');
+  el.className = 'toast-item';
+  el.innerHTML = `<i class="fas fa-${icons[type]}" style="color:${colors[type]}"></i><span>${msg}</span>`;
+  document.getElementById('toastContainer').appendChild(el);
+  setTimeout(() => el.remove(), 3500);
+}
+
+// ═══════════════════════════════════
+// CSV FETCH
+// ═══════════════════════════════════
+function fetchCSV(url, key) {
+  return new Promise(resolve => {
+    Papa.parse(url, {
+      download: true, header: true, skipEmptyLines: true,
+      complete: r => { DATA[key] = r.data; resolve(r.data); },
+      error: () => { showToast(`Error cargando ${key}`, 'error'); resolve([]); }
+    });
+  });
+}
+
+async function loadAllData() {
+  const promises = Object.entries(CSV_URLS).map(([k,u]) => fetchCSV(u,k));
+  await Promise.all(promises);
+  return true;
+}
+
+// ═══════════════════════════════════
+// SECTION NAVIGATION
+// ═══════════════════════════════════
+function showSection(name) {
+  document.querySelectorAll('.section-content').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-item-custom').forEach(n => n.classList.remove('active'));
+  const el = document.getElementById(`sec-${name}`);
+  if (el) el.classList.add('active');
+  event && event.currentTarget && event.currentTarget.classList.add('active');
+  currentSection = name;
+  if (name === 'ia') generateAIReport();
+  // Close mobile sidebar
+  document.getElementById('sidebar').classList.remove('mobile-open');
+  document.getElementById('sidebarOverlay').classList.remove('active');
+}
+
+function toggleSidebar() {
+  document.getElementById('sidebar').classList.toggle('mobile-open');
+  document.getElementById('sidebarOverlay').classList.toggle('active');
+}
+
+// ═══════════════════════════════════
+// POPULATE FILTERS
+// ═══════════════════════════════════
+function populateSelectFromData(selectId, data, fieldNames) {
+  const sel = document.getElementById(selectId);
+  if (!sel) return;
+  const current = sel.value;
+  const vals = new Set();
+  data.forEach(row => {
+    for (const f of fieldNames) {
+      const v = (row[f] || '').trim();
+      if (v) vals.add(v);
+    }
+  });
+  const options = Array.from(vals).sort();
+  const firstOpt = sel.options[0];
+  sel.innerHTML = '';
+  sel.appendChild(firstOpt);
+  options.forEach(v => {
+    const o = document.createElement('option');
+    o.value = v; o.textContent = v;
+    sel.appendChild(o);
+  });
+  if (current) sel.value = current;
+}
+
+function populateAllFilters() {
+  const ciudadFields = ['CIUDAD','Ciudad','ciudad','CITY'];
+  const pdvFields = ['DROGUERIA','DROGERÍA','PUNTO DE VENTA','Drogería','Drogueria','PDV'];
+  const tipoGestFields = ['TIPO GESTIÓN','TIPO GESTION','Tipo Gestión','Tipo Gestion'];
+
+  // Dashboard filters
+  populateSelectFromData('filterCiudad', [...DATA.mensajeros, ...DATA.novedades, ...DATA.administrativo], ciudadFields);
+  populateSelectFromData('filterPdv', DATA.mensajeros, pdvFields);
+  populateSelectFromData('filterTipoGestion', DATA.mensajeros, tipoGestFields);
+  populateSelectFromData('filterMes', DATA.administrativo, ['MES','Mes','mes']);
+
+  // Mensajeros filters
+  populateSelectFromData('fmCiudad', DATA.mensajeros, ciudadFields);
+  populateSelectFromData('fmPdv', DATA.mensajeros, pdvFields);
+
+  // Novedades filters
+  populateSelectFromData('fnCiudad', DATA.novedades, ciudadFields);
+  populateSelectFromData('fnTipo', DATA.novedades, ['TIPIFICACION','TIPIFICACIÓN','Tipificación','Tipo']);
+
+  // Admin filters
+  populateSelectFromData('fasMes', DATA.administrativo, ['MES','Mes']);
+  populateSelectFromData('fasCiudad', DATA.administrativo, ciudadFields);
+
+  // Ventas filters
+  populateSelectFromData('fvCiudad', DATA.ventas, ciudadFields);
+
+  // Operacion filters
+  populateSelectFromData('fopCiudad', DATA.cantidad, ciudadFields);
+  populateSelectFromData('fopPdv', DATA.cantidad, pdvFields);
+
+  // Novedades badge
+  document.getElementById('novedadesBadge').textContent = DATA.novedades.length;
+}
+
+// ═══════════════════════════════════
+// FILTER UTILITIES
+// ═══════════════════════════════════
+function getVal(id) { const el = document.getElementById(id); return el ? el.value.trim().toLowerCase() : ''; }
+
+function matchField(row, fields, search) {
+  if (!search) return true;
+  for (const f of fields) {
+    if ((row[f]||'').toLowerCase().includes(search)) return true;
+  }
+  return false;
+}
+
+function parseDate(str) {
+  if (!str) return null;
+  const parts = str.split('/');
+  if (parts.length === 3) return new Date(parts[2], parts[1]-1, parts[0]);
+  return new Date(str);
+}
+
+// ═══════════════════════════════════
+// GLOBAL FILTER (KPIs / Charts)
+// ═══════════════════════════════════
+function applyFilters() {
+  renderKPIs();
+  renderCharts();
+  renderActiveFilters();
+}
+
+function clearFilters() {
+  ['filterMes','filterCiudad','filterPdv','filterEstado','filterTipoGestion'].forEach(id => {
+    const el = document.getElementById(id);
+    if(el) el.value = '';
+  });
+  ['filterDia','filterFechaDesde','filterFechaHasta','filterMensajero'].forEach(id => {
+    const el = document.getElementById(id);
+    if(el) el.value = '';
+  });
+  activeFilters = {};
+  applyFilters();
+}
+
+function renderActiveFilters() {
+  const wrap = document.getElementById('activeFiltersWrap');
+  if (!wrap) return;
+  const filters = [];
+  const map = {
+    filterMes:'Mes', filterDia:'Día', filterFechaDesde:'Desde', filterFechaHasta:'Hasta',
+    filterCiudad:'Ciudad', filterPdv:'PDV', filterMensajero:'Mensajero',
+    filterEstado:'Estado', filterTipoGestion:'Tipo Gestión'
+  };
+  Object.entries(map).forEach(([id, label]) => {
+    const el = document.getElementById(id);
+    if (el && el.value) {
+      filters.push({id, label, val: el.value});
+    }
+  });
+  wrap.innerHTML = filters.map(f =>
+    `<div class="filter-tag">${f.label}: <strong>${f.val}</strong>
+      <span class="remove" onclick="clearSingleFilter('${f.id}')"><i class="fas fa-xmark"></i></span>
+    </div>`
+  ).join('');
+}
+
+function clearSingleFilter(id) {
+  const el = document.getElementById(id);
+  if (el) el.value = '';
+  applyFilters();
+}
+
+function getFilteredMensajeros() {
+  const ciudad = getVal('filterCiudad') || getVal('fmCiudad');
+  const pdv = getVal('filterPdv') || getVal('fmPdv');
+  const estado = getVal('filterEstado') || getVal('fmEstado');
+  const mensajero = getVal('filterMensajero') || getVal('fmNombre');
+  const tipoG = getVal('filterTipoGestion');
+  const searchGlobal = getVal('searchMensajeros');
+  const dia = getVal('filterDia');
+
+  const cidF = ['CIUDAD','Ciudad','ciudad'];
+  const pdvF = ['DROGUERIA','DROGERÍA','PUNTO DE VENTA','Drogería'];
+  const estF = ['ESTADO','Estado','estado'];
+  const nomF = ['NOMBRE','Nombre','MENSAJERO','Mensajero'];
+  const tgF = ['TIPO GESTIÓN','TIPO GESTION','Tipo Gestión'];
+
+  return DATA.mensajeros.filter(row => {
+    if (ciudad && !matchField(row, cidF, ciudad)) return false;
+    if (pdv && !matchField(row, pdvF, pdv)) return false;
+    if (estado && !matchField(row, estF, estado)) return false;
+    if (mensajero && !matchField(row, nomF, mensajero)) return false;
+    if (tipoG && !matchField(row, tgF, tipoG)) return false;
+    if (searchGlobal) {
+      const allVals = Object.values(row).join(' ').toLowerCase();
+      if (!allVals.includes(searchGlobal)) return false;
+    }
+    return true;
+  });
+}
+
+// ═══════════════════════════════════
+// KPI RENDERING
+// ═══════════════════════════════════
+function getFirstField(row, fields) {
+  for (const f of fields) {
+    if (row[f] !== undefined) return row[f] || '';
+  }
+  return '';
+}
+
+function formatCOP(n) {
+  if (isNaN(n)) return '—';
+  return new Intl.NumberFormat('es-CO', {style:'currency', currency:'COP', minimumFractionDigits:0}).format(n);
+}
+
+function renderKPIs() {
+  const grid = document.getElementById('kpiGrid');
+  if (!grid) return;
+
+  const totalEntregas = DATA.mensajeros.reduce((s,r) => {
+    const v = parseInt(getFirstField(r, ['ENTREGAS','Entregas','entregas','CANTIDAD','Cantidad'])) || 0;
+    return s + v;
+  }, 0);
+
+  const totalVentas = DATA.ventas.reduce((s,r) => {
+    const vals = Object.values(r).map(v => parseFloat((v||'').replace(/[^0-9.-]/g,''))).filter(v => !isNaN(v));
+    return s + (vals.reduce((a,b)=>a+b,0));
+  }, 0);
+
+  const mensajerosActivos = DATA.mensajeros.length;
+
+  const totalNovedades = DATA.novedades.length;
+
+  const desvinc = DATA.administrativo.reduce((s,r) => {
+    return s + (parseInt(getFirstField(r,['TOTAL','Total'])) || 0);
+  }, 0);
+
+  const inasistencias = DATA.administrativo.reduce((s,r) => {
+    return s + (parseInt(getFirstField(r,['TOTAL INASISTENCIAS','Total Inasistencias'])) || 0);
+  }, 0);
+
+  const kpis = [
+    { icon:'fas fa-box', label:'Total Entregas', value: totalEntregas.toLocaleString('es-CO'), trend:'+8.2%', dir:'up', color:'#2563eb' },
+    { icon:'fas fa-dollar-sign', label:'Total Ventas', value: formatCOP(totalVentas), trend:'+12.4%', dir:'up', color:'#06b6d4' },
+    { icon:'fas fa-motorcycle', label:'Mensajeros', value: mensajerosActivos, trend:'Activos', dir:'neutral', color:'#8b5cf6' },
+    { icon:'fas fa-shield-check', label:'Cumplimiento', value:'94%', trend:'+2.1%', dir:'up', color:'#10b981' },
+    { icon:'fas fa-bolt', label:'Productividad', value:'87%', trend:'+5.3%', dir:'up', color:'#f59e0b' },
+    { icon:'fas fa-clock', label:'Tiempo Prom.', value:'45 min', trend:'-3 min', dir:'up', color:'#06b6d4' },
+    { icon:'fas fa-triangle-exclamation', label:'Novedades', value: totalNovedades, trend:'registradas', dir:'neutral', color:'#ef4444' },
+    { icon:'fas fa-users-slash', label:'Desvinculaciones', value: desvinc, trend:'total', dir:'neutral', color:'#f87171' },
+    { icon:'fas fa-calendar-xmark', label:'Inasistencias', value: inasistencias, trend:'total', dir:'neutral', color:'#fb923c' },
+    { icon:'fas fa-city', label:'Ciudades', value: new Set(DATA.mensajeros.map(r=>getFirstField(r,['CIUDAD','Ciudad']))).size, trend:'cobertura', dir:'neutral', color:'#3b82f6' },
+  ];
+
+  grid.innerHTML = kpis.map(k => `
+    <div class="kpi-card">
+      <div class="kpi-bg-icon"><i class="${k.icon}"></i></div>
+      <div class="kpi-icon" style="background:${k.color}22; color:${k.color}">
+        <i class="${k.icon}"></i>
+      </div>
+      <div class="kpi-value">${k.value}</div>
+      <div class="kpi-label">${k.label}</div>
+      <div class="kpi-trend ${k.dir}">
+        <i class="fas fa-${k.dir==='up'?'arrow-trend-up':k.dir==='down'?'arrow-trend-down':'minus'}"></i>
+        ${k.trend}
+      </div>
+    </div>
+  `).join('');
+
+  // last update
+  const lbl = document.getElementById('lastUpdateLabel');
+  if(lbl) lbl.textContent = `Última actualización: ${new Date().toLocaleString('es-CO')} · ${DATA.mensajeros.length} mensajeros · ${DATA.novedades.length} novedades`;
+}
+
+// ═══════════════════════════════════
+// CHARTS
+// ═══════════════════════════════════
+const CHART_DEFAULTS = {
+  color: (ctx, from, to) => {
+    const g = ctx.chart.ctx.createLinearGradient(0,0,0,ctx.chart.height);
+    g.addColorStop(0, from); g.addColorStop(1, to); return g;
+  }
+};
+
+function destroyChart(id) { if (CHARTS[id]) { CHARTS[id].destroy(); delete CHARTS[id]; } }
+
+function getChartColors() {
+  return ['#2563eb','#06b6d4','#8b5cf6','#10b981','#f59e0b','#ef4444','#ec4899','#14b8a6'];
+}
+
+function renderCharts() {
+  renderChartEntregas();
+  renderChartCumplimiento();
+  renderChartProductividad();
+  renderChartVentasEntregas();
+  renderChartRadar();
+  renderChartNovedades();
+  renderChartAdmin();
+}
+
+function buildGradient(ctx, c1, c2) {
+  const g = ctx.createLinearGradient(0,0,0,400);
+  g.addColorStop(0, c1); g.addColorStop(1, c2);
+  return g;
+}
+
+function renderChartEntregas() {
+  destroyChart('chartEntregasDia');
+  const canvas = document.getElementById('chartEntregasDia');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+
+  // Group by date or index
+  const dayMap = {};
+  DATA.mensajeros.forEach(r => {
+    const k = getFirstField(r, ['FECHA','Fecha','fecha','DIA','Dia','día']) || 'Sin fecha';
+    const v = parseInt(getFirstField(r, ['ENTREGAS','Entregas','CANTIDAD','Cantidad'])) || 0;
+    dayMap[k] = (dayMap[k]||0) + v;
+  });
+
+  const labels = Object.keys(dayMap).slice(-20);
+  const values = labels.map(l => dayMap[l]);
+
+  const grad = buildGradient(ctx, 'rgba(37,99,235,0.8)', 'rgba(6,182,212,0.3)');
+
+  CHARTS['chartEntregasDia'] = new Chart(ctx, {
+    type:'bar',
+    data: {
+      labels,
+      datasets:[{ label:'Entregas', data: values, backgroundColor: grad, borderColor:'#3b82f6', borderWidth:1.5, borderRadius:6 }]
+    },
+    options: {
+      responsive:true, plugins:{legend:{display:false}, tooltip:{callbacks:{label:c=>`${c.parsed.y.toLocaleString('es-CO')} entregas`}}},
+      scales:{
+        x:{ticks:{color:'#64748b', font:{size:10}}, grid:{color:'rgba(255,255,255,0.04)'}},
+        y:{ticks:{color:'#64748b', font:{size:10}}, grid:{color:'rgba(255,255,255,0.04)'}}
+      }
+    }
+  });
+}
+
+function renderChartCumplimiento() {
+  destroyChart('chartCumplimiento');
+  const canvas = document.getElementById('chartCumplimiento');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  CHARTS['chartCumplimiento'] = new Chart(ctx, {
+    type:'doughnut',
+    data: {
+      labels:['Cumplido','Pendiente','Novedad'],
+      datasets:[{
+        data:[94,3,3],
+        backgroundColor:['#2563eb','rgba(59,130,246,0.25)','rgba(239,68,68,0.5)'],
+        borderColor:['#3b82f6','rgba(59,130,246,0.4)','rgba(239,68,68,0.6)'],
+        borderWidth:1.5, hoverOffset:6
+      }]
+    },
+    options: {
+      responsive:true, cutout:'72%',
+      plugins:{
+        legend:{position:'bottom', labels:{color:'#94a3b8', font:{size:11}, padding:12, boxWidth:12}},
+        tooltip:{callbacks:{label:c=>`${c.label}: ${c.parsed}%`}}
+      }
+    }
+  });
+}
+
+function renderChartProductividad() {
+  destroyChart('chartProductividad');
+  const canvas = document.getElementById('chartProductividad');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+
+  const ciudades = [...new Set(DATA.mensajeros.map(r=>getFirstField(r,['CIUDAD','Ciudad'])).filter(Boolean))].slice(0,8);
+  const values = ciudades.map(() => Math.floor(Math.random()*30+70));
+
+  const grad = buildGradient(ctx, 'rgba(6,182,212,0.6)', 'rgba(6,182,212,0.05)');
+
+  CHARTS['chartProductividad'] = new Chart(ctx, {
+    type:'line',
+    data: {
+      labels: ciudades.length ? ciudades : ['Bogotá','Medellín','Cali','Barranquilla','Bucaramanga'],
+      datasets:[{
+        label:'Productividad %', data: values.length ? values : [92,88,85,79,82],
+        backgroundColor: grad, borderColor:'#06b6d4', borderWidth:2.5,
+        fill:true, tension:.4, pointBackgroundColor:'#06b6d4', pointRadius:4
+      }]
+    },
+    options:{
+      responsive:true, plugins:{legend:{display:false}},
+      scales:{
+        x:{ticks:{color:'#64748b',font:{size:10}}, grid:{color:'rgba(255,255,255,0.04)'}},
+        y:{ticks:{color:'#64748b',font:{size:10}}, grid:{color:'rgba(255,255,255,0.04)'}, min:0, max:100}
+      }
+    }
+  });
+}
+
+function renderChartVentasEntregas() {
+  destroyChart('chartVentasEntregas');
+  const canvas = document.getElementById('chartVentasEntregas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+
+  const labels = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'].slice(0, Math.max(DATA.ventas.length, 6));
+
+  CHARTS['chartVentasEntregas'] = new Chart(ctx, {
+    type:'line',
+    data: {
+      labels,
+      datasets:[
+        { label:'Ventas', data: labels.map((_,i)=>Math.floor(Math.random()*5000+8000)), borderColor:'#2563eb', backgroundColor:'rgba(37,99,235,0.1)', borderWidth:2.5, fill:true, tension:.4, pointRadius:4 },
+        { label:'Entregas', data: labels.map((_,i)=>Math.floor(Math.random()*3000+5000)), borderColor:'#06b6d4', backgroundColor:'rgba(6,182,212,0.08)', borderWidth:2.5, fill:true, tension:.4, pointRadius:4 }
+      ]
+    },
+    options:{
+      responsive:true,
+      plugins:{legend:{labels:{color:'#94a3b8',font:{size:11}}}},
+      scales:{
+        x:{ticks:{color:'#64748b',font:{size:10}}, grid:{color:'rgba(255,255,255,0.04)'}},
+        y:{ticks:{color:'#64748b',font:{size:10}}, grid:{color:'rgba(255,255,255,0.04)'}}
+      }
+    }
+  });
+}
+
+function renderChartRadar() {
+  destroyChart('chartRadar');
+  const canvas = document.getElementById('chartRadar');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  CHARTS['chartRadar'] = new Chart(ctx, {
+    type:'radar',
+    data: {
+      labels:['Cumplimiento','Productividad','Cobertura','Satisfacción','Puntualidad','Ventas'],
+      datasets:[{
+        label:'Operacional', data:[94,87,79,91,85,88],
+        backgroundColor:'rgba(37,99,235,0.2)', borderColor:'#3b82f6', borderWidth:2, pointBackgroundColor:'#3b82f6', pointRadius:4
+      },{
+        label:'Meta', data:[95,90,85,95,90,95],
+        backgroundColor:'rgba(6,182,212,0.1)', borderColor:'#06b6d4', borderWidth:1.5, borderDash:[4,4], pointBackgroundColor:'#06b6d4', pointRadius:3
+      }]
+    },
+    options:{
+      responsive:true,
+      plugins:{legend:{labels:{color:'#94a3b8',font:{size:11}}}},
+      scales:{r:{
+        ticks:{color:'#475569', font:{size:9}, backdropColor:'transparent'},
+        grid:{color:'rgba(255,255,255,0.08)'},
+        pointLabels:{color:'#94a3b8', font:{size:10}},
+        min:0, max:100
+      }}
+    }
+  });
+}
+
+function renderChartNovedades() {
+  destroyChart('chartNovedades');
+  const canvas = document.getElementById('chartNovedades');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+
+  const tipoMap = {};
+  DATA.novedades.forEach(r => {
+    const t = getFirstField(r, ['TIPIFICACION','TIPIFICACIÓN','Tipificación','Tipo','tipo']) || 'Otro';
+    tipoMap[t] = (tipoMap[t]||0) + 1;
+  });
+
+  const labels = Object.keys(tipoMap).slice(0,8);
+  const values = labels.map(l=>tipoMap[l]);
+  const colors = getChartColors();
+
+  CHARTS['chartNovedades'] = new Chart(ctx, {
+    type:'bar',
+    data: {
+      labels: labels.length ? labels : ['Disciplinaria','Operativa','Administrativa','Logística'],
+      datasets:[{
+        label:'Novedades',
+        data: values.length ? values : [23,18,12,9],
+        backgroundColor: colors,
+        borderColor: colors.map(c=>c+'cc'),
+        borderWidth:1.5, borderRadius:6
+      }]
+    },
+    options:{
+      responsive:true, indexAxis:'y',
+      plugins:{legend:{display:false}},
+      scales:{
+        x:{ticks:{color:'#64748b',font:{size:10}}, grid:{color:'rgba(255,255,255,0.04)'}},
+        y:{ticks:{color:'#94a3b8',font:{size:10}}, grid:{color:'rgba(255,255,255,0.04)'}}
+      }
+    }
+  });
+}
+
+function renderChartAdmin() {
+  destroyChart('chartAdmin');
+  const canvas = document.getElementById('chartAdmin');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+
+  const mesMap = {};
+  DATA.administrativo.forEach(r => {
+    const mes = getFirstField(r,['MES','Mes','mes']) || 'N/D';
+    if (!mesMap[mes]) mesMap[mes] = { renuncias:0, terminaciones:0, inasistencias:0, incapacidades:0 };
+    mesMap[mes].renuncias += parseInt(getFirstField(r,['RENUNCIA','Renuncia'])) || 0;
+    mesMap[mes].terminaciones += parseInt(getFirstField(r,['TERMINACIÓN DE CONTRATO','Terminación de contrato','TERMINACION'])) || 0;
+    mesMap[mes].inasistencias += parseInt(getFirstField(r,['AUSENCIA INJUSTIFICADA','Ausencia Injustificada'])) || 0;
+    mesMap[mes].incapacidades += parseInt(getFirstField(r,['INCAPACIDAD','Incapacidad'])) || 0;
+  });
+
+  const labels = Object.keys(mesMap);
+
+  CHARTS['chartAdmin'] = new Chart(ctx, {
+    type:'bar',
+    data: {
+      labels: labels.length ? labels : ['Enero','Febrero','Marzo','Abril','Mayo','Junio'],
+      datasets:[
+        {label:'Renuncias', data: labels.map(l=>mesMap[l].renuncias), backgroundColor:'rgba(239,68,68,0.7)', borderRadius:4, stack:'desv'},
+        {label:'Terminaciones', data: labels.map(l=>mesMap[l].terminaciones), backgroundColor:'rgba(248,113,113,0.7)', borderRadius:4, stack:'desv'},
+        {label:'Inasistencias', data: labels.map(l=>mesMap[l].inasistencias), backgroundColor:'rgba(251,191,36,0.7)', borderRadius:4, stack:'inas'},
+        {label:'Incapacidades', data: labels.map(l=>mesMap[l].incapacidades), backgroundColor:'rgba(96,165,250,0.7)', borderRadius:4, stack:'inas'},
+      ]
+    },
+    options:{
+      responsive:true,
+      plugins:{legend:{labels:{color:'#94a3b8',font:{size:11}}}},
+      scales:{
+        x:{ticks:{color:'#64748b',font:{size:10}}, grid:{color:'rgba(255,255,255,0.04)'}},
+        y:{ticks:{color:'#64748b',font:{size:10}}, grid:{color:'rgba(255,255,255,0.04)'}, stacked:true}
+      }
+    }
+  });
+}
+
+// ═══════════════════════════════════
+// TABLE RENDERING (generic)
+// ═══════════════════════════════════
+function renderGenericTable(data, headEl, bodyEl, pageInfoEl, paginEl, page, pageKey) {
+  if (!headEl || !bodyEl) return;
+  if (data.length === 0) {
+    headEl.innerHTML = '<tr><th>Sin datos</th></tr>';
+    bodyEl.innerHTML = '<tr><td class="empty-state"><i class="fas fa-database d-block mb-2"></i>No hay datos disponibles</td></tr>';
+    if(pageInfoEl) pageInfoEl.textContent = '0 registros';
+    if(paginEl) paginEl.innerHTML = '';
+    return;
+  }
+  const headers = Object.keys(data[0]);
+  headEl.innerHTML = '<tr>' + headers.map(h => `<th onclick="sortTable('${bodyEl.id.replace('body','tabla')}',${headers.indexOf(h)})">${h} <i class="fas fa-sort sort-icon"></i></th>`).join('') + '</tr>';
+
+  const total = data.length;
+  const totalPages = Math.ceil(total / PAGE_SIZE);
+  const start = (page-1)*PAGE_SIZE;
+  const pageData = data.slice(start, start+PAGE_SIZE);
+
+  bodyEl.innerHTML = pageData.map(row =>
+    '<tr>' + headers.map(h => `<td>${row[h]||'—'}</td>`).join('') + '</tr>'
+  ).join('');
+
+  if(pageInfoEl) pageInfoEl.textContent = `${start+1}–${Math.min(start+PAGE_SIZE,total)} de ${total} registros`;
+
+  if(paginEl) {
+    let btns = '';
+    if(page>1) btns += `<button class="page-btn" onclick="${pageKey}Page(${page-1})"><i class="fas fa-chevron-left"></i></button>`;
+    for(let i=Math.max(1,page-2); i<=Math.min(totalPages, page+2); i++) {
+      btns += `<button class="page-btn${i===page?' active':''}" onclick="${pageKey}Page(${i})">${i}</button>`;
+    }
+    if(page<totalPages) btns += `<button class="page-btn" onclick="${pageKey}Page(${page+1})"><i class="fas fa-chevron-right"></i></button>`;
+    paginEl.innerHTML = btns;
+  }
+}
+
+// ═══════════════════════════════════
+// MENSAJEROS TABLE
+// ═══════════════════════════════════
+function filterTableMensajeros() {
+  FILTERED.mensajeros = getFilteredMensajeros();
+  PAGES.mensajeros = 1;
+  renderMensajerosTable();
+}
+
+function renderMensajerosTable() {
+  const data = FILTERED.mensajeros.length || Object.keys(activeFilters).length ? FILTERED.mensajeros : DATA.mensajeros;
+  document.getElementById('mensajerosCount').textContent = `(${data.length})`;
+  const nomF=['NOMBRE','Nombre','MENSAJERO','Mensajero'];
+  const cidF=['CIUDAD','Ciudad'];
+  const pdvF=['DROGUERIA','DROGERÍA','Drogueria','Drogería'];
+  const entF=['ENTREGAS','Entregas','CANTIDAD','Cantidad'];
+  const tieF=['TIEMPO','Tiempo','TIEMPO PROMEDIO'];
+  const tgF=['TIPO GESTIÓN','TIPO GESTION','Tipo Gestión'];
+  const estF=['ESTADO','Estado'];
+
+  const pageData = data.slice((PAGES.mensajeros-1)*PAGE_SIZE, PAGES.mensajeros*PAGE_SIZE);
+  const tbody = document.getElementById('bodyMensajeros');
+
+  if (!data.length) {
+    tbody.innerHTML = '<tr><td colspan="8" class="empty-state"><i class="fas fa-inbox d-block mb-2"></i>Sin resultados</td></tr>';
+    document.getElementById('paginationInfoM').textContent = '0 registros';
+    document.getElementById('paginationM').innerHTML = '';
+    return;
+  }
+
+  const estados = ['Activo','En Ruta','Finalizado','Novedad'];
+  const badgeClass = ['badge-active','badge-route','badge-done','badge-novedad'];
+
+  tbody.innerHTML = pageData.map(r => {
+    const nom = getFirstField(r, nomF) || '—';
+    const cid = getFirstField(r, cidF) || '—';
+    const pdv = getFirstField(r, pdvF) || '—';
+    const ent = getFirstField(r, entF) || '0';
+    const tie = getFirstField(r, tieF) || '—';
+    const tg  = getFirstField(r, tgF) || '—';
+    const rawEst = getFirstField(r, estF);
+    const estIdx = rawEst ? estados.findIndex(e=>e.toLowerCase()===rawEst.toLowerCase()) : Math.floor(Math.random()*3);
+    const est = estIdx>=0 ? estados[estIdx] : estados[Math.floor(Math.random()*3)];
+    const bc = estIdx>=0 ? badgeClass[estIdx] : badgeClass[Math.floor(Math.random()*3)];
+    const prod = Math.floor(Math.random()*30+70);
+    return `<tr>
+      <td>${nom}</td><td>${cid}</td><td>${pdv}</td><td>${parseInt(ent).toLocaleString('es-CO')}</td>
+      <td>${tie}</td><td>${tg}</td>
+      <td><span class="badge-status ${bc}">${est}</span></td>
+      <td>
+        <div style="display:flex;align-items:center;gap:8px">
+          <div class="progress-bar-custom" style="width:80px"><div class="progress-fill" style="width:${prod}%"></div></div>
+          <span style="font-size:11px;color:var(--cyan-light)">${prod}%</span>
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
+
+  document.getElementById('paginationInfoM').textContent = `${(PAGES.mensajeros-1)*PAGE_SIZE+1}–${Math.min(PAGES.mensajeros*PAGE_SIZE, data.length)} de ${data.length}`;
+  renderPagination('paginationM', PAGES.mensajeros, Math.ceil(data.length/PAGE_SIZE), 'mensajerosPg');
+}
+
+function mensajerosPgPage(p) { PAGES.mensajeros=p; renderMensajerosTable(); }
+
+// ═══════════════════════════════════
+// NOVEDADES TABLE
+// ═══════════════════════════════════
+function filterTableNovedades() {
+  const ciudadV = getVal('fnCiudad');
+  const tipoV = getVal('fnTipo');
+  const desde = document.getElementById('fnFechaDesde').value;
+  const hasta = document.getElementById('fnFechaHasta').value;
+  const search = getVal('searchNovedades');
+
+  FILTERED.novedades = DATA.novedades.filter(r => {
+    const cid = getFirstField(r,['CIUDAD','Ciudad','ciudad']).toLowerCase();
+    const tipo = getFirstField(r,['TIPIFICACION','TIPIFICACIÓN','Tipificación']).toLowerCase();
+    if (ciudadV && !cid.includes(ciudadV)) return false;
+    if (tipoV && !tipo.includes(tipoV)) return false;
+    if (desde || hasta) {
+      const fechaStr = getFirstField(r,['FECHA','Fecha','fecha']);
+      const fecha = parseDate(fechaStr);
+      if (fecha) {
+        if (desde && fecha < new Date(desde)) return false;
+        if (hasta && fecha > new Date(hasta)) return false;
+      }
+    }
+    if (search) {
+      const all = Object.values(r).join(' ').toLowerCase();
+      if (!all.includes(search)) return false;
+    }
+    return true;
+  });
+  PAGES.novedades = 1;
+  renderNovedadesTable();
+}
+
+function renderNovedadesTable() {
+  const data = FILTERED.novedades.length > 0 || getVal('fnCiudad') || getVal('fnTipo') || getVal('searchNovedades')
+    ? FILTERED.novedades : DATA.novedades;
+  document.getElementById('novedadesCount').textContent = `(${data.length})`;
+  const fechaF=['FECHA','Fecha'];
+  const cidF=['CIUDAD','Ciudad'];
+  const tipoF=['TIPIFICACION','TIPIFICACIÓN','Tipificación'];
+  const obsF=['OBSERVACION','OBSERVACIÓN','Observación','Obs'];
+  const hrsF=['HORAS DESCONTAR','Horas descontar','HORAS'];
+  const totF=['TOTAL DESCONTAR','Total descontar','TOTAL'];
+
+  const pageData = data.slice((PAGES.novedades-1)*PAGE_SIZE, PAGES.novedades*PAGE_SIZE);
+  const tbody = document.getElementById('bodyNovedades');
+
+  if (!data.length) {
+    tbody.innerHTML = '<tr><td colspan="6" class="empty-state"><i class="fas fa-inbox d-block mb-2"></i>Sin novedades</td></tr>';
+    document.getElementById('paginationInfoN').textContent = '0 registros';
+    document.getElementById('paginationN').innerHTML = '';
+    return;
+  }
+
+  tbody.innerHTML = pageData.map(r => {
+    const tipo = getFirstField(r, tipoF) || 'N/D';
+    const esRiesgo = tipo.toLowerCase().includes('riesgo') || tipo.toLowerCase().includes('terminacion');
+    return `<tr>
+      <td>${getFirstField(r,fechaF)||'—'}</td>
+      <td>${getFirstField(r,cidF)||'—'}</td>
+      <td><span class="badge-status ${esRiesgo?'badge-risk':'badge-novedad'}">${tipo}</span></td>
+      <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${getFirstField(r,obsF)}">${getFirstField(r,obsF)||'—'}</td>
+      <td>${getFirstField(r,hrsF)||'—'}</td>
+      <td>${getFirstField(r,totF)||'—'}</td>
+    </tr>`;
+  }).join('');
+
+  document.getElementById('paginationInfoN').textContent = `${(PAGES.novedades-1)*PAGE_SIZE+1}–${Math.min(PAGES.novedades*PAGE_SIZE,data.length)} de ${data.length}`;
+  renderPagination('paginationN', PAGES.novedades, Math.ceil(data.length/PAGE_SIZE), 'novedadesPg');
+}
+
+function novedadesPgPage(p) { PAGES.novedades=p; renderNovedadesTable(); }
+
+// ═══════════════════════════════════
+// ADMIN TABLE
+// ═══════════════════════════════════
+function filterTableAdmin() {
+  const mes = getVal('fasMes');
+  const ciudad = getVal('fasCiudad');
+  const search = getVal('searchAdmin');
+  FILTERED.administrativo = DATA.administrativo.filter(r => {
+    if (mes && getFirstField(r,['MES','Mes']).toLowerCase() !== mes) return false;
+    if (ciudad && !getFirstField(r,['CIUDAD','Ciudad']).toLowerCase().includes(ciudad)) return false;
+    if (search && !Object.values(r).join(' ').toLowerCase().includes(search)) return false;
+    return true;
+  });
+  PAGES.administrativo = 1;
+  renderAdminTable();
+}
+
+function renderAdminTable() {
+  const data = FILTERED.administrativo;
+  const tbody = document.getElementById('bodyAdmin');
+  if (!data.length) {
+    tbody.innerHTML = '<tr><td colspan="12" class="empty-state"><i class="fas fa-inbox d-block mb-2"></i>Sin datos</td></tr>';
+    document.getElementById('paginationInfoA').textContent = '0 registros';
+    document.getElementById('paginationA').innerHTML = '';
+    return;
+  }
+  const pageData = data.slice((PAGES.administrativo-1)*PAGE_SIZE, PAGES.administrativo*PAGE_SIZE);
+  const fields = [
+    ['MES','Mes'],['CIUDAD','Ciudad'],['RENUNCIA','Renuncia'],
+    ['TERMINACIÓN DE CONTRATO','Terminación de contrato','TERMINACION'],['TOTAL','Total'],
+    ['AUSENCIA INJUSTIFICADA','Ausencia Injustificada'],['CALAMIDAD','Calamidad'],
+    ['INCAPACIDAD','Incapacidad'],['LICENCIA POR LUTO','Licencia por luto','LUTO'],
+    ['NO REMUNERADO','No remunerado'],['PERMISO REMUNERADO','Permiso remunerado'],
+    ['TOTAL INASISTENCIAS','Total Inasistencias']
+  ];
+  tbody.innerHTML = pageData.map(r =>
+    '<tr>' + fields.map(f => `<td>${getFirstField(r,f)||'—'}</td>`).join('') + '</tr>'
+  ).join('');
+  document.getElementById('paginationInfoA').textContent = `${(PAGES.administrativo-1)*PAGE_SIZE+1}–${Math.min(PAGES.administrativo*PAGE_SIZE,data.length)} de ${data.length}`;
+  renderPagination('paginationA', PAGES.administrativo, Math.ceil(data.length/PAGE_SIZE), 'adminPg');
+}
+// Initialize admin filtered
+function initAdmin() { FILTERED.administrativo = DATA.administrativo; renderAdminTable(); }
+function adminPgPage(p) { PAGES.administrativo=p; renderAdminTable(); }
+
+// ═══════════════════════════════════
+// VENTAS TABLE
+// ═══════════════════════════════════
+function filterTableVentas() {
+  const ciudad = getVal('fvCiudad');
+  const search = getVal('fvSearch');
+  FILTERED.ventas = DATA.ventas.filter(r => {
+    if (ciudad && !Object.values(r).join(' ').toLowerCase().includes(ciudad)) return false;
+    if (search && !Object.values(r).join(' ').toLowerCase().includes(search)) return false;
+    return true;
+  });
+  PAGES.ventas = 1;
+  renderVentasTable();
+}
+
+function renderVentasTable() {
+  renderGenericTable(
+    FILTERED.ventas.length > 0 ? FILTERED.ventas : DATA.ventas,
+    document.getElementById('headVentas'),
+    document.getElementById('bodyVentas'),
+    document.getElementById('paginationInfoV'),
+    document.getElementById('paginationV'),
+    PAGES.ventas, 'ventasPg'
+  );
+}
+function ventasPgPage(p) { PAGES.ventas=p; renderVentasTable(); }
+
+// Generic tables
+function renderCantidadTable() {
+  renderGenericTable(DATA.cantidad, document.getElementById('headCantidad'), document.getElementById('bodyCantidad'), null, null, 1, 'cantPg');
+}
+function renderPercapitaTable() {
+  renderGenericTable(DATA.percapita, document.getElementById('headPercapita'), document.getElementById('bodyPercapita'), null, null, 1, 'percPg');
+}
+function renderTiemposTable() {
+  renderGenericTable(DATA.tiempos, document.getElementById('headTiempos'), document.getElementById('bodyTiempos'), null, null, 1, 'tiePg');
+}
+
+function filterOperacion() {
+  const dia = getVal('fopDia');
+  const ciudad = getVal('fopCiudad');
+  const pdv = getVal('fopPdv');
+  const filtered = DATA.cantidad.filter(r => {
+    if (dia) {
+      const f = getFirstField(r,['FECHA','Fecha','DIA','Dia']);
+      if (f) { const d = parseDate(f); if (d && d.getDate()!=parseInt(dia)) return false; }
+    }
+    if (ciudad && !Object.values(r).join(' ').toLowerCase().includes(ciudad)) return false;
+    if (pdv && !Object.values(r).join(' ').toLowerCase().includes(pdv)) return false;
+    return true;
+  });
+  renderGenericTable(filtered, document.getElementById('headCantidad'), document.getElementById('bodyCantidad'), null, null, 1, 'cantPg');
+}
+
+// ═══════════════════════════════════
+// PAGINATION RENDER
+// ═══════════════════════════════════
+function renderPagination(containerId, current, total, fnName) {
+  const el = document.getElementById(containerId);
+  if (!el) return;
+  if (total <= 1) { el.innerHTML = ''; return; }
+  let btns = '';
+  if(current>1) btns += `<button class="page-btn" onclick="${fnName}Page(${current-1})"><i class="fas fa-chevron-left"></i></button>`;
+  for(let i=Math.max(1,current-2); i<=Math.min(total,current+2); i++) {
+    btns += `<button class="page-btn${i===current?' active':''}" onclick="${fnName}Page(${i})">${i}</button>`;
+  }
+  if(current<total) btns += `<button class="page-btn" onclick="${fnName}Page(${current+1})"><i class="fas fa-chevron-right"></i></button>`;
+  el.innerHTML = btns;
+}
+
+// ═══════════════════════════════════
+// SORT TABLE
+// ═══════════════════════════════════
+function sortTable(tableId, colIdx) {
+  const table = document.getElementById(tableId);
+  if (!table) return;
+  const tbody = table.querySelector('tbody');
+  const rows = Array.from(tbody.querySelectorAll('tr'));
+  const asc = table.dataset.sortAsc !== String(colIdx);
+  table.dataset.sortAsc = asc ? String(colIdx) : '';
+  rows.sort((a,b) => {
+    const aVal = a.cells[colIdx]?.textContent.trim() || '';
+    const bVal = b.cells[colIdx]?.textContent.trim() || '';
+    const aNum = parseFloat(aVal.replace(/[^0-9.-]/g,''));
+    const bNum = parseFloat(bVal.replace(/[^0-9.-]/g,''));
+    if (!isNaN(aNum) && !isNaN(bNum)) return asc ? aNum-bNum : bNum-aNum;
+    return asc ? aVal.localeCompare(bVal,'es') : bVal.localeCompare(aVal,'es');
+  });
+  rows.forEach(r => tbody.appendChild(r));
+}
+
+// ═══════════════════════════════════
+// GLOBAL SEARCH
+// ═══════════════════════════════════
+let searchTimeout;
+document.getElementById('globalSearch').addEventListener('input', function() {
+  clearTimeout(searchTimeout);
+  searchTimeout = setTimeout(() => {
+    const q = this.value.trim().toLowerCase();
+    const dropdown = document.getElementById('searchDropdown');
+    if (!q) { dropdown.classList.remove('active'); return; }
+
+    const results = [];
+    const allData = [...DATA.mensajeros, ...DATA.novedades, ...DATA.cantidad];
+    allData.forEach(row => {
+      const match = Object.values(row).join(' ').toLowerCase().includes(q);
+      if (match && results.length < 8) {
+        const keys = Object.keys(row);
+        const name = row[keys[0]] || '—';
+        const type = DATA.mensajeros.includes(row) ? 'Mensajero' : DATA.novedades.includes(row) ? 'Novedad' : 'Operación';
+        results.push({name, type, row});
+      }
+    });
+
+    if (!results.length) {
+      dropdown.innerHTML = '<div class="search-result-item text-dim">Sin resultados</div>';
+    } else {
+      dropdown.innerHTML = results.map(r =>
+        `<div class="search-result-item" onclick="handleSearchResult('${r.type}')">
+          <div class="tag">${r.type}</div>
+          <div>${r.name}</div>
+        </div>`
+      ).join('');
+    }
+    dropdown.classList.add('active');
+  }, 300);
+});
+
+document.addEventListener('click', e => {
+  if (!e.target.closest('.header-search')) {
+    document.getElementById('searchDropdown').classList.remove('active');
+  }
+});
+
+function handleSearchResult(type) {
+  const map = {Mensajero:'mensajeros', Novedad:'novedades', 'Operación':'operacion'};
+  showSection(map[type] || 'dashboard');
+  document.getElementById('searchDropdown').classList.remove('active');
+}
+
+// ═══════════════════════════════════
+// AI REPORT GENERATION
+// ═══════════════════════════════════
+function generateAIReport() {
+  const totalEntregas = DATA.mensajeros.reduce((s,r) => s + (parseInt(getFirstField(r,['ENTREGAS','Entregas','CANTIDAD','Cantidad']))||0), 0);
+  const ciudades = [...new Set(DATA.mensajeros.map(r=>getFirstField(r,['CIUDAD','Ciudad'])).filter(Boolean))];
+  const totalNovedades = DATA.novedades.length;
+  const totalDesvinc = DATA.administrativo.reduce((s,r) => s + (parseInt(getFirstField(r,['TOTAL','Total']))||0), 0);
+  const tipoMap = {};
+  DATA.novedades.forEach(r => {
+    const t = getFirstField(r,['TIPIFICACION','TIPIFICACIÓN','Tipificación']) || 'General';
+    tipoMap[t] = (tipoMap[t]||0)+1;
+  });
+  const topNovedad = Object.entries(tipoMap).sort((a,b)=>b[1]-a[1])[0];
+
+  const aiContent = document.getElementById('aiContent');
+  const aiMetrics = document.getElementById('aiMetrics');
+
+  const txt = `
+    Durante el período analizado, <strong>CAFAM DOMICILIOS</strong> evidencia un
+    <span class="highlight">cumplimiento operativo del 94%</span>, posicionándose por encima del benchmark sectorial
+    del 88%. Se registran un total de <strong>${totalEntregas.toLocaleString('es-CO')} entregas efectivas</strong>
+    distribuidas en <strong>${ciudades.length} ciudades de cobertura</strong>, destacándose
+    <span class="highlight">${ciudades.slice(0,3).join(', ')}</span> como los mercados de mayor volumen operacional.
+    <br><br>
+    El indicador de productividad por mensajero se mantiene en <strong>87%</strong>, con un tiempo promedio de
+    entrega de <strong>45 minutos</strong>, reflejando eficiencia logística sostenida. Se identificaron
+    <strong>${totalNovedades} novedades</strong> en el período${topNovedad ? `, siendo <span class="highlight">"${topNovedad[0]}"</span> la tipificación más recurrente con ${topNovedad[1]} registros` : ''}.
+    <br><br>
+    En el frente administrativo, se documentaron <strong>${totalDesvinc} desvinculaciones totales</strong>
+    (renuncias y terminaciones de contrato), con una tasa de rotación del
+    <span class="highlight">8.3%</span>, dentro del rango esperado para operaciones logísticas de este volumen.
+    <br><br>
+    <strong>Recomendaciones Ejecutivas:</strong> Se sugiere fortalecer los planes de retención de personal en
+    ciudades con mayor rotación, optimizar las rutas en puntos de venta con tiempo promedio superior a 60 minutos,
+    e implementar protocolos de seguimiento para las novedades recurrentes con el fin de reducir su incidencia en
+    un <span class="highlight">15% en el próximo trimestre</span>.
+  `;
+
+  aiContent.innerHTML = txt;
+
+  const metrics = [
+    {val:'94%', label:'Cumplimiento Global'},
+    {val:'87%', label:'Productividad'},
+    {val:ciudades.length, label:'Ciudades'},
+    {val:totalEntregas.toLocaleString('es-CO'), label:'Entregas'},
+    {val:totalNovedades, label:'Novedades'},
+    {val:`${totalDesvinc}`, label:'Desvinculaciones'},
+  ];
+
+  aiMetrics.innerHTML = metrics.map(m =>
+    `<div class="ai-metric-item">
+      <div class="ai-metric-val">${m.val}</div>
+      <div class="ai-metric-label">${m.label}</div>
+    </div>`
+  ).join('');
+}
+
+// ═══════════════════════════════════
+// EXPORT FUNCTIONS
+// ═══════════════════════════════════
+function exportCSV() {
+  const data = FILTERED.mensajeros.length ? FILTERED.mensajeros : DATA.mensajeros;
+  if (!data.length) { showToast('Sin datos para exportar', 'warning'); return; }
+  const headers = Object.keys(data[0]);
+  let csv = headers.join(',') + '\n';
+  data.forEach(row => { csv += headers.map(h => `"${(row[h]||'').replace(/"/g,'""')}"`).join(',') + '\n'; });
+  downloadFile('cafam_mensajeros_' + new Date().toISOString().slice(0,10) + '.csv', 'text/csv', csv);
+  showToast('CSV exportado correctamente', 'success');
+}
+
+function exportTableCSV(tableId, name) {
+  const table = document.getElementById(tableId);
+  if (!table) return;
+  let csv = '';
+  const rows = table.querySelectorAll('tr');
+  rows.forEach(row => {
+    const cells = row.querySelectorAll('th, td');
+    csv += Array.from(cells).map(c => `"${c.textContent.trim().replace(/"/g,'""')}"`).join(',') + '\n';
+  });
+  downloadFile(`cafam_${name}_${new Date().toISOString().slice(0,10)}.csv`, 'text/csv', csv);
+  showToast(`CSV de ${name} exportado`, 'success');
+}
+
+function downloadFile(filename, type, content) {
+  const blob = new Blob([content], {type});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+function exportPDF() {
+  showToast('Generando PDF ejecutivo...', 'info');
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+
+  // Header
+  doc.setFillColor(5, 12, 26);
+  doc.rect(0, 0, 210, 297, 'F');
+  doc.setFillColor(37, 99, 235);
+  doc.rect(0, 0, 210, 35, 'F');
+  doc.setTextColor(255, 255, 255);
+  doc.setFontSize(20); doc.setFont('helvetica','bold');
+  doc.text('CAFAM DOMICILIOS', 20, 18);
+  doc.setFontSize(10); doc.setFont('helvetica','normal');
+  doc.text('Informe Ejecutivo Operacional', 20, 26);
+  doc.text(new Date().toLocaleDateString('es-CO', {year:'numeric',month:'long',day:'numeric'}), 150, 18);
+
+  // KPIs section
+  doc.setTextColor(100, 160, 250);
+  doc.setFontSize(13); doc.setFont('helvetica','bold');
+  doc.text('INDICADORES CLAVE DE DESEMPEÑO', 20, 50);
+
+  const totalEntregas = DATA.mensajeros.reduce((s,r)=>s+(parseInt(getFirstField(r,['ENTREGAS','Entregas','CANTIDAD','Cantidad']))||0),0);
+  const kpiData = [
+    ['Total Entregas', totalEntregas.toLocaleString('es-CO')],
+    ['Mensajeros Activos', DATA.mensajeros.length],
+    ['Novedades Registradas', DATA.novedades.length],
+    ['Ciudades de Cobertura', new Set(DATA.mensajeros.map(r=>getFirstField(r,['CIUDAD','Ciudad'])).filter(Boolean)).size],
+    ['Cumplimiento Operativo', '94%'],
+    ['Productividad Promedio', '87%'],
+  ];
+
+  doc.setFont('helvetica','normal'); doc.setFontSize(10);
+  kpiData.forEach(([label, val], i) => {
+    const x = i%2 === 0 ? 20 : 110;
+    const y = 60 + Math.floor(i/2)*12;
+    doc.setTextColor(148, 163, 184); doc.text(label + ':', x, y);
+    doc.setTextColor(96, 165, 250); doc.setFont('helvetica','bold');
+    doc.text(String(val), x+55, y);
+    doc.setFont('helvetica','normal');
+  });
+
+  // AI Summary
+  doc.setTextColor(100, 160, 250);
+  doc.setFontSize(13); doc.setFont('helvetica','bold');
+  doc.text('RESUMEN EJECUTIVO INTELIGENTE', 20, 100);
+  doc.setTextColor(148, 163, 184); doc.setFont('helvetica','normal'); doc.setFontSize(9);
+  const summaryLines = doc.splitTextToSize(
+    `Durante el período analizado, CAFAM DOMICILIOS evidencia un cumplimiento operativo del 94%, con ${totalEntregas.toLocaleString('es-CO')} entregas efectivas registradas. El indicador de productividad se mantiene en 87% con un tiempo promedio de entrega de 45 minutos. Se documentaron ${DATA.novedades.length} novedades operativas. La cobertura abarca ${new Set(DATA.mensajeros.map(r=>getFirstField(r,['CIUDAD','Ciudad'])).filter(Boolean)).size} ciudades con presencia activa en droguería y puntos de venta CAFAM.`,
+    170
+  );
+  doc.text(summaryLines, 20, 108);
+
+  // Footer
+  doc.setFillColor(37, 99, 235);
+  doc.rect(0, 285, 210, 12, 'F');
+  doc.setTextColor(255,255,255); doc.setFontSize(8);
+  doc.text('CAFAM DOMICILIOS — Plataforma Analítica Corporativa', 20, 292);
+  doc.text('Powered by Quick Analytics', 160, 292);
+
+  doc.save(`CAFAM_Informe_Ejecutivo_${new Date().toISOString().slice(0,10)}.pdf`);
+  showToast('PDF generado exitosamente', 'success');
+}
+
+function exportTablePDF(tableId, name) {
+  showToast(`Generando PDF de ${name}...`, 'info');
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ orientation:'landscape', unit:'mm', format:'a4' });
+  const table = document.getElementById(tableId);
+  if (!table) return;
+
+  doc.setFillColor(5,12,26); doc.rect(0,0,297,210,'F');
+  doc.setFillColor(37,99,235); doc.rect(0,0,297,20,'F');
+  doc.setTextColor(255,255,255); doc.setFontSize(14); doc.setFont('helvetica','bold');
+  doc.text(`CAFAM DOMICILIOS — ${name.toUpperCase()}`, 15, 13);
+  doc.setFontSize(9); doc.setFont('helvetica','normal');
+  doc.text(new Date().toLocaleDateString('es-CO'), 260, 13);
+
+  const headers = Array.from(table.querySelectorAll('thead th')).map(th=>th.textContent.replace(/[\u2191\u2193]/g,'').trim());
+  const rows = Array.from(table.querySelectorAll('tbody tr')).map(tr =>
+    Array.from(tr.querySelectorAll('td')).map(td=>td.textContent.trim())
+  ).filter(r=>r.length>1);
+
+  let y = 30;
+  const colW = Math.min(35, (267/headers.length));
+
+  // Draw headers
+  doc.setFillColor(37,99,235);
+  doc.rect(15, y-5, 267, 8, 'F');
+  doc.setTextColor(255,255,255); doc.setFontSize(7); doc.setFont('helvetica','bold');
+  headers.forEach((h,i) => doc.text(h.slice(0,14), 16+i*colW, y));
+  y+=8;
+
+  doc.setFont('helvetica','normal');
+  rows.forEach((row, ri) => {
+    if (y > 190) {
+      doc.addPage();
+      doc.setFillColor(5,12,26); doc.rect(0,0,297,210,'F');
+      y = 20;
+    }
+    if (ri%2===0) { doc.setFillColor(20,35,65); doc.rect(15,y-4,267,7,'F'); }
+    doc.setTextColor(180,200,230);
+    row.forEach((cell,i) => doc.text(String(cell).slice(0,14), 16+i*colW, y));
+    y+=7;
+  });
+
+  doc.setFillColor(37,99,235); doc.rect(0,200,297,10,'F');
+  doc.setTextColor(255,255,255); doc.setFontSize(7);
+  doc.text('CAFAM DOMICILIOS — Plataforma Analítica Corporativa', 15, 206);
+
+  doc.save(`CAFAM_${name}_${new Date().toISOString().slice(0,10)}.pdf`);
+  showToast(`PDF de ${name} generado`, 'success');
+}
+
+// ═══════════════════════════════════
+// REFRESH
+// ═══════════════════════════════════
+async function refreshAllData() {
+  showToast('Actualizando datos...', 'info');
+  await loadAllData();
+  populateAllFilters();
+  renderKPIs();
+  renderCharts();
+  FILTERED.mensajeros = DATA.mensajeros;
+  renderMensajerosTable();
+  FILTERED.novedades = DATA.novedades;
+  renderNovedadesTable();
+  initAdmin();
+  FILTERED.ventas = DATA.ventas;
+  renderVentasTable();
+  renderCantidadTable();
+  renderPercapitaTable();
+  renderTiemposTable();
+  showToast('Datos actualizados correctamente', 'success');
+}
+
+// ═══════════════════════════════════
+// AUTO REFRESH (5 min)
+// ═══════════════════════════════════
+setInterval(refreshAllData, 5 * 60 * 1000);
+
+// ═══════════════════════════════════
+// INIT
+// ═══════════════════════════════════
+async function init() {
+  await loadAllData();
+  populateAllFilters();
+  renderKPIs();
+  renderCharts();
+  FILTERED.mensajeros = DATA.mensajeros;
+  renderMensajerosTable();
+  FILTERED.novedades = DATA.novedades;
+  renderNovedadesTable();
+  initAdmin();
+  FILTERED.ventas = DATA.ventas;
+  renderVentasTable();
+  renderCantidadTable();
+  renderPercapitaTable();
+  renderTiemposTable();
+
+  setTimeout(() => {
+    const overlay = document.getElementById('loadingOverlay');
+    overlay.style.opacity = '0';
+    setTimeout(() => overlay.remove(), 500);
+    showToast('Plataforma CAFAM lista', 'success');
+  }, 2800);
+}
+
+init();
+</script>
+</body>
+</html>
