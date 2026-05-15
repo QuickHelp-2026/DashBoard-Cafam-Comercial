@@ -610,7 +610,7 @@ function buildAccessors(){
     modelo:r=>fld(r,...Object.keys(r).filter(k=>k.toLowerCase().includes('modelo'))||['modelo']),
     fecha:r=>fld(r,...Object.keys(r).filter(k=>k.toLowerCase().includes('fecha'))||['fecha']),
     horas:r=>num(fld(r,...Object.keys(r).filter(k=>k.toLowerCase().includes('hora'))||['horas'])),
-    valor:r=>num(fld(r,...Object.keys(r).filter(k=>k.toLowerCase().includes('valor')||k.toLowerCase().includes('descont'))||['valor']))
+    valor:r=>num(fld(r,'TOTAL A DESCONTAR')),
   };
   A.can={
     mes:dFld(D.cantidad,'mes','month'),
