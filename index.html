@@ -31,7 +31,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--t1);min-hei
 #loadWrap{position:fixed;inset:0;background:var(--bg);z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;transition:opacity .5s;}
 #loadWrap img{height:56px;animation:float 2.5s ease-in-out infinite;}
 .lbar-wrap{width:280px;height:4px;background:rgba(255,255,255,.1);border-radius:2px;overflow:hidden;}
-.lbar{height:100%;width:0;background:linear-gradient(90deg,var(--b1),var(--cy));border-radius:2px;animation:lprog 3s ease forwards;}
+.lbar{height:100%;width:0;background:linear-gradient(90deg,var(--b1),var(--cy));border-radius:2px;transition:width .5s ease;}
 @keyframes lprog{to{width:100%}}
 @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
 .ltext{font-size:11px;color:var(--t3);letter-spacing:2px;text-transform:uppercase;}
@@ -203,8 +203,14 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--t1);min-hei
 <!-- LOADING -->
 <div id="loadWrap">
   <img src="https://i.ibb.co/Tq23KgR9/download-removebg-preview.png" alt="Cafam">
-  <div class="lbar-wrap"><div class="lbar"></div></div>
+  <div class="lbar-wrap"><div class="lbar" id="loadBar"></div></div>
   <div class="ltext" id="loadTxt">Conectando con Google Sheets...</div>
+  <div id="loadDetail" style="font-size:10px;color:#475569;margin-top:4px;letter-spacing:1px;text-align:center;max-width:320px;">Iniciando carga de datos...</div>
+  <div id="loadSkip" style="margin-top:16px;display:none;">
+    <button onclick="forceSkip()" style="background:rgba(37,99,235,.2);border:1px solid rgba(37,99,235,.4);color:#60a5fa;padding:8px 20px;border-radius:20px;font-size:11px;cursor:pointer;font-family:Inter,sans-serif;letter-spacing:1px;">
+      SALTAR CARGA Y CONTINUAR
+    </button>
+  </div>
 </div>
 
 <!-- SIDEBAR -->
@@ -562,49 +568,93 @@ function go(name,btn){
 // ═══════════════════════════════════════════════
 // CSV FETCH
 // ═══════════════════════════════════════════════
-function fetchCSV(url,key){
-  return new Promise(function(res){
-    var done=false;
-    var timer=setTimeout(function(){
-      if(!done){done=true;D[key]=[];res([]);}
-    },3000);
+function fetchCSV(url, key) {
+  return new Promise(function(resolve) {
+    var done = false;
 
-    function finish(data){
-      if(!done){done=true;clearTimeout(timer);D[key]=data||[];res(D[key]);}
+    // Hard timeout: 12s per sheet
+    var timer = setTimeout(function() {
+      if (!done) {
+        done = true;
+        console.warn('TIMEOUT loading ' + key);
+        D[key] = [];
+        resolve([]);
+      }
+    }, 12000);
+
+    function finish(data) {
+      if (!done) {
+        done = true;
+        clearTimeout(timer);
+        D[key] = data || [];
+        resolve(D[key]);
+      }
     }
 
-    function tryProxy(){
-      var proxy='https://corsproxy.io/?'+encodeURIComponent(url);
-      fetch(proxy)
-        .then(function(r){return r.text();})
-        .then(function(text){
-          var parsed=Papa.parse(text,{header:true,skipEmptyLines:true});
-          finish(parsed.data);
+    function parseText(text) {
+      try {
+        var result = Papa.parse(text, { header: true, skipEmptyLines: true });
+        return result.data || [];
+      } catch(e) {
+        return [];
+      }
+    }
+
+    // Strategy 1: direct fetch with credentials omitted
+    function tryDirect() {
+      fetch(url, { method: 'GET', mode: 'cors', credentials: 'omit' })
+        .then(function(r) { return r.text(); })
+        .then(function(t) {
+          var data = parseText(t);
+          if (data.length > 0) { finish(data); } else { tryProxy1(); }
         })
-        .catch(function(){
-          var proxy2='https://api.allorigins.win/raw?url='+encodeURIComponent(url);
-          fetch(proxy2)
-            .then(function(r){return r.text();})
-            .then(function(text){
-              var parsed=Papa.parse(text,{header:true,skipEmptyLines:true});
-              finish(parsed.data);
-            })
-            .catch(function(){finish([]);});
+        .catch(function() { tryProxy1(); });
+    }
+
+    // Strategy 2: corsproxy.io
+    function tryProxy1() {
+      var p = 'https://corsproxy.io/?' + encodeURIComponent(url);
+      fetch(p, { method: 'GET', credentials: 'omit' })
+        .then(function(r) { return r.text(); })
+        .then(function(t) {
+          var data = parseText(t);
+          if (data.length > 0) { finish(data); } else { tryProxy2(); }
+        })
+        .catch(function() { tryProxy2(); });
+    }
+
+    // Strategy 3: allorigins
+    function tryProxy2() {
+      var p = 'https://api.allorigins.win/raw?url=' + encodeURIComponent(url);
+      fetch(p, { method: 'GET', credentials: 'omit' })
+        .then(function(r) { return r.text(); })
+        .then(function(t) {
+          var data = parseText(t);
+          if (data.length > 0) { finish(data); } else { tryProxy3(); }
+        })
+        .catch(function() { tryProxy3(); });
+    }
+
+    // Strategy 4: thingproxy
+    function tryProxy3() {
+      var p = 'https://thingproxy.freeboard.io/fetch/' + url;
+      fetch(p, { method: 'GET', credentials: 'omit' })
+        .then(function(r) { return r.text(); })
+        .then(function(t) {
+          var data = parseText(t);
+          finish(data); // accept whatever we got, even empty
+        })
+        .catch(function() {
+          // Strategy 5: Papa.parse download mode as last resort
+          Papa.parse(url, {
+            download: true, header: true, skipEmptyLines: true,
+            complete: function(r) { finish(r.data || []); },
+            error: function() { finish([]); }
+          });
         });
     }
 
-    fetch(url)
-      .then(function(r){
-        if(!r.ok) throw new Error('HTTP '+r.status);
-        return r.text();
-      })
-      .then(function(text){
-        var parsed=Papa.parse(text,{header:true,skipEmptyLines:true});
-        finish(parsed.data);
-      })
-      .catch(function(){
-        tryProxy();
-      });
+    tryDirect();
   });
 }
 
@@ -1299,17 +1349,37 @@ function hideLoader(){
 
 async function init(){
   // Safety net: always remove loader after 10s no matter what
+  // Show skip button after 5s so user can proceed manually if needed
+  var skipTimer=setTimeout(function(){
+    var skipBtn=document.getElementById('loadSkip');
+    if(skipBtn)skipBtn.style.display='block';
+  },5000);
+
   var safetyTimer=setTimeout(function(){
+    clearTimeout(skipTimer);
+    buildAccessors();
+    renderResumen();
     hideLoader();
-    toast('Cargado (tiempo límite alcanzado)','warn');
-  },8000);
+    toast('Cargado (tiempo límite alcanzado — algunos datos pueden faltar)','warn');
+  },15000);
 
   try {
     var ltxt=document.getElementById('loadTxt');
     var sheets=Object.keys(CSV);
     for(var i=0;i<sheets.length;i++){
-      if(ltxt) ltxt.textContent='Cargando '+sheets[i]+'... ('+(i+1)+'/'+sheets.length+')';
+      var pct=Math.round(((i)/sheets.length)*100);
+      if(ltxt){
+        ltxt.textContent='Cargando '+(i+1)+' de '+sheets.length+': '+sheets[i];
+        ltxt.style.color='#22d3ee';
+      }
+      var lbar=document.getElementById('loadBar');
+      if(lbar)lbar.style.width=pct+'%';
+      var ldet=document.getElementById('loadDetail');
+      if(ldet)ldet.textContent='Hoja '+(i+1)+'/'+sheets.length+' — intentando conexión directa y proxies...';
       await fetchCSV(CSV[sheets[i]],sheets[i]);
+      var pct2=Math.round(((i+1)/sheets.length)*100);
+      if(lbar)lbar.style.width=pct2+'%';
+      if(ldet)ldet.textContent='✓ '+sheets[i]+' ('+D[sheets[i]].length+' registros)';
     }
     if(ltxt) ltxt.textContent='Procesando datos...';
     buildAccessors();
@@ -1320,6 +1390,7 @@ async function init(){
   }
 
   clearTimeout(safetyTimer);
+  clearTimeout(skipTimer);
   setTimeout(function(){
     hideLoader();
     toast('Plataforma CAFAM lista','success');
@@ -1327,7 +1398,21 @@ async function init(){
   },500);
 }
 
-if(document.readyState==="loading"){document.addEventListener("DOMContentLoaded",init);}else{init();}
+function forceSkip(){
+  // User manually skips loading — proceed with whatever data is available
+  var sheets=Object.keys(CSV);
+  sheets.forEach(function(k){ if(!D[k])D[k]=[]; });
+  buildAccessors();
+  renderResumen();
+  hideLoader();
+  toast('Cargado con datos parciales','warn');
+}
+
+if(document.readyState==="loading"){
+  document.addEventListener("DOMContentLoaded",init);
+}else{
+  init();
+}
 </script>
 </body>
 </html>
