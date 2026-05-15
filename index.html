@@ -502,7 +502,7 @@ function fld(row){var keys=Array.prototype.slice.call(arguments,1);for(var ki=0;
 function sum(arr,fn){return arr.reduce((s,r)=>s+(fn(r)||0),0);}
 function groupBy(arr,fn){const m={};arr.forEach(r=>{const k=fn(r)||'N/D';m[k]=(m[k]||[]); m[k].push(r);});return m;}
 function sumGroup(arr,keyFn,valFn){const m={};arr.forEach(r=>{const k=keyFn(r)||'N/D';m[k]=(m[k]||0)+num(valFn(r));});return m;}
-function sortObj(obj,desc=true){return Object.entries(obj).sort((a,b)=>desc?b[1]-a[1]:a[1]-b[1]);}
+function sortObj(obj,desc){if(desc===undefined)desc=true;return Object.entries(obj).sort(function(a,b){return desc?b[1]-a[1]:a[1]-b[1];});}
 function topN(obj,n,desc){if(desc===undefined)desc=true;return sortObj(obj,desc).slice(0,n);}
 function parseDate(s){if(!s)return null;const p=String(s).split(/[\/\-]/);if(p.length===3){const[a,b,c]=p;const yr=a.length===4?parseInt(a):parseInt(c),mo=a.length===4?parseInt(b)-1:parseInt(b)-1,dy=a.length===4?parseInt(c):parseInt(a);const d=new Date(yr,mo,dy);return isNaN(d)?null:d;}return null;}
 function clearF(ids,fn){ids.forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});fn();}
@@ -564,32 +564,47 @@ function go(name,btn){
 // ═══════════════════════════════════════════════
 function fetchCSV(url,key){
   return new Promise(function(res){
-    // Timeout individual por hoja: 8 segundos
     var done=false;
     var timer=setTimeout(function(){
-      if(!done){done=true;console.warn('Timeout:',key);D[key]=[];res([]);}
-    },8000);
+      if(!done){done=true;D[key]=[];res([]);}
+    },3000);
 
-    Papa.parse(url,{
-      download:true,header:true,skipEmptyLines:true,
-      complete:function(r){
-        if(!done){done=true;clearTimeout(timer);D[key]=r.data||[];res(D[key]);}
-      },
-      error:function(err){
-        if(done)return;
-        console.warn('Direct failed for '+key+', trying proxy...');
-        var proxyUrl='https://corsproxy.io/?'+encodeURIComponent(url);
-        Papa.parse(proxyUrl,{
-          download:true,header:true,skipEmptyLines:true,
-          complete:function(r2){
-            if(!done){done=true;clearTimeout(timer);D[key]=r2.data||[];res(D[key]);}
-          },
-          error:function(){
-            if(!done){done=true;clearTimeout(timer);D[key]=[];res([]);}
-          }
+    function finish(data){
+      if(!done){done=true;clearTimeout(timer);D[key]=data||[];res(D[key]);}
+    }
+
+    function tryProxy(){
+      var proxy='https://corsproxy.io/?'+encodeURIComponent(url);
+      fetch(proxy)
+        .then(function(r){return r.text();})
+        .then(function(text){
+          var parsed=Papa.parse(text,{header:true,skipEmptyLines:true});
+          finish(parsed.data);
+        })
+        .catch(function(){
+          var proxy2='https://api.allorigins.win/raw?url='+encodeURIComponent(url);
+          fetch(proxy2)
+            .then(function(r){return r.text();})
+            .then(function(text){
+              var parsed=Papa.parse(text,{header:true,skipEmptyLines:true});
+              finish(parsed.data);
+            })
+            .catch(function(){finish([]);});
         });
-      }
-    });
+    }
+
+    fetch(url)
+      .then(function(r){
+        if(!r.ok) throw new Error('HTTP '+r.status);
+        return r.text();
+      })
+      .then(function(text){
+        var parsed=Papa.parse(text,{header:true,skipEmptyLines:true});
+        finish(parsed.data);
+      })
+      .catch(function(){
+        tryProxy();
+      });
   });
 }
 
@@ -731,24 +746,11 @@ function renderNovedades(){
   const mesArr=sortObj(byMes,false).reverse();
   makeChart('cNovMes','line',mesArr.map(e=>e[0]),[lineDS('Novedades',mesArr.map(e=>e[1]),'#ef4444',true)]);
 
- // Análisis de modelos top4
+  // Análisis de modelos / tipos
   const byModelo=sumGroup(rows,r=>A.nov.modelo(r)||A.nov.tipo(r),r=>1);
-  const top4=topN(byModelo,4);
-  const fijo=sum(rows,r=>(A.nov.modelo(r)||A.nov.tipo(r)).toLowerCase().includes('fija')||((A.nov.modelo(r)||A.nov.tipo(r)).toLowerCase().includes('plant'))?1:0);
-  const colabo=sum(rows,r=>(A.nov.modelo(r)||A.nov.tipo(r)).toLowerCase().includes('cola')?1:0);
-
-// TOP TIPOS DE NOVEDAD
-const byTipo = sumGroup(rows,r=>A.nov.tipo(r),r=>1);
-const top4 = topN(byTipo,4);
-
-// MODELO OPERATIVO
-const byModelo = sumGroup(rows,r=>A.nov.modelo(r),r=>1);
-
-const fijo = sum(rows,r=>
-  A.nov.modelo(r).toLowerCase().includes('planta')
-  || A.nov.modelo(r).toLowerCase().includes('fija')
-  ? 1 : 0
-);
+  const top4=topN(byTipo,4);
+  const fijo=sum(rows,r=>(A.nov.modelo(r)||A.nov.tipo(r)).toLowerCase().indexOf('planta')!==-1||(A.nov.modelo(r)||A.nov.tipo(r)).toLowerCase().indexOf('fija')!==-1?1:0);
+  const colabo=sum(rows,r=>(A.nov.modelo(r)||A.nov.tipo(r)).toLowerCase().indexOf('cola')!==-1?1:0);
 
 
   // Analysis
@@ -1261,7 +1263,9 @@ function exportPDF(section){
 // ═══════════════════════════════════════════════
 async function refreshAll(){
   toast('Actualizando datos...','info');
-  await Promise.all(Object.entries(CSV).map(([k,u])=>fetchCSV(u,k)));
+  var csvEntries=Object.entries(CSV);
+  var refreshPromises=csvEntries.map(function(entry){return fetchCSV(entry[1],entry[0]);});
+  await Promise.all(refreshPromises);
   buildAccessors();
   const active=document.querySelector('.sec.active');
   const id=active?active.id.replace('sec-',''):'resumen';
@@ -1298,7 +1302,7 @@ async function init(){
   var safetyTimer=setTimeout(function(){
     hideLoader();
     toast('Cargado (tiempo límite alcanzado)','warn');
-  },10000);
+  },8000);
 
   try {
     var ltxt=document.getElementById('loadTxt');
@@ -1323,7 +1327,7 @@ async function init(){
   },500);
 }
 
-init();
+if(document.readyState==="loading"){document.addEventListener("DOMContentLoaded",init);}else{init();}
 </script>
 </body>
 </html>
