@@ -94,7 +94,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--t1);min-hei
 .fbtn-pdf{background:linear-gradient(135deg,#7c3aed,#6d28d9);color:#fff;}
 
 /* KPI GRID */
-.kgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px;margin-bottom:18px;}
+.kgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:18px;}
 .kc{background:var(--card);border:1px solid var(--brd);border-radius:var(--r);padding:14px 16px;position:relative;overflow:hidden;transition:all .3s;cursor:default;backdrop-filter:blur(10px);min-width:0;}
 .kc::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--b1),var(--cy));opacity:0;transition:opacity .3s;}
 .kc:hover{border-color:var(--brdhi);transform:translateY(-2px);box-shadow:var(--sdw),var(--glow);}
@@ -609,20 +609,43 @@ function fetchCSV(url, key) {
     }
 
     function parseCSV(text) {
-      // Limpiar BOM y caracteres extraños
       text = text.replace(/^\uFEFF/, '').replace(/\r\n/g, '\n').replace(/\r/g, '\n');
-      // Detectar delimitador: tab o coma
       var firstLine = text.split('\n')[0] || '';
       var delim = (firstLine.indexOf('\t') !== -1) ? '\t' : ',';
       var result = Papa.parse(text, {
         header: true,
         skipEmptyLines: true,
         delimiter: delim,
-        transformHeader: function(h) { return h.trim(); },
-        transform: function(v) { return v.trim(); }
+        transformHeader: function(h) {
+          // Keep original AND normalized version as key
+          return h.trim();
+        },
+        transform: function(v) { return (v||'').trim(); }
       });
-      return result.data || [];
+      var data = result.data || [];
+      // Add _idx map: normalized header (no accents, uppercase) -> original key
+      // This allows fuzzy column lookup
+      if(data.length>0){
+        var origKeys = Object.keys(data[0]);
+        data._colMap = {};
+        origKeys.forEach(function(k){
+          // Normalize: uppercase, remove accents
+          var norm = k.toUpperCase()
+            .replace(/[ÁÀÂÄ]/g,'A').replace(/[ÉÈÊË]/g,'E')
+            .replace(/[ÍÌÎÏ]/g,'I').replace(/[ÓÒÔÖ]/g,'O')
+            .replace(/[ÚÙÛÜ]/g,'U').replace(/[Ñ]/g,'N')
+            .replace(/\s+/g,' ').trim();
+          data._colMap[norm] = k;
+        });
+        // Store colMap on each row for access
+        data.forEach(function(r){ r.__colMap = data._colMap; });
+      }
+      return data;
     }
+    
+
+    // getField and getNum are defined globally
+
 
     function tryDirect() {
       fetch(url, { method: 'GET', mode: 'cors', credentials: 'omit' })
@@ -673,250 +696,238 @@ function dFld(rows){var cands=Array.prototype.slice.call(arguments,1);var k=dete
 
 // Key field accessors built after data loads
 let A={};
+// ── GLOBAL FUZZY COLUMN HELPERS ────────────────────────────
+function getField(r, normalizedName) {
+  if(!r) return '';
+  // 1. Direct access
+  var v = r[normalizedName];
+  if(v!==undefined&&v!==null) return String(v).trim();
+  // 2. Via stored colMap (set during parseCSV)
+  if(r.__colMap && r.__colMap[normalizedName]) {
+    v = r[r.__colMap[normalizedName]];
+    if(v!==undefined&&v!==null) return String(v).trim();
+  }
+  // 3. Fuzzy: normalize both sides and compare
+  var normInput = normalizedName.toUpperCase()
+    .replace(/[Áá]/g,'A').replace(/[Éé]/g,'E')
+    .replace(/[Íí]/g,'I').replace(/[Óó]/g,'O')
+    .replace(/[Úú]/g,'U').replace(/[Ññ]/g,'N')
+    .trim();
+  var keys = Object.keys(r).filter(function(k){return k!=='__colMap';});
+  var found = null;
+  for(var ki=0;ki<keys.length;ki++){
+    var key=keys[ki];
+    var kn=key.toUpperCase()
+      .replace(/[Áá]/g,'A').replace(/[Éé]/g,'E')
+      .replace(/[Íí]/g,'I').replace(/[Óó]/g,'O')
+      .replace(/[Úú]/g,'U').replace(/[Ññ]/g,'N')
+      .trim();
+    if(kn===normInput){found=key;break;}
+  }
+  if(!found){
+    // Partial match: normInput is contained in key or vice versa
+    for(var ki2=0;ki2<keys.length;ki2++){
+      var key2=keys[ki2];
+      var kn2=key2.toUpperCase()
+        .replace(/[Áá]/g,'A').replace(/[Éé]/g,'E')
+        .replace(/[Íí]/g,'I').replace(/[Óó]/g,'O')
+        .replace(/[Úú]/g,'U').replace(/[Ññ]/g,'N')
+        .trim();
+      if(kn2.indexOf(normInput)!==-1||normInput.indexOf(kn2)!==-1){found=key2;break;}
+    }
+  }
+  return found ? String(r[found]||'').trim() : '';
+}
+
+function getNum(r, normalizedName) {
+  var v = getField(r, normalizedName);
+  if(!v||v==='') return 0;
+  var n = parseFloat(v.replace(/[^0-9.,-]/g,'').replace(',','.'));
+  return isNaN(n) ? 0 : n;
+}
+
 function buildAccessors(){
+
+  // ── NOVEDADES GESTIÓN ──────────────────────────────────
   A.nov={
-    mes:dFld(D.novedades,'mes','month'),
-    ciudad:r=>fld(r,...Object.keys(r).filter(k=>k.toLowerCase().includes('ciudad'))||['H']),
-    drog:r=>fld(r,...Object.keys(r).filter(k=>k.toLowerCase().includes('drog')||k.toLowerCase().includes('punto'))||['N']),
-    tipo:r=>fld(r,'TIPO'),
-    modelo:r=>fld(r,'MODELO'),
-    fecha:r=>fld(r,...Object.keys(r).filter(k=>k.toLowerCase().includes('fecha'))||['fecha']),
-    horas:r=>num(fld(r,...Object.keys(r).filter(k=>k.toLowerCase().includes('hora'))||['horas'])),
-    valor:r=>num(fld(r,'TOTAL A DESCONTAR')),
-  };
-  A.can={
-    // MES — columna B
-    mes: function(r) {
-      return String(r['MES'] || r['Mes'] || r['mes'] || '').trim();
-    },
-    // CIUDAD — columna E
-    ciudad: function(r) {
-      return String(r['CIUDAD'] || r['Ciudad'] || r['ciudad'] || '').trim();
-    },
-    // DROGUERIA NOMBRE CORTO — columna G  |  DROGUERIA — columna O
-    drog: function(r) {
-      var v = r['DROGUERIA NOMBRE CORTO'] || r['DROGUERIA'] || r['Drogueria'] || r['drogueria'] || '';
-      if (!v) {
-        var k = Object.keys(r).find(function(k){ return k.toLowerCase().indexOf('drog') !== -1; });
-        v = k ? r[k] : '';
-      }
-      return String(v).trim();
-    },
-    // TIPO GESTIÓN — columna H
-    tipo: function(r) {
-      return String(r['TIPO GESTIÓN'] || r['TIPO GESTION'] || r['Tipo Gestión'] || r['tipo gestión'] || '').trim();
-    },
-    // TIPO MENSAJERO — columna F
-    tipoM: function(r) {
-      return String(r['TIPO MENSAJERO'] || r['Tipo Mensajero'] || r['tipo mensajero'] || '').trim();
-    },
-    // ENTREGADO — columna I — servicios efectivos
-    efectiva: function(r) {
-      var v = r['ENTREGADO'] || r['Entregado'] || r['entregado'];
-      if (v !== undefined && v !== '') { var n = parseFloat(String(v).replace(/[^0-9.-]/g,'')); if (!isNaN(n)) return n; }
-      // fallback índice 8
-      var vals = Object.values(r); var n2 = parseFloat(String(vals[8]||'').replace(/[^0-9.-]/g,'')); return isNaN(n2) ? 0 : n2;
-    },
-    // NO EFECTIVOS = CANCELACION + CONGELADO + REPROGRAMADO (col J + K + L)
-    cancelada: function(r) {
-      var c = parseFloat(String(r['CANCELACION']||r['CANCELACIÓN']||r['Cancelacion']||'0').replace(/[^0-9.-]/g,''))||0;
-      var g = parseFloat(String(r['CONGELADO']||r['Congelado']||'0').replace(/[^0-9.-]/g,''))||0;
-      var p = parseFloat(String(r['REPROGRAMADO']||r['Reprogramado']||'0').replace(/[^0-9.-]/g,''))||0;
-      return c + g + p;
-    },
-    // TOTAL — columna M
-    total: function(r) {
-      var v = r['TOTAL'] || r['Total'] || r['total'];
-      if (v !== undefined && v !== '') { var n = parseFloat(String(v).replace(/[^0-9.-]/g,'')); if (!isNaN(n) && n > 0) return n; }
-      return A.can.efectiva(r) + A.can.cancelada(r);
-    },
-    // DÍA / fecha_cierre para tendencia semanal
-    fecha: function(r) {
-      return String(r['fecha_cierre'] || r['FECHA'] || r['Fecha'] || r['DÍA'] || r['DIA'] || '').trim();
-    },
-    // DÍA de la semana (columna C) — texto: Lunes, Martes...
-    diaSemana: function(r) {
-      return String(r['SEMANA'] || r['DÍA'] || r['DIA'] || r['Dia'] || '').trim();
-    },
-    // Mensajeros (no existe columna directa, retorna 0)
-    mensajeros: function(r) { return 0; }
+    mes:    function(r){return getField(r,'MES');},
+    ciudad: function(r){return getField(r,'CIUDAD');},
+    drog:   function(r){return getField(r,'DROGUERIA NOMBRE CORTO')||getField(r,'DROGUERIA');},
+    tipo:   function(r){return getField(r,'TIPO');},
+    modelo: function(r){return getField(r,'MODELO');},
+    fecha:  function(r){return getField(r,'fecha_cierre')||getField(r,'FECHA');},
+    horas:  function(r){return getNum(r,'HORAS DESCONTAR')||getNum(r,'HORAS');},
+    valor:  function(r){return getNum(r,'TOTAL A DESCONTAR')||getNum(r,'VALOR')||getNum(r,'TOTAL');}
   };
 
-    A.pc={
-    // TIPO = col A (Planta Fija / Colaborativo)
-    tipoM: function(r){ return String(r['TIPO']||'').trim(); },
-    // CIUDAD = col B
-    ciudad: function(r){ return String(r['CIUDAD']||'').trim(); },
-    // MES = col C
-    mes: function(r){ return String(r['MES']||'').trim(); },
-    // DROUERIA = col D (typo in sheet: DROUERIA not DROGUERIA)
-    drog: function(r){
-      return String(r['DROGUERIA NOMBRE CORTO']||r['DROUERIA']||r['DROGUERIA']||'').trim();
+  // ── CANTIDAD ───────────────────────────────────────────
+  A.can={
+    mes:       function(r){return getField(r,'MES');},
+    ciudad:    function(r){return getField(r,'CIUDAD');},
+    drog:      function(r){return getField(r,'DROGUERIA NOMBRE CORTO')||getField(r,'DROGUERIA');},
+    tipo:      function(r){return getField(r,'TIPO GESTION')||getField(r,'TIPO GESTIÓN');},
+    tipoM:     function(r){return getField(r,'TIPO MENSAJERO');},
+    fecha:     function(r){return getField(r,'fecha_cierre')||getField(r,'FECHA');},
+    diaSemana: function(r){return getField(r,'SEMANA')||getField(r,'DIA')||getField(r,'DÍA');},
+    efectiva:  function(r){return getNum(r,'ENTREGADO');},
+    cancelada: function(r){return getNum(r,'CANCELACION')+getNum(r,'CONGELADO')+getNum(r,'REPROGRAMADO');},
+    total:     function(r){var t=getNum(r,'TOTAL');return t>0?t:A.can.efectiva(r)+A.can.cancelada(r);},
+    mensajeros:function(r){return getNum(r,'CANT MENSAJERO')||getNum(r,'MENSAJEROS');}
+  };
+
+  // ── PER CAPITA ─────────────────────────────────────────
+  // Cols exactas: TIPO|CIUDAD|MES|DROUERIA|GESTIÓN|CANT ENTREGAS|COSTO|PER CAPITA|DROGUERIA NOMBRE CORTO
+  // COSTO y PER CAPITA vienen como $19,200 → hay que limpiar $ y .
+  A.pc={
+    tipoM:    function(r){return getField(r,'TIPO');},
+    ciudad:   function(r){return getField(r,'CIUDAD');},
+    mes:      function(r){return getField(r,'MES');},
+    drog:     function(r){
+      // Prefer DROGUERIA NOMBRE CORTO (col I), fallback to DROUERIA (col D, typo)
+      return getField(r,'DROGUERIA NOMBRE CORTO')||getField(r,'DROUERIA')||getField(r,'DROGUERIA');
     },
-    // GESTIÓN = col E
-    tipo: function(r){ return String(r['GESTIÓN']||r['GESTION']||'').trim(); },
-    // CANT ENTREGAS = col F
-    entregas: function(r){
-      var v = r['CANT ENTREGAS'];
-      if(v!==undefined&&v!==''){var n=parseFloat(String(v).replace(/[^0-9.-]/g,''));if(!isNaN(n))return n;}
-      return 0;
+    tipo:     function(r){return getField(r,'GESTION')||getField(r,'GESTIÓN');},
+    entregas: function(r){return getNum(r,'CANT ENTREGAS');},
+    costo:    function(r){
+      var v=getField(r,'COSTO');
+      if(!v)return 0;
+      // Remove $ and thousands separator (.), keep decimal separator (,→.)
+      var n=parseFloat(v.replace(/\$/g,'').replace(/\./g,'').replace(',','.'));
+      return isNaN(n)?0:n;
     },
-    // COSTO = col G
-    costo: function(r){
-      var v = r['COSTO'];
-      if(v!==undefined&&v!==''){var n=parseFloat(String(v).replace(/[^0-9.,]/g,'').replace(',','.'));if(!isNaN(n))return n;}
-      return 0;
-    },
-    // PER CAPITA = col H
-    percapita: function(r){
-      var v = r['PER CAPITA'];
-      if(v!==undefined&&v!==''){var n=parseFloat(String(v).replace(/[^0-9.,]/g,'').replace(',','.'));if(!isNaN(n)&&n>0)return n;}
+    percapita:function(r){
+      var v=getField(r,'PER CAPITA');
+      if(v){
+        var n=parseFloat(v.replace(/\$/g,'').replace(/\./g,'').replace(',','.'));
+        if(!isNaN(n)&&n>0)return n;
+      }
       var co=A.pc.costo(r); var en=A.pc.entregas(r);
-      return (co>0&&en>0)?co/en:0;
+      return (co>0&&en>0)?Math.round(co/en):0;
     }
   };
 
-    A.ti={
-    mes:    function(r){ return String(r['MES']||'').trim(); },
-    ciudad: function(r){ return String(r['CIUDAD']||'').trim(); },
-    // DROGUERIA NOMBRE CORTO = col G (preferred) | DROGUERIA = col O
-    drog:   function(r){ return String(r['DROGUERIA NOMBRE CORTO']||r['DROGUERIA']||'').trim(); },
-    // TIPO MENSJAERO = col F (typo in sheet: MENSJAERO not MENSAJERO)
-    tipoM:  function(r){ return String(r['TIPO MENSJAERO']||r['TIPO MENSAJERO']||'').trim(); },
-    // TIPO GESTIÓN = col H
-    tipoG:  function(r){ return String(r['TIPO GESTIÓN']||r['TIPO GESTION']||'').trim(); },
-    semana: function(r){ return String(r['SEMANA']||r['DÍA']||'').trim(); },
-    fecha:  function(r){ return String(r['fecha_cierre']||'').trim(); },
-
-    // Parse HH:MM:SS or decimal minutes → total minutes
+  // ── TIEMPOS ────────────────────────────────────────────
+  // Cols exactas: fecha_cierre|MES|DÍA|SEMANA|CIUDAD|TIPO MENSJAERO|
+  //   DROGUERIA NOMBRE CORTO (col G)|TIPO GESTIÓN|CREACIÓN|LLEGADA|CIERRE|
+  //   TIEMPO RUTA|TIEMPO ENTREGA|TIEMPO TOTAL|DROGUERIA
+  A.ti={
+    mes:    function(r){return getField(r,'MES');},
+    ciudad: function(r){return getField(r,'CIUDAD');},
+    drog:   function(r){return getField(r,'DROGUERIA NOMBRE CORTO')||getField(r,'DROGUERIA');},
+    tipoM:  function(r){
+      // typo in sheet: MENSJAERO not MENSAJERO
+      return getField(r,'TIPO MENSJAERO')||getField(r,'TIPO MENSAJERO');
+    },
+    tipoG:  function(r){return getField(r,'TIPO GESTION')||getField(r,'TIPO GESTIÓN');},
+    semana: function(r){return getField(r,'SEMANA');},
+    fecha:  function(r){return getField(r,'fecha_cierre');},
+    // Parse HH:MM:SS → minutes (float)
     _toMin: function(v){
       if(!v||String(v).trim()==='')return 0;
       var s=String(v).trim();
       if(s.indexOf(':')!==-1){
         var p=s.split(':');
-        var h=parseInt(p[0])||0;
-        var m=parseInt(p[1])||0;
-        var sec=parseInt(p[2])||0;
-        return h*60+m+sec/60;
+        return (parseInt(p[0])||0)*60+(parseInt(p[1])||0)+(parseInt(p[2]||0))/60;
       }
       var n=parseFloat(s.replace(/[^0-9.]/g,''));
       return isNaN(n)?0:n;
     },
-    // Format minutes → HH:MM
-    _minToHHMM: function(mins){
+    // Format minutes → HH:MM (hora militar)
+    _minToHHMM:function(mins){
       if(!mins||mins<=0)return '00:00';
-      var h=Math.floor(mins/60);
-      var m=Math.round(mins%60);
+      var h=Math.floor(mins/60),m=Math.round(mins%60);
       return (h<10?'0':'')+h+':'+(m<10?'0':'')+m;
     },
-    // TIEMPO RUTA = col L
-    tiempoRuta: function(r){ return this._toMin(r['TIEMPO RUTA']||''); },
-    // TIEMPO ENTREGA = col M
-    tiempoEntrega: function(r){ return this._toMin(r['TIEMPO ENTREGA']||''); },
-    // TIEMPO TOTAL = col N
-    tiempoTotal: function(r){
-      var v=r['TIEMPO TOTAL']||'';
-      if(String(v).trim()!=='') return this._toMin(v);
+    tiempoRuta:    function(r){return this._toMin(getField(r,'TIEMPO RUTA'));},
+    tiempoEntrega: function(r){return this._toMin(getField(r,'TIEMPO ENTREGA'));},
+    tiempoTotal:   function(r){
+      var v=getField(r,'TIEMPO TOTAL');
+      if(v&&v!=='')return this._toMin(v);
       return this.tiempoRuta(r)+this.tiempoEntrega(r);
     }
   };
 
-    A.ven={
-    mes:    function(r){ return String(r['MES']||'').trim(); },
-    ciudad: function(r){ return String(r['CIUDAD']||'').trim(); },
-    semana: function(r){ return String(r['SEMANA']||r['DÍA']||'').trim(); },
-    fecha:  function(r){ return String(r['fecha_cierre']||r['FECHA']||'').trim(); },
-    // DROGUERIA NOMBRE CORTO preferred
-    drog:   function(r){ return String(r['DROGUERIA NOMBRE CORTO']||r['DROGUERIA']||'').trim(); },
-    // TIPO GESTIÓN
-    tipo:   function(r){ return String(r['TIPO GESTIÓN']||r['TIPO GESTION']||'').trim(); },
-    // ESTADO = col G — values: "ENTREGADO", "CANCELACIÓN", etc.
+  // ── VENTAS ─────────────────────────────────────────────
+  // Cols exactas: fecha_cierre|MES|DÍA|SEMANA|CIUDAD|DROGUERIA NOMBRE CORTO|
+  //   ESTADO|TIPO GESTIÓN|TOTAL VENTA|DROGUERIA
+  // Col G = ESTADO: "ENTREGADO" o "CANCELACION"
+  // Col I = TOTAL VENTA: $150,400.00 → limpiar $ y .
+  A.ven={
+    mes:    function(r){return getField(r,'MES');},
+    ciudad: function(r){return getField(r,'CIUDAD');},
+    drog:   function(r){return getField(r,'DROGUERIA NOMBRE CORTO')||getField(r,'DROGUERIA');},
+    tipo:   function(r){return getField(r,'TIPO GESTION')||getField(r,'TIPO GESTIÓN');},
+    semana: function(r){return getField(r,'SEMANA');},
+    fecha:  function(r){return getField(r,'fecha_cierre')||getField(r,'FECHA');},
+    // ESTADO = col G
     estado: function(r){
-      var v=r['ESTADO']||r['Estado']||r['estado']||'';
-      if(!v){
-        // fallback: find by index (col G = index 6)
-        var vals=Object.values(r);
-        v=vals[6]||'';
-      }
-      return String(v).trim();
+      var v=getField(r,'ESTADO');
+      if(v) return v;
+      // fallback by index: col G = index 6
+      var vals=Object.keys(r).filter(function(k){return k!=='__colMap';});
+      return String(r[vals[6]]||'').trim();
     },
-    // Valor del servicio — detect which column has the $$ amount
+    // TOTAL VENTA = col I — format: $150,400.00
     valor: function(r){
-      // Try common names first
-      var candidates=['VALOR','Valor','valor','VENTA','Venta','PRECIO','Precio',
-                       'VALOR VENTA','Valor Venta','TOTAL','Total'];
-      for(var i=0;i<candidates.length;i++){
-        var v=r[candidates[i]];
-        if(v!==undefined&&v!==''){var n=parseFloat(String(v).replace(/[^0-9.-]/g,''));if(!isNaN(n)&&n>0)return n;}
+      var v=getField(r,'TOTAL VENTA');
+      if(v){
+        var n=parseFloat(v.replace(/\$/g,'').replace(/,/g,''));
+        if(!isNaN(n)&&n>0) return n;
       }
-      // Last resort: find first numeric column with large values (>1000)
-      var keys=Object.keys(r);
-      for(var ki=0;ki<keys.length;ki++){
-        var k=keys[ki];
-        var kl=k.toLowerCase();
-        if(kl.indexOf('fecha')!==-1||kl.indexOf('mes')!==-1||kl==='día'||kl==='dia'||kl==='semana') continue;
-        var v2=r[k];
-        if(v2!==undefined&&v2!==''){
-          var n2=parseFloat(String(v2).replace(/[^0-9.-]/g,''));
-          if(!isNaN(n2)&&n2>1000) return n2;
+      // fallback: scan for large $ value
+      var keys=Object.keys(r).filter(function(k){return k!=='__colMap';});
+      for(var i=0;i<keys.length;i++){
+        var k=keys[i]; var raw=String(r[k]||'');
+        if(raw.indexOf('$')!==-1){
+          var n2=parseFloat(raw.replace(/\$/g,'').replace(/,/g,''));
+          if(!isNaN(n2)&&n2>=100) return n2;
         }
       }
       return 0;
     },
-    // Is this row an ENTREGADO state?
     isEntregado: function(r){
-      var est=A.ven.estado(r).toUpperCase();
-      return est==='ENTREGADO'||est.indexOf('ENTREGAD')!==-1;
+      var e=A.ven.estado(r).toUpperCase();
+      return e==='ENTREGADO'||e.indexOf('ENTREGAD')!==-1;
     },
-    // Is this row a CANCELACIÓN state?
     isCancelado: function(r){
-      var est=A.ven.estado(r).toUpperCase();
-      return est.indexOf('CANCEL')!==-1;
+      var e=A.ven.estado(r).toUpperCase();
+      return e==='CANCELACION'||e.indexOf('CANCEL')!==-1;
     },
-    // Convenience: valor only if entregado, else 0
-    efectivo:  function(r){ return A.ven.isEntregado(r)?A.ven.valor(r):0; },
-    // Convenience: valor only if cancelado, else 0
-    cancelado: function(r){ return A.ven.isCancelado(r)?A.ven.valor(r):0; },
-    // Total: always the valor regardless of state
-    total:     function(r){ return A.ven.valor(r); }
+    efectivo:  function(r){return A.ven.isEntregado(r)?A.ven.valor(r):0;},
+    cancelado: function(r){return A.ven.isCancelado(r)?A.ven.valor(r):0;},
+    total:     function(r){return A.ven.valor(r);}
   };
 
-    A.nc={
-    mes:    function(r){return String(r['MES']||r['Mes']||'').trim();},
-    semana: function(r){return String(r['SEMANA']||r['DÍA']||'').trim();},
-    ciudad: function(r){return String(r['CIUDAD']||r['Ciudad']||'').trim();},
-    tipoM:  function(r){return String(r['TIPO MENSAJERO']||r['Tipo Mensajero']||'').trim();},
-    drog:   function(r){return String(r['DROGUERIA NOMBRE CORTO']||r['DROGUERIA']||'').trim();},
-    tipo:   function(r){return String(r['TIPO GESTIÓN']||r['TIPO GESTION']||'').trim();},
-    // Total novedades columna TOTAL
+  // ── NOVEDADES CANCELACIÓN ──────────────────────────────
+  var NC_TIPOS=[
+    'CANCELACION POR GUIA DUPLICADA','CANCELACION POR GUIA SIN COBERTURA',
+    'CANCELACION POR ZONA ROJA','CLIENTE CANCELA POR DEMORA EN LA ENTREGA',
+    'CLIENTE COMPRO POR OTRO CANAL','CLIENTE COMPRO PRODUCTO EN OTRA CADENA',
+    'CLIENTE NO CONTESTA','CLIENTE NO LO PUEDE ESPERAR',
+    'CLIENTE NO LO REQUIERE POR CAMBIO DE FORMULA MEDICA',
+    'CLIENTE NO TIENE DINERO PARA PAGAR','CLIENTE YA NO DESEA EL DOMICILIO',
+    'ERROR ASESOR','ERROR DE SISTEMAS','ERROR DEL CLIENTE EN SOLICITUD DE PRODUCTO',
+    'MEDICAMENTOS NO DISPONIBLES','NO SE ENCUENTRA EL USUARIO'
+  ];
+  var NC_QUICK=['CANCELACION POR GUIA DUPLICADA','CANCELACION POR GUIA SIN COBERTURA',
+    'CANCELACION POR ZONA ROJA','CLIENTE NO CONTESTA','NO SE ENCUENTRA EL USUARIO',
+    'ERROR ASESOR','ERROR DE SISTEMAS'];
+  A.nc={
+    mes:    function(r){return getField(r,'MES');},
+    semana: function(r){return getField(r,'SEMANA');},
+    ciudad: function(r){return getField(r,'CIUDAD');},
+    tipoM:  function(r){return getField(r,'TIPO MENSAJERO');},
+    drog:   function(r){return getField(r,'DROGUERIA NOMBRE CORTO')||getField(r,'DROGUERIA');},
+    tipo:   function(r){return getField(r,'TIPO GESTION')||getField(r,'TIPO GESTIÓN');},
+    TIPOS:  NC_TIPOS, QUICK_TIPOS: NC_QUICK,
+    tipoVal:function(r,tipo){return getNum(r,tipo);},
     total:  function(r){
-      var v=r['TOTAL']||r['Total']||'';
-      if(v!==''&&v!==undefined){var n=parseFloat(String(v).replace(/[^0-9.-]/g,''));if(!isNaN(n))return n;}
-      // Sumar todas las columnas de tipo
-      var tipos=["CANCELACION POR GUIA DUPLICADA", "CANCELACION POR GUIA SIN COBERTURA", "CANCELACION POR ZONA ROJA", "CLIENTE CANCELA POR DEMORA EN LA ENTREGA", "CLIENTE COMPRO POR OTRO CANAL", "CLIENTE COMPRO PRODUCTO EN OTRA CADENA", "CLIENTE NO CONTESTA", "CLIENTE NO LO PUEDE ESPERAR", "CLIENTE NO LO REQUIERE POR CAMBIO DE FORMULA MEDICA", "CLIENTE NO TIENE DINERO PARA PAGAR", "CLIENTE YA NO DESEA EL DOMICILIO", "ERROR ASESOR", "ERROR DE SISTEMAS", "ERROR DEL CLIENTE EN SOLICITUD DE PRODUCTO", "MEDICAMENTOS NO DISPONIBLES", "NO SE ENCUENTRA EL USUARIO"];
-      var s=0;tipos.forEach(function(t){var vt=r[t];if(vt)s+=parseFloat(String(vt).replace(/[^0-9.-]/g,''))||0;});
-      return s;
+      var t=getNum(r,'TOTAL'); if(t>0) return t;
+      var s=0; NC_TIPOS.forEach(function(t2){s+=getNum(r,t2);}); return s;
     },
-    // Todas las columnas de tipo de novedad
-    TIPOS: ["CANCELACION POR GUIA DUPLICADA", "CANCELACION POR GUIA SIN COBERTURA", "CANCELACION POR ZONA ROJA", "CLIENTE CANCELA POR DEMORA EN LA ENTREGA", "CLIENTE COMPRO POR OTRO CANAL", "CLIENTE COMPRO PRODUCTO EN OTRA CADENA", "CLIENTE NO CONTESTA", "CLIENTE NO LO PUEDE ESPERAR", "CLIENTE NO LO REQUIERE POR CAMBIO DE FORMULA MEDICA", "CLIENTE NO TIENE DINERO PARA PAGAR", "CLIENTE YA NO DESEA EL DOMICILIO", "ERROR ASESOR", "ERROR DE SISTEMAS", "ERROR DEL CLIENTE EN SOLICITUD DE PRODUCTO", "MEDICAMENTOS NO DISPONIBLES", "NO SE ENCUENTRA EL USUARIO"],
-    QUICK_TIPOS: ["CANCELACION POR GUIA DUPLICADA", "CANCELACION POR GUIA SIN COBERTURA", "CANCELACION POR ZONA ROJA", "CLIENTE NO CONTESTA", "NO SE ENCUENTRA EL USUARIO", "ERROR ASESOR", "ERROR DE SISTEMAS"],
-    // Valor de un tipo específico
-    tipoVal: function(r,tipo){
-      var v=r[tipo];if(!v)return 0;
-      return parseFloat(String(v).replace(/[^0-9.-]/g,''))||0;
-    },
-    // Responsabilidad Quick
-    quick: function(r){
-      var s=0;
-      var qt=["CANCELACION POR GUIA DUPLICADA", "CANCELACION POR GUIA SIN COBERTURA", "CANCELACION POR ZONA ROJA", "CLIENTE NO CONTESTA", "NO SE ENCUENTRA EL USUARIO", "ERROR ASESOR", "ERROR DE SISTEMAS"];
-      qt.forEach(function(t){s+=A.nc.tipoVal(r,t);});
-      return s;
-    },
-    // Responsabilidad Cafam/Cliente
-    cafam: function(r){
-      return A.nc.total(r)-A.nc.quick(r);
-    }
-  };;
+    quick:  function(r){var s=0;NC_QUICK.forEach(function(t){s+=getNum(r,t);});return s;},
+    cafam:  function(r){return Math.max(0,A.nc.total(r)-A.nc.quick(r));}
+  };
 }
 
 // ═══════════════════════════════════════════════
@@ -1838,8 +1849,6 @@ function hideLoader(){
 }
 
 async function init(){
-  // Safety net: always remove loader after 10s no matter what
-  // Show skip button after 5s so user can proceed manually if needed
   var skipTimer=setTimeout(function(){
     var skipBtn=document.getElementById('loadSkip');
     if(skipBtn)skipBtn.style.display='block';
@@ -1848,114 +1857,53 @@ async function init(){
   var safetyTimer=setTimeout(function(){
     clearTimeout(skipTimer);
     buildAccessors();
-
-    // === DIAGNOSTIC: log ALL sheets column names ===
-    var sheets_diag=['percapita','tiempos','ventas','novcancel','cantidad'];
-    // Extra ventas diagnostic
-    if(D.ventas&&D.ventas.length>0){
-      var r0=D.ventas[0];
-      console.log('[CAFAM] Ventas estado col G:', Object.values(r0)[6]);
-      console.log('[CAFAM] Ventas estado(r0):', A.ven.estado(r0));
-      console.log('[CAFAM] Ventas valor(r0):', A.ven.valor(r0));
-      console.log('[CAFAM] Ventas isEntregado(r0):', A.ven.isEntregado(r0));
-    }
-    if(D.percapita&&D.percapita.length>0){
-      var rpc=D.percapita[0];
-      console.log('[CAFAM] PC costo:', A.pc.costo(rpc),'entregas:',A.pc.entregas(rpc),'pc:',A.pc.percapita(rpc),'drog:',A.pc.drog(rpc));
-    }
-    if(D.tiempos&&D.tiempos.length>0){
-      var rti=D.tiempos[0];
-      console.log('[CAFAM] Tiempos TOTAL raw:',rti['TIEMPO TOTAL'],'parsed:',A.ti.tiempoTotal(rti),'min, drog:',A.ti.drog(rti));
-    }
-    var diag_lines=['<strong style="color:#22d3ee">DIAGNÓSTICO DE COLUMNAS CSV</strong>'];
-    sheets_diag.forEach(function(sh){
-      if(D[sh]&&D[sh].length>0){
-        var cols=Object.keys(D[sh][0]);
-        var r0=D[sh][0];
-        console.log('[CAFAM] '+sh+' cols:', cols);
-        console.log('[CAFAM] '+sh+' row0:', r0);
-        diag_lines.push('<br><strong>'+sh+'</strong> ('+D[sh].length+' filas): '+cols.join(' | '));
-        diag_lines.push('<em>Fila1: '+cols.slice(0,8).map(function(c){return c+'='+r0[c];}).join(' | ')+'</em>');
-      }else{
-        diag_lines.push('<br><strong style="color:#ef4444">'+sh+': VACÍO</strong>');
-      }
-    });
-    var diagEl=document.getElementById('diagPanel');
-    if(diagEl)diagEl.innerHTML=diag_lines.join('<br>');
-    // === END DIAGNOSTIC ===
-
     renderResumen();
     hideLoader();
-    toast('Cargado (tiempo límite alcanzado — algunos datos pueden faltar)','warn');
+    toast('Datos cargados (tiempo límite)','warn');
+    setInterval(refreshAll,5*60*1000);
   },15000);
 
   try {
     var ltxt=document.getElementById('loadTxt');
     var sheets=Object.keys(CSV);
     for(var i=0;i<sheets.length;i++){
-      var pct=Math.round(((i)/sheets.length)*100);
-      if(ltxt){
-        ltxt.textContent='Cargando '+(i+1)+' de '+sheets.length+': '+sheets[i];
-        ltxt.style.color='#22d3ee';
-      }
+      if(ltxt){ ltxt.textContent='Cargando '+(i+1)+' de '+sheets.length+': '+sheets[i]; ltxt.style.color='#22d3ee'; }
       var lbar=document.getElementById('loadBar');
-      if(lbar)lbar.style.width=pct+'%';
+      if(lbar)lbar.style.width=Math.round((i/sheets.length)*100)+'%';
       var ldet=document.getElementById('loadDetail');
-      if(ldet)ldet.textContent='Hoja '+(i+1)+'/'+sheets.length+' — intentando conexión directa y proxies...';
+      if(ldet)ldet.textContent='Hoja '+(i+1)+'/'+sheets.length+'...';
       await fetchCSV(CSV[sheets[i]],sheets[i]);
-      var pct2=Math.round(((i+1)/sheets.length)*100);
-      if(lbar)lbar.style.width=pct2+'%';
-      if(ldet)ldet.textContent='✓ '+sheets[i]+' ('+D[sheets[i]].length+' registros)';
+      if(lbar)lbar.style.width=Math.round(((i+1)/sheets.length)*100)+'%';
+      if(ldet)ldet.textContent='OK: '+sheets[i]+' ('+D[sheets[i]].length+' registros)';
     }
-    if(ltxt) ltxt.textContent='Procesando datos...';
+
     buildAccessors();
 
-    // === DIAGNOSTIC: log ALL sheets column names ===
-    var sheets_diag=['percapita','tiempos','ventas','novcancel','cantidad'];
-    // Extra ventas diagnostic
-    if(D.ventas&&D.ventas.length>0){
-      var r0=D.ventas[0];
-      console.log('[CAFAM] Ventas estado col G:', Object.values(r0)[6]);
-      console.log('[CAFAM] Ventas estado(r0):', A.ven.estado(r0));
-      console.log('[CAFAM] Ventas valor(r0):', A.ven.valor(r0));
-      console.log('[CAFAM] Ventas isEntregado(r0):', A.ven.isEntregado(r0));
-    }
-    if(D.percapita&&D.percapita.length>0){
-      var rpc=D.percapita[0];
-      console.log('[CAFAM] PC costo:', A.pc.costo(rpc),'entregas:',A.pc.entregas(rpc),'pc:',A.pc.percapita(rpc),'drog:',A.pc.drog(rpc));
-    }
-    if(D.tiempos&&D.tiempos.length>0){
-      var rti=D.tiempos[0];
-      console.log('[CAFAM] Tiempos TOTAL raw:',rti['TIEMPO TOTAL'],'parsed:',A.ti.tiempoTotal(rti),'min, drog:',A.ti.drog(rti));
-    }
-    var diag_lines=['<strong style="color:#22d3ee">DIAGNÓSTICO DE COLUMNAS CSV</strong>'];
-    sheets_diag.forEach(function(sh){
-      if(D[sh]&&D[sh].length>0){
-        var cols=Object.keys(D[sh][0]);
-        var r0=D[sh][0];
-        console.log('[CAFAM] '+sh+' cols:', cols);
-        console.log('[CAFAM] '+sh+' row0:', r0);
-        diag_lines.push('<br><strong>'+sh+'</strong> ('+D[sh].length+' filas): '+cols.join(' | '));
-        diag_lines.push('<em>Fila1: '+cols.slice(0,8).map(function(c){return c+'='+r0[c];}).join(' | ')+'</em>');
-      }else{
-        diag_lines.push('<br><strong style="color:#ef4444">'+sh+': VACÍO</strong>');
-      }
+    // Diagnostic panel
+    var diag='<strong style="color:#22d3ee">CSV COLUMNS</strong>';
+    ['percapita','tiempos','ventas','novcancel','cantidad'].forEach(function(sh){
+      if(!D[sh]||!D[sh].length){ diag+='<br><span style="color:#ef4444">'+sh+': EMPTY</span>'; return; }
+      var r0=D[sh][0];
+      var cols=Object.keys(r0).filter(function(k){return k!=='__colMap';});
+      diag+='<br><strong style="color:#22d3ee">'+sh+'</strong> ('+D[sh].length+'): '+cols.join(' | ');
+      if(sh==='percapita') diag+='<br>→ costo='+A.pc.costo(r0)+' pc='+A.pc.percapita(r0)+' drog='+A.pc.drog(r0);
+      if(sh==='tiempos')   diag+='<br>→ total='+A.ti.tiempoTotal(r0)+'min drog='+A.ti.drog(r0);
+      if(sh==='ventas')    diag+='<br>→ estado='+A.ven.estado(r0)+' valor='+A.ven.valor(r0);
     });
     var diagEl=document.getElementById('diagPanel');
-    if(diagEl)diagEl.innerHTML=diag_lines.join('<br>');
-    // === END DIAGNOSTIC ===
+    if(diagEl)diagEl.innerHTML=diag;
 
     renderResumen();
   } catch(e) {
     console.error('Init error:',e);
-    toast('Error al inicializar: '+e.message,'warn');
+    toast('Error: '+e.message,'warn');
   }
 
   clearTimeout(safetyTimer);
   clearTimeout(skipTimer);
   setTimeout(function(){
     hideLoader();
-    toast('Plataforma CAFAM lista','success');
+    toast('CAFAM plataforma lista','success');
     setInterval(refreshAll,5*60*1000);
   },500);
 }
