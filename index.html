@@ -220,6 +220,10 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--t1);min-hei
   </div>
 </div>
 
+<!-- DIAGNOSTIC PANEL -->
+<div id="diagPanel" style="display:none;position:fixed;bottom:60px;right:16px;background:rgba(5,12,26,.97);border:1px solid rgba(37,99,235,.4);border-radius:10px;padding:14px 18px;font-size:10px;color:#94a3b8;z-index:8888;max-width:700px;max-height:300px;overflow-y:auto;line-height:1.7;"></div>
+<button onclick="var p=document.getElementById('diagPanel');p.style.display=p.style.display==='none'?'block':'none'" style="position:fixed;bottom:16px;right:16px;background:rgba(37,99,235,.3);border:1px solid rgba(37,99,235,.5);color:#60a5fa;font-size:10px;padding:5px 12px;border-radius:20px;cursor:pointer;z-index:8889;font-family:Inter,sans-serif;">🔍 Debug CSV</button>
+
 <!-- SIDEBAR -->
 <nav id="sb">
   <div class="sb-logo">
@@ -1804,18 +1808,23 @@ async function init(){
     clearTimeout(skipTimer);
     buildAccessors();
 
-    // === DIAGNOSTIC: log column names of each sheet ===
-    if(D.cantidad && D.cantidad.length>0){
-      console.log('[CAFAM] Columnas CANTIDAD:', Object.keys(D.cantidad[0]));
-      console.log('[CAFAM] Fila 1 CANTIDAD:', D.cantidad[0]);
-      console.log('[CAFAM] efectiva(fila1):', A.can.efectiva(D.cantidad[0]));
-      console.log('[CAFAM] cancelada(fila1):', A.can.cancelada(D.cantidad[0]));
-      console.log('[CAFAM] total(fila1):', A.can.total(D.cantidad[0]));
-      console.log('[CAFAM] drog(fila1):', A.can.drog(D.cantidad[0]));
-      console.log('[CAFAM] mes(fila1):', A.can.mes(D.cantidad[0]));
-    }else{
-      console.warn('[CAFAM] D.cantidad vacío o sin datos');
-    }
+    // === DIAGNOSTIC: log ALL sheets column names ===
+    var sheets_diag=['percapita','tiempos','ventas','novcancel','cantidad'];
+    var diag_lines=['<strong style="color:#22d3ee">DIAGNÓSTICO DE COLUMNAS CSV</strong>'];
+    sheets_diag.forEach(function(sh){
+      if(D[sh]&&D[sh].length>0){
+        var cols=Object.keys(D[sh][0]);
+        var r0=D[sh][0];
+        console.log('[CAFAM] '+sh+' cols:', cols);
+        console.log('[CAFAM] '+sh+' row0:', r0);
+        diag_lines.push('<br><strong>'+sh+'</strong> ('+D[sh].length+' filas): '+cols.join(' | '));
+        diag_lines.push('<em>Fila1: '+cols.slice(0,8).map(function(c){return c+'='+r0[c];}).join(' | ')+'</em>');
+      }else{
+        diag_lines.push('<br><strong style="color:#ef4444">'+sh+': VACÍO</strong>');
+      }
+    });
+    var diagEl=document.getElementById('diagPanel');
+    if(diagEl)diagEl.innerHTML=diag_lines.join('<br>');
     // === END DIAGNOSTIC ===
 
     renderResumen();
@@ -1844,18 +1853,23 @@ async function init(){
     if(ltxt) ltxt.textContent='Procesando datos...';
     buildAccessors();
 
-    // === DIAGNOSTIC: log column names of each sheet ===
-    if(D.cantidad && D.cantidad.length>0){
-      console.log('[CAFAM] Columnas CANTIDAD:', Object.keys(D.cantidad[0]));
-      console.log('[CAFAM] Fila 1 CANTIDAD:', D.cantidad[0]);
-      console.log('[CAFAM] efectiva(fila1):', A.can.efectiva(D.cantidad[0]));
-      console.log('[CAFAM] cancelada(fila1):', A.can.cancelada(D.cantidad[0]));
-      console.log('[CAFAM] total(fila1):', A.can.total(D.cantidad[0]));
-      console.log('[CAFAM] drog(fila1):', A.can.drog(D.cantidad[0]));
-      console.log('[CAFAM] mes(fila1):', A.can.mes(D.cantidad[0]));
-    }else{
-      console.warn('[CAFAM] D.cantidad vacío o sin datos');
-    }
+    // === DIAGNOSTIC: log ALL sheets column names ===
+    var sheets_diag=['percapita','tiempos','ventas','novcancel','cantidad'];
+    var diag_lines=['<strong style="color:#22d3ee">DIAGNÓSTICO DE COLUMNAS CSV</strong>'];
+    sheets_diag.forEach(function(sh){
+      if(D[sh]&&D[sh].length>0){
+        var cols=Object.keys(D[sh][0]);
+        var r0=D[sh][0];
+        console.log('[CAFAM] '+sh+' cols:', cols);
+        console.log('[CAFAM] '+sh+' row0:', r0);
+        diag_lines.push('<br><strong>'+sh+'</strong> ('+D[sh].length+' filas): '+cols.join(' | '));
+        diag_lines.push('<em>Fila1: '+cols.slice(0,8).map(function(c){return c+'='+r0[c];}).join(' | ')+'</em>');
+      }else{
+        diag_lines.push('<br><strong style="color:#ef4444">'+sh+': VACÍO</strong>');
+      }
+    });
+    var diagEl=document.getElementById('diagPanel');
+    if(diagEl)diagEl.innerHTML=diag_lines.join('<br>');
     // === END DIAGNOSTIC ===
 
     renderResumen();
