@@ -571,83 +571,67 @@ function go(name,btn){
 function fetchCSV(url, key) {
   return new Promise(function(resolve) {
     var done = false;
-
-    // Hard timeout: 12s per sheet
     var timer = setTimeout(function() {
-      if (!done) {
-        done = true;
-        console.warn('TIMEOUT loading ' + key);
-        D[key] = [];
-        resolve([]);
-      }
+      if (!done) { done = true; console.warn('[CAFAM] TIMEOUT:', key); D[key] = []; resolve([]); }
     }, 12000);
 
     function finish(data) {
       if (!done) {
-        done = true;
-        clearTimeout(timer);
+        done = true; clearTimeout(timer);
         D[key] = data || [];
+        console.log('[CAFAM] Loaded "' + key + '": ' + D[key].length + ' rows');
+        if (D[key].length > 0) console.log('[CAFAM] Cols "' + key + '":', Object.keys(D[key][0]));
         resolve(D[key]);
       }
     }
 
-    function parseText(text) {
-      try {
-        var result = Papa.parse(text, { header: true, skipEmptyLines: true });
-        return result.data || [];
-      } catch(e) {
-        return [];
-      }
+    function parseCSV(text) {
+      // Limpiar BOM y caracteres extraños
+      text = text.replace(/^\uFEFF/, '').replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+      // Detectar delimitador: tab o coma
+      var firstLine = text.split('\n')[0] || '';
+      var delim = (firstLine.indexOf('\t') !== -1) ? '\t' : ',';
+      var result = Papa.parse(text, {
+        header: true,
+        skipEmptyLines: true,
+        delimiter: delim,
+        transformHeader: function(h) { return h.trim(); },
+        transform: function(v) { return v.trim(); }
+      });
+      return result.data || [];
     }
 
-    // Strategy 1: direct fetch with credentials omitted
     function tryDirect() {
       fetch(url, { method: 'GET', mode: 'cors', credentials: 'omit' })
         .then(function(r) { return r.text(); })
-        .then(function(t) {
-          var data = parseText(t);
-          if (data.length > 0) { finish(data); } else { tryProxy1(); }
-        })
+        .then(function(t) { var d = parseCSV(t); if (d.length > 0) finish(d); else tryProxy1(); })
         .catch(function() { tryProxy1(); });
     }
 
-    // Strategy 2: corsproxy.io
     function tryProxy1() {
-      var p = 'https://corsproxy.io/?' + encodeURIComponent(url);
-      fetch(p, { method: 'GET', credentials: 'omit' })
+      fetch('https://corsproxy.io/?' + encodeURIComponent(url), { credentials: 'omit' })
         .then(function(r) { return r.text(); })
-        .then(function(t) {
-          var data = parseText(t);
-          if (data.length > 0) { finish(data); } else { tryProxy2(); }
-        })
+        .then(function(t) { var d = parseCSV(t); if (d.length > 0) finish(d); else tryProxy2(); })
         .catch(function() { tryProxy2(); });
     }
 
-    // Strategy 3: allorigins
     function tryProxy2() {
-      var p = 'https://api.allorigins.win/raw?url=' + encodeURIComponent(url);
-      fetch(p, { method: 'GET', credentials: 'omit' })
+      fetch('https://api.allorigins.win/raw?url=' + encodeURIComponent(url), { credentials: 'omit' })
         .then(function(r) { return r.text(); })
-        .then(function(t) {
-          var data = parseText(t);
-          if (data.length > 0) { finish(data); } else { tryProxy3(); }
-        })
+        .then(function(t) { var d = parseCSV(t); if (d.length > 0) finish(d); else tryProxy3(); })
         .catch(function() { tryProxy3(); });
     }
 
-    // Strategy 4: thingproxy
     function tryProxy3() {
-      var p = 'https://thingproxy.freeboard.io/fetch/' + url;
-      fetch(p, { method: 'GET', credentials: 'omit' })
+      fetch('https://thingproxy.freeboard.io/fetch/' + url, { credentials: 'omit' })
         .then(function(r) { return r.text(); })
-        .then(function(t) {
-          var data = parseText(t);
-          finish(data); // accept whatever we got, even empty
-        })
+        .then(function(t) { var d = parseCSV(t); finish(d); })
         .catch(function() {
-          // Strategy 5: Papa.parse download mode as last resort
           Papa.parse(url, {
             download: true, header: true, skipEmptyLines: true,
+            delimiter: '',
+            transformHeader: function(h) { return h.trim(); },
+            transform: function(v) { return v.trim(); },
             complete: function(r) { finish(r.data || []); },
             error: function() { finish([]); }
           });
@@ -678,81 +662,64 @@ function buildAccessors(){
     valor:r=>num(fld(r,'TOTAL A DESCONTAR')),
   };
   A.can={
-    mes:dFld(D.cantidad,'mes','month'),
-    // Ciudad — busca columna que contenga 'ciudad'
-    ciudad:function(r){
-      var keys=Object.keys(r);
-      var k=keys.find(function(k){return k.toLowerCase().indexOf('ciudad')!==-1;});
-      return k?fld(r,k):'';
+    // MES — columna B
+    mes: function(r) {
+      return String(r['MES'] || r['Mes'] || r['mes'] || '').trim();
     },
-    // Drogería / Punto de venta
-    drog:function(r){
-      var keys=Object.keys(r);
-      var k=keys.find(function(k){return k.toLowerCase().indexOf('drog')!==-1||k.toLowerCase().indexOf('punto')!==-1;});
-      return k?fld(r,k):'';
+    // CIUDAD — columna E
+    ciudad: function(r) {
+      return String(r['CIUDAD'] || r['Ciudad'] || r['ciudad'] || '').trim();
     },
-    // Tipo de gestión (domicilio/transferencia)
-    tipo:function(r){
-      var keys=Object.keys(r);
-      var k=keys.find(function(k){return k.toLowerCase().indexOf('gesti')!==-1||k.toLowerCase().indexOf('tipo')!==-1;});
-      return k?fld(r,k):'';
+    // DROGUERIA NOMBRE CORTO — columna G  |  DROGUERIA — columna O
+    drog: function(r) {
+      var v = r['DROGUERIA NOMBRE CORTO'] || r['DROGUERIA'] || r['Drogueria'] || r['drogueria'] || '';
+      if (!v) {
+        var k = Object.keys(r).find(function(k){ return k.toLowerCase().indexOf('drog') !== -1; });
+        v = k ? r[k] : '';
+      }
+      return String(v).trim();
     },
-    // Tipo mensajero (planta fija / colaborativo)
-    tipoM:function(r){
-      var keys=Object.keys(r);
-      var k=keys.find(function(k){
-        var kl=k.toLowerCase();
-        return (kl.indexOf('mensajero')!==-1&&kl.indexOf('tipo')!==-1)||(kl.indexOf('planta')!==-1)||(kl.indexOf('colabo')!==-1);
-      });
-      return k?fld(r,k):'';
+    // TIPO GESTIÓN — columna H
+    tipo: function(r) {
+      return String(r['TIPO GESTIÓN'] || r['TIPO GESTION'] || r['Tipo Gestión'] || r['tipo gestión'] || '').trim();
     },
-    // ENTREGADO = columna I = servicios efectivamente entregados
-    efectiva:function(r){
-      // Busca primero columna 'ENTREGADO', luego 'entregado', luego 'efectiv'
-      var v=fld(r,'ENTREGADO','Entregado','entregado');
-      if(v!=='')return num(v);
-      var keys=Object.keys(r);
-      var k=keys.find(function(k){return k.toLowerCase().indexOf('entregado')!==-1||k.toLowerCase().indexOf('efectiv')!==-1;});
-      return k?num(fld(r,k)):0;
+    // TIPO MENSAJERO — columna F
+    tipoM: function(r) {
+      return String(r['TIPO MENSAJERO'] || r['Tipo Mensajero'] || r['tipo mensajero'] || '').trim();
     },
-    // CANCELADO = servicios no efectivos
-    cancelada:function(r){
-      var v=fld(r,'CANCELADO','Cancelado','cancelado','NO ENTREGADO','No entregado');
-      if(v!=='')return num(v);
-      var keys=Object.keys(r);
-      var k=keys.find(function(k){return k.toLowerCase().indexOf('cancel')!==-1||k.toLowerCase().indexOf('no entregado')!==-1;});
-      return k?num(fld(r,k)):0;
+    // ENTREGADO — columna I — servicios efectivos
+    efectiva: function(r) {
+      var v = r['ENTREGADO'] || r['Entregado'] || r['entregado'];
+      if (v !== undefined && v !== '') { var n = parseFloat(String(v).replace(/[^0-9.-]/g,'')); if (!isNaN(n)) return n; }
+      // fallback índice 8
+      var vals = Object.values(r); var n2 = parseFloat(String(vals[8]||'').replace(/[^0-9.-]/g,'')); return isNaN(n2) ? 0 : n2;
     },
-    // TOTAL = suma de entregas (entregado + cancelado)
-    total:function(r){
-      var v=fld(r,'TOTAL','Total','total','CANTIDAD','Cantidad');
-      if(v!==''&&num(v)>0)return num(v);
-      // Si no hay columna total, sumar efectiva + cancelada
-      var ef=A.can.efectiva(r);
-      var ca=A.can.cancelada(r);
-      if(ef>0||ca>0)return ef+ca;
-      // Último recurso: buscar cualquier columna numérica que diga 'total' o 'cantidad'
-      var keys=Object.keys(r);
-      var k=keys.find(function(k){return k.toLowerCase().indexOf('total')!==-1||k.toLowerCase().indexOf('cantidad')!==-1;});
-      return k?num(fld(r,k)):0;
+    // NO EFECTIVOS = CANCELACION + CONGELADO + REPROGRAMADO (col J + K + L)
+    cancelada: function(r) {
+      var c = parseFloat(String(r['CANCELACION']||r['CANCELACIÓN']||r['Cancelacion']||'0').replace(/[^0-9.-]/g,''))||0;
+      var g = parseFloat(String(r['CONGELADO']||r['Congelado']||'0').replace(/[^0-9.-]/g,''))||0;
+      var p = parseFloat(String(r['REPROGRAMADO']||r['Reprogramado']||'0').replace(/[^0-9.-]/g,''))||0;
+      return c + g + p;
     },
-    // Fecha para tendencia semanal
-    fecha:function(r){
-      var keys=Object.keys(r);
-      var k=keys.find(function(k){return k.toLowerCase().indexOf('fecha')!==-1;});
-      return k?fld(r,k):'';
+    // TOTAL — columna M
+    total: function(r) {
+      var v = r['TOTAL'] || r['Total'] || r['total'];
+      if (v !== undefined && v !== '') { var n = parseFloat(String(v).replace(/[^0-9.-]/g,'')); if (!isNaN(n) && n > 0) return n; }
+      return A.can.efectiva(r) + A.can.cancelada(r);
     },
-    // Cantidad de mensajeros en el punto
-    mensajeros:function(r){
-      var keys=Object.keys(r);
-      var k=keys.find(function(k){
-        var kl=k.toLowerCase();
-        return kl.indexOf('mensajero')!==-1&&(kl.indexOf('cant')!==-1||kl.indexOf('num')!==-1||kl.indexOf('#')!==-1);
-      });
-      return k?num(fld(r,k)):0;
-    }
+    // DÍA / fecha_cierre para tendencia semanal
+    fecha: function(r) {
+      return String(r['fecha_cierre'] || r['FECHA'] || r['Fecha'] || r['DÍA'] || r['DIA'] || '').trim();
+    },
+    // DÍA de la semana (columna C) — texto: Lunes, Martes...
+    diaSemana: function(r) {
+      return String(r['SEMANA'] || r['DÍA'] || r['DIA'] || r['Dia'] || '').trim();
+    },
+    // Mensajeros (no existe columna directa, retorna 0)
+    mensajeros: function(r) { return 0; }
   };
-  A.pc={
+
+    A.pc={
     mes:dFld(D.percapita,'mes','month'),
     ciudad:r=>fld(r,...Object.keys(r).filter(k=>k.toLowerCase().includes('ciudad'))||['ciudad']),
     drog:r=>fld(r,...Object.keys(r).filter(k=>k.toLowerCase().includes('drog')||k.toLowerCase().includes('punto'))||['drog']),
@@ -884,7 +851,7 @@ function renderCantidad(){
   const rows=applyRowFilter(D.cantidad,A.can,{mes:gv('cfMes'),ciudad:gv('cfCiudad'),drog:gv('cfDrog'),tipo:gv('cfTipo'),tipoM:gv('cfTipoM')});
   popFilters(D.cantidad,A.can,[['cfMes',A.can.mes],['cfCiudad',A.can.ciudad],['cfDrog',A.can.drog],['cfTipo',A.can.tipo],['cfTipoM',A.can.tipoM]]);
 
-  // totEf = suma de columna ENTREGADO (col I) — NO usar total como fallback
+  // totEf = suma de columna ENTREGADO (col I)
   const totEf=sum(rows,function(r){return A.can.efectiva(r);});
   const totCan=sum(rows,r=>A.can.cancelada(r));
   // totTot = total real de servicios = entregados + cancelados
@@ -924,8 +891,24 @@ function renderCantidad(){
   makeChart('cCanMes','bar',mesArr.map(e=>e[0]),[barDS('Efectivas',mesArr.map(e=>byMesEf[e[0]]||0),'#10b981','s'),barDS('Canceladas',mesArr.map(e=>byMesCan[e[0]]||0),'#ef4444','s')],{extra:{plugins:{legend:{display:true}}}});
 
   // Día de semana
-  const diasCnt=Array(7).fill(0);
-  rows.forEach(r=>{const d=parseDate(A.can.fecha(r));if(d)diasCnt[d.getDay()]+=(A.can.efectiva(r));});
+  // Tendencia por día de semana — usa columna SEMANA (texto) si existe, si no parsea fecha
+  var diasCnt = Array(7).fill(0);
+  rows.forEach(function(r) {
+    var ds = A.can.diaSemana(r).toLowerCase();
+    var idx = -1;
+    if (ds.indexOf('lun') !== -1) idx = 1;
+    else if (ds.indexOf('mar') !== -1) idx = 2;
+    else if (ds.indexOf('mié') !== -1 || ds.indexOf('mie') !== -1 || ds.indexOf('miér') !== -1) idx = 3;
+    else if (ds.indexOf('jue') !== -1) idx = 4;
+    else if (ds.indexOf('vie') !== -1) idx = 5;
+    else if (ds.indexOf('sáb') !== -1 || ds.indexOf('sab') !== -1) idx = 6;
+    else if (ds.indexOf('dom') !== -1) idx = 0;
+    if (idx >= 0) { diasCnt[idx] += A.can.efectiva(r); }
+    else {
+      var d = parseDate(A.can.fecha(r));
+      if (d) diasCnt[d.getDay()] += A.can.efectiva(r);
+    }
+  });
   makeChart('cCanDia','line',DIAS,[lineDS('Entregas',diasCnt,'#2563eb',true)]);
 
   // Top droguería
@@ -1429,6 +1412,21 @@ async function init(){
   var safetyTimer=setTimeout(function(){
     clearTimeout(skipTimer);
     buildAccessors();
+
+    // === DIAGNOSTIC: log column names of each sheet ===
+    if(D.cantidad && D.cantidad.length>0){
+      console.log('[CAFAM] Columnas CANTIDAD:', Object.keys(D.cantidad[0]));
+      console.log('[CAFAM] Fila 1 CANTIDAD:', D.cantidad[0]);
+      console.log('[CAFAM] efectiva(fila1):', A.can.efectiva(D.cantidad[0]));
+      console.log('[CAFAM] cancelada(fila1):', A.can.cancelada(D.cantidad[0]));
+      console.log('[CAFAM] total(fila1):', A.can.total(D.cantidad[0]));
+      console.log('[CAFAM] drog(fila1):', A.can.drog(D.cantidad[0]));
+      console.log('[CAFAM] mes(fila1):', A.can.mes(D.cantidad[0]));
+    }else{
+      console.warn('[CAFAM] D.cantidad vacío o sin datos');
+    }
+    // === END DIAGNOSTIC ===
+
     renderResumen();
     hideLoader();
     toast('Cargado (tiempo límite alcanzado — algunos datos pueden faltar)','warn');
@@ -1454,6 +1452,21 @@ async function init(){
     }
     if(ltxt) ltxt.textContent='Procesando datos...';
     buildAccessors();
+
+    // === DIAGNOSTIC: log column names of each sheet ===
+    if(D.cantidad && D.cantidad.length>0){
+      console.log('[CAFAM] Columnas CANTIDAD:', Object.keys(D.cantidad[0]));
+      console.log('[CAFAM] Fila 1 CANTIDAD:', D.cantidad[0]);
+      console.log('[CAFAM] efectiva(fila1):', A.can.efectiva(D.cantidad[0]));
+      console.log('[CAFAM] cancelada(fila1):', A.can.cancelada(D.cantidad[0]));
+      console.log('[CAFAM] total(fila1):', A.can.total(D.cantidad[0]));
+      console.log('[CAFAM] drog(fila1):', A.can.drog(D.cantidad[0]));
+      console.log('[CAFAM] mes(fila1):', A.can.mes(D.cantidad[0]));
+    }else{
+      console.warn('[CAFAM] D.cantidad vacío o sin datos');
+    }
+    // === END DIAGNOSTIC ===
+
     renderResumen();
   } catch(e) {
     console.error('Init error:',e);
