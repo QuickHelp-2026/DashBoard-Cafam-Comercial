@@ -597,6 +597,45 @@ function fillSelect(id,values,currentVal){
 }
 
 // ═══════════════════════════════════════════════
+// MONTH SORT — Ordena meses en orden calendario
+// ═══════════════════════════════════════════════
+var MES_ORDER=['ENE','FEB','MAR','ABR','MAY','JUN','JUL','AGO','SEP','OCT','NOV','DIC',
+               'ENERO','FEBRERO','MARZO','ABRIL','MAYO','JUNIO','JULIO','AGOSTO','SEPTIEMBRE','OCTUBRE','NOVIEMBRE','DICIEMBRE',
+               'JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
+function mesIdx(m){
+  if(!m) return 99;
+  var u=String(m).toUpperCase().trim();
+  // Try 3-letter prefix match first
+  for(var i=0;i<12;i++){
+    if(u===MES_ORDER[i]||u===MES_ORDER[i+12]||u.indexOf(MES_ORDER[i])===0) return i;
+  }
+  // Fallback: numeric if month is like "01","02"...
+  var n=parseInt(u);
+  if(!isNaN(n)&&n>=1&&n<=12) return n-1;
+  return 99;
+}
+function sortMeses(keys){
+  return keys.slice().sort(function(a,b){return mesIdx(a)-mesIdx(b);});
+}
+
+// ═══════════════════════════════════════════════
+// ACTIVE FILTER TAGS — Muestra filtros activos
+// ═══════════════════════════════════════════════
+function showActiveTags(containerId, filterIds, filterLabels){
+  var el=document.getElementById(containerId);
+  if(!el) return;
+  var html='';
+  filterIds.forEach(function(id,i){
+    var val=gv(id);
+    if(val){
+      html+='<span class="atag">'+filterLabels[i]+': '+val+
+        '<span class="atag-x" onclick="document.getElementById(\''+id+'\').value=\'\';this.closest(\'.sec.active\').querySelector(\'[onclick*=render]\') && eval(this.closest(\'.sec.active\').id.replace(\'sec-\',\'render\')+\'()\')"> ✕</span></span>';
+    }
+  });
+  el.innerHTML=html;
+}
+
+// ═══════════════════════════════════════════════
 // CLOCK
 // ═══════════════════════════════════════════════
 function clock(){const n=new Date();document.getElementById('cDate').textContent=n.toLocaleDateString('es-CO',{weekday:'short',day:'2-digit',month:'short',year:'numeric'}).toUpperCase();document.getElementById('cTime').textContent=n.toLocaleTimeString('es-CO',{hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false});}
@@ -1073,8 +1112,8 @@ function renderNovedades(){
 
   // Por mes
   const byMes=sumGroup(rows,r=>A.nov.mes(r),r=>1);
-  const mesArr=sortObj(byMes,false).reverse();
-  makeChart('cNovMes','line',mesArr.map(e=>e[0]),[lineDS('Novedades',mesArr.map(e=>e[1]),'#ef4444',true)]);
+  const mesArr=sortMeses(Object.keys(byMes));
+  makeChart('cNovMes','line',mesArr,[lineDS('Novedades',mesArr.map(e=>byMes[e]||0),'#ef4444',true)]);
 
   // Análisis de modelos / tipos
   const byModelo=sumGroup(rows,r=>A.nov.modelo(r)||A.nov.tipo(r),r=>1);
@@ -1135,10 +1174,10 @@ function renderCantidad(){
   ].join('');
 
   // Por mes
-  const mesArr=Object.entries(byMes);
   const byMesEf=sumGroup(rows,function(r){return A.can.mes(r);},function(r){return A.can.efectiva(r);});
   const byMesCan=sumGroup(rows,function(r){return A.can.mes(r);},function(r){return A.can.cancelada(r);});
-  makeChart('cCanMes','bar',mesArr.map(e=>e[0]),[barDS('Efectivas',mesArr.map(e=>byMesEf[e[0]]||0),'#10b981','s'),barDS('Canceladas',mesArr.map(e=>byMesCan[e[0]]||0),'#ef4444','s')],{extra:{plugins:{legend:{display:true}}}});
+  const mesArrSorted=sortMeses([...new Set([...Object.keys(byMesEf),...Object.keys(byMesCan)])]);
+  makeChart('cCanMes','bar',mesArrSorted,[barDS('Efectivas',mesArrSorted.map(m=>byMesEf[m]||0),'#10b981','s'),barDS('Canceladas',mesArrSorted.map(m=>byMesCan[m]||0),'#ef4444','s')],{extra:{plugins:{legend:{display:true}}}});
 
   // Día de semana
   // Tendencia por día de semana — usa columna SEMANA (texto) si existe, si no parsea fecha
@@ -1286,7 +1325,7 @@ function renderPercapita(){
   // ══ GRÁFICAS ════════════════════════════════════════════
 
   // 1) Línea de tendencia PC por mes
-  var mesKeys=Object.keys(avgPcByMes).sort();
+  var mesKeys=sortMeses(Object.keys(avgPcByMes));
   makeChart('cPcMes','line',mesKeys,
     [lineDS('Per Cápita Prom.',mesKeys.map(function(k){return avgPcByMes[k];}), '#f59e0b', false)]
   );
@@ -1457,7 +1496,7 @@ function renderTiempos(){
 
   // ══ GRÁFICAS ══
   // 1) Tendencia por mes (HH:MM en labels, minutos en data)
-  var mesKeys=Object.keys(avgByMes).sort();
+  var mesKeys=sortMeses(Object.keys(avgByMes));
   makeChart('cTiMes','line',mesKeys,
     [lineDS('T. Prom. (min)',mesKeys.map(function(k){return avgByMes[k];}), '#2563eb', false)]
   );
@@ -1572,7 +1611,7 @@ function renderVentas(){
   // ══ GRÁFICAS ══════════════════════════════════════════════
 
   // 1) Valor por mes — Entregado vs Cancelado
-  var mesKeys=[...new Set([...Object.keys(byMesEf),...Object.keys(byMesCan)])].sort();
+  var mesKeys=sortMeses([...new Set([...Object.keys(byMesEf),...Object.keys(byMesCan)])]);
   makeChart('cVenMes','bar',mesKeys,[
     barDS('Entregado', mesKeys.map(function(k){return byMesEf[k]||0;}), '#10b981','s'),
     barDS('Cancelado', mesKeys.map(function(k){return byMesCan[k]||0;}), '#ef4444','s')
@@ -1694,7 +1733,7 @@ function renderNovCancel(){
   );
 
   // 3) Por mes
-  var mesKeys=Object.keys(byMes).sort();
+  var mesKeys=sortMeses(Object.keys(byMes));
   makeChart('cNcMes','line',mesKeys,
     [lineDS('Novedades',mesKeys.map(function(k){return byMes[k];}), '#ef4444', true)]
   );
@@ -1800,8 +1839,10 @@ function renderResumen(){
 
   const topDNov=sortObj(byDrogNov);
 
-  const bestMes=sortObj(sumGroup(fCan,r=>A.can.mes(r),r=>A.can.efectiva(r)))[0];
-  const worstMes=sortObj(sumGroup(fCan,r=>A.can.mes(r),r=>A.can.efectiva(r)),false)[0];
+  const byMesRes=sumGroup(fCan,r=>A.can.mes(r),r=>A.can.efectiva(r));
+  const byMesResArr=sortMeses(Object.keys(byMesRes));
+  const bestMes=sortObj(byMesRes)[0];
+  const worstMes=sortObj(byMesRes,false)[0];
 
   document.getElementById('resumenUpdate').textContent=`Última actualización: ${new Date().toLocaleString('es-CO')}`;
 
