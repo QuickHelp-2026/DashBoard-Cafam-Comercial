@@ -737,7 +737,6 @@ function renderNovedades(){
   const fijo=sum(rows,r=>(A.nov.modelo(r)||A.nov.tipo(r)).toLowerCase().includes('fija')||((A.nov.modelo(r)||A.nov.tipo(r)).toLowerCase().includes('plant'))?1:0);
   const colabo=sum(rows,r=>(A.nov.modelo(r)||A.nov.tipo(r)).toLowerCase().includes('cola')?1:0);
 
-
 // TOP TIPOS DE NOVEDAD
 const byTipo = sumGroup(rows,r=>A.nov.tipo(r),r=>1);
 const top4 = topN(byTipo,4);
@@ -750,6 +749,7 @@ const fijo = sum(rows,r=>
   || A.nov.modelo(r).toLowerCase().includes('fija')
   ? 1 : 0
 );
+
 
   // Analysis
   document.getElementById('novAnalysis').innerHTML=`
