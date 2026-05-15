@@ -3,2434 +3,1310 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CAFAM DOMICILIOS — Centro de Analítica Corporativa</title>
+<title>CAFAM DOMICILIOS — Centro Analítico Corporativo</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/css/bootstrap.min.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <style>
-:root {
-  --bg-primary: #050c1a;
-  --bg-secondary: #071224;
-  --bg-card: rgba(10, 25, 55, 0.85);
-  --bg-card-hover: rgba(14, 35, 75, 0.95);
-  --blue-deep: #0a1628;
-  --blue-corp: #1a4fd6;
-  --blue-electric: #2563eb;
-  --blue-bright: #3b82f6;
-  --blue-light: #60a5fa;
-  --cyan: #06b6d4;
-  --cyan-light: #22d3ee;
-  --teal: #0d9488;
-  --text-primary: #f0f6ff;
-  --text-secondary: #94a3b8;
-  --text-muted: #475569;
-  --border: rgba(59, 130, 246, 0.15);
-  --border-bright: rgba(59, 130, 246, 0.4);
-  --glow: 0 0 20px rgba(37, 99, 235, 0.3);
-  --glow-strong: 0 0 40px rgba(37, 99, 235, 0.5);
-  --shadow-card: 0 8px 32px rgba(0,0,0,0.4), 0 0 0 1px rgba(59,130,246,0.1);
-  --sidebar-w: 260px;
-  --header-h: 72px;
-  --radius: 14px;
-  --radius-sm: 8px;
-}
-
-* { margin: 0; padding: 0; box-sizing: border-box; }
-
-body {
-  font-family: 'Inter', sans-serif;
-  background: var(--bg-primary);
-  color: var(--text-primary);
-  min-height: 100vh;
-  overflow-x: hidden;
-}
-
-/* ── SCROLLBAR ── */
-::-webkit-scrollbar { width: 5px; height: 5px; }
-::-webkit-scrollbar-track { background: var(--bg-primary); }
-::-webkit-scrollbar-thumb { background: var(--blue-corp); border-radius: 3px; }
-
-/* ── SIDEBAR ── */
-#sidebar {
-  position: fixed; top: 0; left: 0;
-  width: var(--sidebar-w);
-  height: 100vh;
-  background: linear-gradient(180deg, #071220 0%, #050c1a 100%);
-  border-right: 1px solid var(--border);
-  z-index: 1000;
-  display: flex; flex-direction: column;
-  transition: transform .3s ease;
-  overflow-y: auto;
-}
-
-.sidebar-logo {
-  padding: 22px 20px 16px;
-  border-bottom: 1px solid var(--border);
-  display: flex; align-items: center; gap: 12px;
-}
-
-.sidebar-logo img { height: 40px; filter: brightness(1.1); }
-
-.sidebar-brand {
-  font-size: 11px; font-weight: 700; letter-spacing: 1.5px;
-  text-transform: uppercase; color: var(--cyan-light);
-  line-height: 1.3;
-}
-.sidebar-brand span { display: block; color: var(--text-secondary); font-weight: 400; font-size: 10px; }
-
-.sidebar-section-label {
-  font-size: 9px; font-weight: 700; letter-spacing: 2px;
-  text-transform: uppercase; color: var(--text-muted);
-  padding: 16px 20px 6px;
-}
-
-.nav-item-custom {
-  display: flex; align-items: center; gap: 12px;
-  padding: 11px 20px; margin: 2px 10px;
-  border-radius: var(--radius-sm);
-  cursor: pointer; transition: all .25s;
-  font-size: 13px; font-weight: 500; color: var(--text-secondary);
-  position: relative; text-decoration: none;
-}
-
-.nav-item-custom i { width: 18px; text-align: center; font-size: 14px; }
-
-.nav-item-custom:hover {
-  background: rgba(37,99,235,0.15);
-  color: var(--text-primary);
-  box-shadow: inset 3px 0 0 var(--blue-electric);
-}
-
-.nav-item-custom.active {
-  background: linear-gradient(135deg, rgba(37,99,235,0.25), rgba(6,182,212,0.1));
-  color: var(--cyan-light);
-  box-shadow: inset 3px 0 0 var(--cyan), var(--glow);
-}
-
-.nav-item-custom .badge-nav {
-  margin-left: auto; background: var(--blue-corp);
-  font-size: 9px; padding: 2px 7px; border-radius: 20px;
-}
-
-.sidebar-footer {
-  margin-top: auto; padding: 16px 20px;
-  border-top: 1px solid var(--border);
-  display: flex; align-items: center; gap: 10px;
-}
-
-.sidebar-footer img { height: 24px; opacity: 0.7; border-radius: 4px; }
-.sidebar-footer span { font-size: 10px; color: var(--text-muted); }
-
-/* ── HEADER ── */
-#header {
-  position: fixed; top: 0; left: var(--sidebar-w);
-  right: 0; height: var(--header-h);
-  background: rgba(5,12,26,0.92);
-  backdrop-filter: blur(20px);
-  border-bottom: 1px solid var(--border);
-  z-index: 999;
-  display: flex; align-items: center;
-  padding: 0 28px; gap: 16px;
-}
-
-.header-title { font-size: 18px; font-weight: 700; color: var(--text-primary); }
-.header-title span { color: var(--cyan-light); }
-
-.header-search {
-  flex: 1; max-width: 380px; margin: 0 24px;
-  position: relative;
-}
-
-.header-search input {
-  width: 100%; background: rgba(255,255,255,0.05);
-  border: 1px solid var(--border); border-radius: 25px;
-  padding: 9px 16px 9px 40px;
-  color: var(--text-primary); font-size: 13px; font-family: 'Inter',sans-serif;
-  transition: all .25s;
-}
-
-.header-search input:focus {
-  outline: none; border-color: var(--blue-electric);
-  background: rgba(37,99,235,0.08);
-  box-shadow: 0 0 0 3px rgba(37,99,235,0.15);
-}
-
-.header-search i {
-  position: absolute; left: 14px; top: 50%; transform: translateY(-50%);
-  color: var(--text-muted); font-size: 13px;
-}
-
-.search-results-dropdown {
-  position: absolute; top: calc(100% + 6px); left: 0; right: 0;
-  background: var(--bg-card); border: 1px solid var(--border-bright);
-  border-radius: var(--radius-sm); z-index: 9999;
-  max-height: 300px; overflow-y: auto; display: none;
-}
-
-.search-results-dropdown.active { display: block; }
-.search-result-item {
-  padding: 10px 16px; cursor: pointer; font-size: 12px;
-  border-bottom: 1px solid var(--border); transition: background .15s;
-}
-.search-result-item:hover { background: rgba(37,99,235,0.15); }
-.search-result-item .tag { font-size: 10px; color: var(--cyan); font-weight: 600; }
-
-.header-right { display: flex; align-items: center; gap: 14px; margin-left: auto; }
-
-.status-online {
-  display: flex; align-items: center; gap: 6px;
-  font-size: 11px; font-weight: 600; color: #10b981;
-  background: rgba(16,185,129,0.12); border: 1px solid rgba(16,185,129,0.3);
-  padding: 4px 12px; border-radius: 20px;
-}
-
-.status-online::before {
-  content: ''; width: 7px; height: 7px;
-  background: #10b981; border-radius: 50%;
-  animation: pulse-green 2s infinite;
-}
-
-@keyframes pulse-green {
-  0%,100% { opacity:1; transform:scale(1); }
-  50% { opacity:.5; transform:scale(1.3); }
-}
-
-.header-datetime {
-  font-size: 12px; color: var(--text-secondary); text-align: right;
-  line-height: 1.4;
-}
-.header-datetime .date { font-weight: 600; color: var(--text-primary); }
-
-.btn-icon {
-  width: 38px; height: 38px; border-radius: 50%;
-  background: rgba(255,255,255,0.05); border: 1px solid var(--border);
-  display: flex; align-items: center; justify-content: center;
-  cursor: pointer; color: var(--text-secondary); transition: all .2s;
-  font-size: 14px;
-}
-.btn-icon:hover { background: rgba(37,99,235,0.2); color: var(--text-primary); border-color: var(--blue-electric); }
-
-.avatar {
-  width: 38px; height: 38px; border-radius: 50%;
-  background: linear-gradient(135deg, var(--blue-corp), var(--cyan));
-  display: flex; align-items: center; justify-content: center;
-  font-size: 14px; font-weight: 700; color: white; cursor: pointer;
-  border: 2px solid var(--border-bright);
-}
-
-/* ── MAIN CONTENT ── */
-#main {
-  margin-left: var(--sidebar-w);
-  padding-top: var(--header-h);
-  min-height: 100vh;
-}
-
-.content-area { padding: 24px 28px; }
-
-/* ── SECTION HEADER ── */
-.section-header {
-  display: flex; align-items: center; justify-content: space-between;
-  margin-bottom: 20px;
-}
-.section-title { font-size: 20px; font-weight: 700; }
-.section-title span { color: var(--cyan-light); }
-.section-subtitle { font-size: 13px; color: var(--text-secondary); margin-top: 2px; }
-
-/* ── FILTER BAR ── */
-.filter-bar {
-  background: var(--bg-card);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 18px 22px;
-  margin-bottom: 22px;
-  backdrop-filter: blur(10px);
-}
-
-.filter-bar-header {
-  display: flex; align-items: center; justify-content: space-between;
-  margin-bottom: 16px;
-}
-
-.filter-bar-title {
-  font-size: 13px; font-weight: 600; color: var(--cyan-light);
-  display: flex; align-items: center; gap: 8px;
-}
-
-.filter-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-  gap: 12px;
-  align-items: end;
-}
-
-.filter-group { display: flex; flex-direction: column; gap: 5px; }
-.filter-label { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; color: var(--text-muted); }
-
-.filter-control {
-  background: rgba(255,255,255,0.04);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  padding: 8px 12px;
-  color: var(--text-primary);
-  font-size: 12px; font-family: 'Inter',sans-serif;
-  transition: all .2s;
-  -webkit-appearance: none;
-}
-
-.filter-control:focus { outline: none; border-color: var(--blue-electric); background: rgba(37,99,235,0.08); }
-.filter-control option { background: #0a1628; }
-
-.filter-actions { display: flex; gap: 8px; align-items: flex-end; flex-wrap: wrap; }
-
-.btn-filter {
-  padding: 8px 18px; border-radius: var(--radius-sm); font-size: 12px; font-weight: 600;
-  cursor: pointer; transition: all .2s; border: none; font-family: 'Inter',sans-serif;
-  display: flex; align-items: center; gap: 6px;
-}
-
-.btn-primary-filter {
-  background: linear-gradient(135deg, var(--blue-corp), var(--blue-electric));
-  color: white;
-}
-.btn-primary-filter:hover { transform: translateY(-1px); box-shadow: var(--glow); }
-
-.btn-secondary-filter {
-  background: rgba(255,255,255,0.06); color: var(--text-secondary);
-  border: 1px solid var(--border);
-}
-.btn-secondary-filter:hover { background: rgba(255,255,255,0.1); color: var(--text-primary); }
-
-.btn-export {
-  background: linear-gradient(135deg, #0d9488, #0891b2);
-  color: white; padding: 8px 16px;
-}
-.btn-export:hover { transform: translateY(-1px); box-shadow: 0 0 20px rgba(6,182,212,0.4); }
-
-.btn-pdf {
-  background: linear-gradient(135deg, #7c3aed, #6d28d9);
-  color: white; padding: 8px 16px;
-}
-.btn-pdf:hover { transform: translateY(-1px); box-shadow: 0 0 20px rgba(124,58,237,0.4); }
-
-.active-filters {
-  display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px;
-}
-
-.filter-tag {
-  background: rgba(37,99,235,0.2); border: 1px solid rgba(37,99,235,0.4);
-  color: var(--blue-light); font-size: 10px; font-weight: 600;
-  padding: 3px 10px; border-radius: 20px;
-  display: flex; align-items: center; gap: 5px;
-}
-
-.filter-tag .remove { cursor: pointer; opacity: .7; }
-.filter-tag .remove:hover { opacity: 1; }
-
-/* ── KPI CARDS ── */
-.kpi-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-  gap: 16px;
-  margin-bottom: 24px;
-}
-
-.kpi-card {
-  background: var(--bg-card);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 20px;
-  position: relative; overflow: hidden;
-  transition: all .3s; cursor: default;
-  backdrop-filter: blur(10px);
-}
-
-.kpi-card::before {
-  content: ''; position: absolute;
-  top: 0; left: 0; right: 0; height: 2px;
-  background: linear-gradient(90deg, var(--blue-corp), var(--cyan));
-  opacity: 0; transition: opacity .3s;
-}
-
-.kpi-card:hover {
-  border-color: var(--border-bright);
-  transform: translateY(-3px);
-  box-shadow: var(--shadow-card), var(--glow);
-  background: var(--bg-card-hover);
-}
-
-.kpi-card:hover::before { opacity: 1; }
-
-.kpi-icon {
-  width: 44px; height: 44px; border-radius: 11px;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 18px; margin-bottom: 14px;
-}
-
-.kpi-value {
-  font-size: 28px; font-weight: 800;
-  background: linear-gradient(135deg, var(--text-primary), var(--blue-light));
-  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-  line-height: 1;
-}
-
-.kpi-label { font-size: 11px; color: var(--text-secondary); margin-top: 4px; font-weight: 500; text-transform: uppercase; letter-spacing: .5px; }
-
-.kpi-trend {
-  display: flex; align-items: center; gap: 4px;
-  font-size: 11px; font-weight: 600; margin-top: 10px;
-}
-
-.kpi-trend.up { color: #10b981; }
-.kpi-trend.down { color: #f87171; }
-.kpi-trend.neutral { color: var(--text-muted); }
-
-.sparkline-canvas { width: 100% !important; height: 40px !important; margin-top: 10px; }
-
-.kpi-bg-icon {
-  position: absolute; right: -10px; bottom: -10px;
-  font-size: 64px; opacity: .04;
-}
-
-/* ── CHART CARDS ── */
-.chart-card {
-  background: var(--bg-card);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 22px;
-  backdrop-filter: blur(10px);
-  transition: border-color .3s;
-  height: 100%;
-}
-
-.chart-card:hover { border-color: var(--border-bright); }
-
-.chart-title {
-  font-size: 14px; font-weight: 700; margin-bottom: 4px;
-  display: flex; align-items: center; gap: 8px;
-}
-.chart-title i { color: var(--cyan-light); }
-.chart-subtitle { font-size: 11px; color: var(--text-muted); margin-bottom: 18px; }
-
-.chart-wrapper { position: relative; }
-
-/* ── TABLES ── */
-.table-card {
-  background: var(--bg-card);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  overflow: hidden; backdrop-filter: blur(10px);
-}
-
-.table-card-header {
-  padding: 18px 22px;
-  border-bottom: 1px solid var(--border);
-  display: flex; align-items: center; justify-content: space-between;
-  flex-wrap: wrap; gap: 10px;
-}
-
-.table-search {
-  background: rgba(255,255,255,0.05);
-  border: 1px solid var(--border); border-radius: 20px;
-  padding: 7px 14px 7px 36px;
-  color: var(--text-primary); font-size: 12px; font-family: 'Inter',sans-serif;
-  width: 240px; position: relative; transition: all .2s;
-}
-.table-search:focus { outline: none; border-color: var(--blue-electric); }
-.table-search-wrap { position: relative; }
-.table-search-wrap i { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--text-muted); font-size: 12px; }
-
-.data-table { width: 100%; border-collapse: collapse; font-size: 12px; }
-.data-table thead th {
-  padding: 12px 16px; background: rgba(37,99,235,0.1);
-  color: var(--text-muted); font-weight: 700; text-transform: uppercase;
-  font-size: 10px; letter-spacing: 1px; text-align: left;
-  border-bottom: 1px solid var(--border); white-space: nowrap;
-  cursor: pointer; user-select: none; transition: color .2s;
-}
-.data-table thead th:hover { color: var(--cyan-light); }
-.data-table thead th .sort-icon { margin-left: 4px; opacity: .5; }
-.data-table tbody tr { border-bottom: 1px solid var(--border); transition: background .15s; }
-.data-table tbody tr:hover { background: rgba(37,99,235,0.08); }
-.data-table tbody td { padding: 12px 16px; color: var(--text-secondary); vertical-align: middle; }
-.data-table tbody td:first-child { color: var(--text-primary); font-weight: 500; }
-
-.badge-status {
-  padding: 3px 10px; border-radius: 20px; font-size: 10px; font-weight: 700;
-  text-transform: uppercase; letter-spacing: .5px;
-}
-.badge-active { background: rgba(16,185,129,0.15); color: #10b981; border: 1px solid rgba(16,185,129,0.3); }
-.badge-route { background: rgba(251,191,36,0.15); color: #fbbf24; border: 1px solid rgba(251,191,36,0.3); }
-.badge-done { background: rgba(59,130,246,0.15); color: #60a5fa; border: 1px solid rgba(59,130,246,0.3); }
-.badge-novedad { background: rgba(248,113,113,0.15); color: #f87171; border: 1px solid rgba(248,113,113,0.3); }
-.badge-risk { background: rgba(239,68,68,0.2); color: #ef4444; border: 1px solid rgba(239,68,68,0.4); }
-
-.pagination-wrap {
-  padding: 14px 22px;
-  border-top: 1px solid var(--border);
-  display: flex; align-items: center; justify-content: space-between;
-  font-size: 12px;
-}
-.pagination-wrap span { color: var(--text-muted); }
-.pagination-btns { display: flex; gap: 4px; }
-.page-btn {
-  width: 30px; height: 30px; border-radius: 6px;
-  background: rgba(255,255,255,0.05); border: 1px solid var(--border);
-  color: var(--text-secondary); font-size: 12px; cursor: pointer;
-  display: flex; align-items: center; justify-content: center; transition: all .2s;
-}
-.page-btn:hover, .page-btn.active { background: var(--blue-corp); color: white; border-color: var(--blue-corp); }
-
-/* ── AI MODULE ── */
-.ai-card {
-  background: linear-gradient(135deg, rgba(10,22,55,0.95), rgba(7,18,42,0.95));
-  border: 1px solid rgba(59,130,246,0.3);
-  border-radius: var(--radius);
-  padding: 26px;
-  position: relative; overflow: hidden;
-  backdrop-filter: blur(20px);
-}
-
-.ai-card::before {
-  content: ''; position: absolute;
-  top: 0; left: 0; right: 0; height: 1px;
-  background: linear-gradient(90deg, transparent, var(--blue-electric), var(--cyan), transparent);
-}
-
-.ai-header {
-  display: flex; align-items: center; gap: 14px; margin-bottom: 20px;
-}
-
-.ai-icon {
-  width: 52px; height: 52px; border-radius: 14px;
-  background: linear-gradient(135deg, var(--blue-corp), var(--cyan));
-  display: flex; align-items: center; justify-content: center;
-  font-size: 22px; animation: ai-pulse 3s infinite;
-  box-shadow: 0 0 20px rgba(37,99,235,0.5);
-}
-
-@keyframes ai-pulse {
-  0%,100% { box-shadow: 0 0 20px rgba(37,99,235,0.5); }
-  50% { box-shadow: 0 0 35px rgba(6,182,212,0.7); }
-}
-
-.ai-badge {
-  background: linear-gradient(135deg, rgba(37,99,235,0.3), rgba(6,182,212,0.2));
-  border: 1px solid rgba(6,182,212,0.4);
-  color: var(--cyan-light); font-size: 10px; font-weight: 700;
-  padding: 3px 10px; border-radius: 20px; letter-spacing: 1px;
-  text-transform: uppercase;
-}
-
-.ai-content {
-  font-size: 13.5px; line-height: 1.85; color: var(--text-secondary);
-  border-left: 3px solid var(--blue-corp);
-  padding-left: 16px;
-}
-
-.ai-content strong { color: var(--text-primary); }
-.ai-content .highlight { color: var(--cyan-light); font-weight: 600; }
-
-.ai-metrics {
-  display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-  gap: 12px; margin-top: 20px;
-}
-
-.ai-metric-item {
-  background: rgba(37,99,235,0.08); border: 1px solid var(--border);
-  border-radius: var(--radius-sm); padding: 12px;
-  text-align: center;
-}
-
-.ai-metric-val { font-size: 22px; font-weight: 800; color: var(--cyan-light); }
-.ai-metric-label { font-size: 10px; color: var(--text-muted); margin-top: 3px; }
-
-/* ── LOADING ── */
-.loading-overlay {
-  position: fixed; inset: 0;
-  background: var(--bg-primary);
-  z-index: 9999; display: flex;
-  flex-direction: column; align-items: center; justify-content: center;
-  gap: 20px; transition: opacity .5s;
-}
-
-.loading-logo { height: 60px; filter: brightness(1.2); animation: float 3s ease-in-out infinite; }
-@keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-10px)} }
-
-.loading-bar-wrap {
-  width: 300px; height: 4px; background: rgba(255,255,255,0.1);
-  border-radius: 2px; overflow: hidden;
-}
-.loading-bar {
-  height: 100%; width: 0;
-  background: linear-gradient(90deg, var(--blue-corp), var(--cyan));
-  border-radius: 2px; animation: load-progress 2.5s ease forwards;
-}
-@keyframes load-progress { to { width: 100%; } }
-
-.loading-text { font-size: 12px; color: var(--text-muted); letter-spacing: 2px; text-transform: uppercase; }
-
-/* ── TOAST ── */
-.toast-container {
-  position: fixed; bottom: 24px; right: 24px; z-index: 9998;
-  display: flex; flex-direction: column; gap: 8px;
-}
-
-.toast-item {
-  background: var(--bg-card); border: 1px solid var(--border);
-  border-radius: 10px; padding: 12px 18px;
-  font-size: 13px; display: flex; align-items: center; gap: 10px;
-  min-width: 280px; backdrop-filter: blur(20px);
-  animation: slideInRight .3s ease;
-  box-shadow: var(--shadow-card);
-}
-@keyframes slideInRight { from { transform: translateX(100%); opacity:0; } to { transform:translateX(0); opacity:1; } }
-
-/* ── SECTION TABS ── */
-.section-content { display: none; }
-.section-content.active { display: block; animation: fadeInUp .3s ease; }
-@keyframes fadeInUp { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
-
-/* ── DIVIDER ── */
-.section-divider {
-  height: 1px;
-  background: linear-gradient(90deg, transparent, var(--border-bright), transparent);
-  margin: 28px 0;
-}
-
-/* ── RESPONSIVE ── */
-@media (max-width: 1024px) {
-  :root { --sidebar-w: 70px; }
-  .sidebar-brand, .nav-item-custom span, .sidebar-section-label, .sidebar-footer span { display: none; }
-  .nav-item-custom { justify-content: center; padding: 12px; margin: 2px 6px; }
-  .nav-item-custom i { width: auto; }
-  .sidebar-logo { justify-content: center; }
-  .sidebar-logo img { height: 32px; }
-}
-
-@media (max-width: 768px) {
-  :root { --sidebar-w: 0px; --header-h: 60px; }
-  #sidebar { transform: translateX(-260px); width: 260px; }
-  #sidebar.mobile-open { transform: translateX(0); }
-  #header { left: 0; }
-  #main { margin-left: 0; }
-  .kpi-grid { grid-template-columns: repeat(2, 1fr); }
-  .filter-grid { grid-template-columns: repeat(2, 1fr); }
-}
-
-/* ── MISC ── */
-.row-gap { gap: 20px; }
-.g-16 { gap: 16px; }
-.text-cyan { color: var(--cyan-light); }
-.text-dim { color: var(--text-muted); }
-.fw-700 { font-weight: 700; }
-.empty-state { padding: 40px; text-align: center; color: var(--text-muted); font-size: 13px; }
-.empty-state i { font-size: 36px; margin-bottom: 10px; opacity: .4; }
-
-.stat-row {
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 10px 0; border-bottom: 1px solid var(--border); font-size: 13px;
-}
-.stat-row:last-child { border-bottom: none; }
-.stat-row .label { color: var(--text-secondary); }
-.stat-row .value { font-weight: 700; color: var(--text-primary); }
-
-/* Sidebar overlay for mobile */
-.sidebar-overlay {
-  display: none; position: fixed; inset: 0;
-  background: rgba(0,0,0,0.6); z-index: 999;
-}
-.sidebar-overlay.active { display: block; }
-
-.hamburger {
-  display: none; background: none; border: none;
-  color: var(--text-primary); font-size: 20px; cursor: pointer; padding: 4px;
-}
-@media (max-width: 768px) { .hamburger { display: block; } }
-
-.progress-bar-custom {
-  height: 6px; background: rgba(255,255,255,0.08); border-radius: 3px; overflow: hidden;
-}
-.progress-fill {
-  height: 100%; border-radius: 3px;
-  background: linear-gradient(90deg, var(--blue-corp), var(--cyan));
-  transition: width 1s ease;
-}
+:root{
+  --bg:#050c1a;--bg2:#071224;--card:rgba(10,25,55,0.9);--cardhov:rgba(14,35,75,0.97);
+  --b1:#1a4fd6;--b2:#2563eb;--b3:#3b82f6;--b4:#60a5fa;
+  --cy:#06b6d4;--cy2:#22d3ee;--teal:#0d9488;
+  --green:#10b981;--amber:#f59e0b;--red:#ef4444;--purple:#8b5cf6;
+  --t1:#f0f6ff;--t2:#94a3b8;--t3:#475569;
+  --brd:rgba(59,130,246,.15);--brdhi:rgba(59,130,246,.4);
+  --glow:0 0 20px rgba(37,99,235,.3);--glows:0 0 40px rgba(37,99,235,.5);
+  --sdw:0 8px 32px rgba(0,0,0,.4),0 0 0 1px rgba(59,130,246,.1);
+  --sw:260px;--hh:66px;--r:14px;--rsm:8px;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--t1);min-height:100vh;overflow-x:hidden;}
+::-webkit-scrollbar{width:5px;height:5px;}
+::-webkit-scrollbar-track{background:var(--bg);}
+::-webkit-scrollbar-thumb{background:var(--b1);border-radius:3px;}
+
+/* LOADING */
+#loadWrap{position:fixed;inset:0;background:var(--bg);z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;transition:opacity .5s;}
+#loadWrap img{height:56px;animation:float 2.5s ease-in-out infinite;}
+.lbar-wrap{width:280px;height:4px;background:rgba(255,255,255,.1);border-radius:2px;overflow:hidden;}
+.lbar{height:100%;width:0;background:linear-gradient(90deg,var(--b1),var(--cy));border-radius:2px;animation:lprog 3s ease forwards;}
+@keyframes lprog{to{width:100%}}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+.ltext{font-size:11px;color:var(--t3);letter-spacing:2px;text-transform:uppercase;}
+
+/* SIDEBAR */
+#sb{position:fixed;top:0;left:0;width:var(--sw);height:100vh;background:linear-gradient(180deg,#071220,#050c1a);border-right:1px solid var(--brd);z-index:1000;display:flex;flex-direction:column;overflow-y:auto;transition:transform .3s;}
+.sb-logo{padding:18px 18px 14px;border-bottom:1px solid var(--brd);display:flex;align-items:center;gap:10px;}
+.sb-logo img{height:38px;filter:brightness(1.1);}
+.sb-brand{font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--cy2);line-height:1.3;}
+.sb-brand span{display:block;color:var(--t2);font-weight:400;font-size:10px;}
+.sb-lbl{font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--t3);padding:14px 18px 5px;}
+.nav-it{display:flex;align-items:center;gap:11px;padding:10px 18px;margin:2px 8px;border-radius:var(--rsm);cursor:pointer;transition:all .2s;font-size:12.5px;font-weight:500;color:var(--t2);position:relative;border:none;background:none;width:calc(100% - 16px);text-align:left;}
+.nav-it i{width:17px;text-align:center;font-size:13px;}
+.nav-it:hover{background:rgba(37,99,235,.15);color:var(--t1);box-shadow:inset 3px 0 0 var(--b2);}
+.nav-it.active{background:linear-gradient(135deg,rgba(37,99,235,.25),rgba(6,182,212,.1));color:var(--cy2);box-shadow:inset 3px 0 0 var(--cy),var(--glow);}
+.sb-ft{margin-top:auto;padding:14px 18px;border-top:1px solid var(--brd);font-size:10px;color:var(--t3);display:flex;align-items:center;gap:8px;}
+.sb-ft img{height:20px;opacity:.6;border-radius:3px;}
+
+/* HEADER */
+#hdr{position:fixed;top:0;left:var(--sw);right:0;height:var(--hh);background:rgba(5,12,26,.93);backdrop-filter:blur(20px);border-bottom:1px solid var(--brd);z-index:999;display:flex;align-items:center;padding:0 24px;gap:14px;}
+.hdr-title{font-size:16px;font-weight:800;color:var(--t1);}
+.hdr-title span{color:var(--cy2);}
+.hdr-search{flex:1;max-width:340px;margin:0 18px;position:relative;}
+.hdr-search input{width:100%;background:rgba(255,255,255,.05);border:1px solid var(--brd);border-radius:22px;padding:8px 14px 8px 36px;color:var(--t1);font-size:12px;font-family:'Inter',sans-serif;transition:all .2s;}
+.hdr-search input:focus{outline:none;border-color:var(--b2);background:rgba(37,99,235,.08);}
+.hdr-search i{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--t3);font-size:12px;}
+.hdr-r{display:flex;align-items:center;gap:12px;margin-left:auto;}
+.online-dot{display:flex;align-items:center;gap:5px;font-size:10px;font-weight:700;color:var(--green);background:rgba(16,185,129,.12);border:1px solid rgba(16,185,129,.3);padding:4px 10px;border-radius:20px;}
+.online-dot::before{content:'';width:6px;height:6px;background:var(--green);border-radius:50%;animation:pulse-g 2s infinite;}
+@keyframes pulse-g{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(1.4)}}
+.hdr-dt{font-size:11px;color:var(--t2);text-align:right;line-height:1.4;}
+.hdr-dt .d{font-weight:700;color:var(--t1);}
+.ic-btn{width:36px;height:36px;border-radius:50%;background:rgba(255,255,255,.05);border:1px solid var(--brd);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--t2);transition:all .2s;font-size:13px;}
+.ic-btn:hover{background:rgba(37,99,235,.2);color:var(--t1);}
+.ava{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,var(--b1),var(--cy));display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;cursor:pointer;border:2px solid var(--brdhi);}
+
+/* MAIN */
+#main{margin-left:var(--sw);padding-top:var(--hh);min-height:100vh;}
+.ca{padding:20px 24px;}
+
+/* SECTION */
+.sec{display:none;animation:fiu .3s ease;}
+.sec.active{display:block;}
+@keyframes fiu{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+
+/* FILTER BAR */
+.fbar{background:var(--card);border:1px solid var(--brd);border-radius:var(--r);padding:16px 20px;margin-bottom:18px;backdrop-filter:blur(10px);}
+.fbar-row{display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end;}
+.fg{display:flex;flex-direction:column;gap:4px;min-width:130px;}
+.flbl{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--t3);}
+.fc{background:rgba(255,255,255,.04);border:1px solid var(--brd);border-radius:var(--rsm);padding:7px 10px;color:var(--t1);font-size:11.5px;font-family:'Inter',sans-serif;transition:all .2s;-webkit-appearance:none;}
+.fc:focus{outline:none;border-color:var(--b2);background:rgba(37,99,235,.08);}
+.fc option{background:#0a1628;}
+.fbtn{padding:7px 16px;border-radius:var(--rsm);font-size:11.5px;font-weight:600;cursor:pointer;border:none;font-family:'Inter',sans-serif;display:flex;align-items:center;gap:5px;white-space:nowrap;}
+.fbtn-p{background:linear-gradient(135deg,var(--b1),var(--b2));color:#fff;}
+.fbtn-p:hover{transform:translateY(-1px);box-shadow:var(--glow);}
+.fbtn-s{background:rgba(255,255,255,.06);color:var(--t2);border:1px solid var(--brd);}
+.fbtn-s:hover{background:rgba(255,255,255,.1);color:var(--t1);}
+.fbtn-exp{background:linear-gradient(135deg,#0d9488,#0891b2);color:#fff;}
+.fbtn-pdf{background:linear-gradient(135deg,#7c3aed,#6d28d9);color:#fff;}
+
+/* KPI GRID */
+.kgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:14px;margin-bottom:20px;}
+.kc{background:var(--card);border:1px solid var(--brd);border-radius:var(--r);padding:18px;position:relative;overflow:hidden;transition:all .3s;cursor:default;backdrop-filter:blur(10px);}
+.kc::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--b1),var(--cy));opacity:0;transition:opacity .3s;}
+.kc:hover{border-color:var(--brdhi);transform:translateY(-2px);box-shadow:var(--sdw),var(--glow);}
+.kc:hover::before{opacity:1;}
+.kc-ico{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:16px;margin-bottom:12px;}
+.kc-val{font-size:24px;font-weight:800;background:linear-gradient(135deg,var(--t1),var(--b4));-webkit-background-clip:text;-webkit-text-fill-color:transparent;line-height:1;}
+.kc-lbl{font-size:10px;color:var(--t2);margin-top:3px;font-weight:500;text-transform:uppercase;letter-spacing:.5px;}
+.kc-tr{display:flex;align-items:center;gap:3px;font-size:10px;font-weight:600;margin-top:8px;}
+.kc-tr.up{color:var(--green);}
+.kc-tr.dn{color:var(--red);}
+.kc-tr.ne{color:var(--t3);}
+.kc-bg{position:absolute;right:-8px;bottom:-8px;font-size:56px;opacity:.04;}
+
+/* CHART CARD */
+.cc{background:var(--card);border:1px solid var(--brd);border-radius:var(--r);padding:20px;backdrop-filter:blur(10px);transition:border-color .3s;height:100%;}
+.cc:hover{border-color:var(--brdhi);}
+.cc-ttl{font-size:13px;font-weight:700;margin-bottom:3px;display:flex;align-items:center;gap:7px;}
+.cc-ttl i{color:var(--cy2);}
+.cc-sub{font-size:10px;color:var(--t3);margin-bottom:16px;}
+
+/* GRID LAYOUTS */
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:16px;}
+.g12{display:grid;grid-template-columns:2fr 1fr;gap:16px;margin-bottom:16px;}
+.g21{display:grid;grid-template-columns:1fr 2fr;gap:16px;margin-bottom:16px;}
+.gfull{margin-bottom:16px;}
+@media(max-width:1100px){.g3{grid-template-columns:1fr 1fr;}.g12,.g21{grid-template-columns:1fr;}}
+@media(max-width:768px){.g2,.g3,.g12,.g21{grid-template-columns:1fr;}#main{margin-left:0;}#hdr{left:0;}:root{--sw:0px;}}
+
+/* ANALYSIS CARD */
+.ac{background:linear-gradient(135deg,rgba(10,22,55,.97),rgba(7,18,42,.97));border:1px solid rgba(59,130,246,.3);border-radius:var(--r);padding:22px;position:relative;overflow:hidden;margin-bottom:16px;}
+.ac::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--b2),var(--cy),transparent);}
+.ac-ttl{font-size:13px;font-weight:700;color:var(--cy2);margin-bottom:12px;display:flex;align-items:center;gap:8px;}
+.ac-body{font-size:12.5px;line-height:1.8;color:var(--t2);}
+.ac-body strong{color:var(--t1);}
+.ac-body .hi{color:var(--cy2);font-weight:600;}
+.ac-body .warn{color:var(--amber);font-weight:600;}
+.ac-body .ok{color:var(--green);font-weight:600;}
+.ac-body .bad{color:var(--red);font-weight:600;}
+
+/* TOP TABLE */
+.top-table{width:100%;border-collapse:collapse;font-size:11.5px;}
+.top-table th{padding:8px 12px;background:rgba(37,99,235,.12);color:var(--t3);font-weight:700;text-transform:uppercase;font-size:9px;letter-spacing:1px;text-align:left;border-bottom:1px solid var(--brd);}
+.top-table td{padding:9px 12px;color:var(--t2);border-bottom:1px solid var(--brd);}
+.top-table td:first-child{color:var(--t1);font-weight:600;}
+.top-table tr:hover td{background:rgba(37,99,235,.08);}
+.rank-badge{width:22px;height:22px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;}
+.r1{background:linear-gradient(135deg,#f59e0b,#d97706);color:#fff;}
+.r2{background:rgba(148,163,184,.2);color:var(--t2);}
+.r3{background:rgba(180,130,80,.2);color:#c97d4a;}
+.rn{background:rgba(37,99,235,.15);color:var(--b4);}
+
+/* SECTION HEADER */
+.sh{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;flex-wrap:wrap;gap:10px;}
+.sh-left h2{font-size:18px;font-weight:800;}
+.sh-left h2 span{color:var(--cy2);}
+.sh-left p{font-size:11px;color:var(--t2);margin-top:2px;}
+.sh-right{display:flex;gap:8px;flex-wrap:wrap;}
+
+/* BADGE */
+.bdg{padding:2px 9px;border-radius:20px;font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;}
+.bdg-ok{background:rgba(16,185,129,.15);color:var(--green);border:1px solid rgba(16,185,129,.3);}
+.bdg-warn{background:rgba(245,158,11,.15);color:var(--amber);border:1px solid rgba(245,158,11,.3);}
+.bdg-bad{background:rgba(239,68,68,.15);color:var(--red);border:1px solid rgba(239,68,68,.3);}
+.bdg-info{background:rgba(59,130,246,.15);color:var(--b4);border:1px solid rgba(59,130,246,.3);}
+
+/* PLAN DE ACCION */
+.plan{background:rgba(8,20,50,.9);border:1px solid rgba(6,182,212,.25);border-radius:var(--r);padding:20px;}
+.plan-ttl{font-size:12px;font-weight:700;color:var(--cy2);margin-bottom:14px;display:flex;align-items:center;gap:7px;}
+.plan-item{display:flex;gap:12px;margin-bottom:12px;padding-bottom:12px;border-bottom:1px solid var(--brd);}
+.plan-item:last-child{border-bottom:none;margin-bottom:0;padding-bottom:0;}
+.plan-num{width:26px;height:26px;border-radius:50%;background:linear-gradient(135deg,var(--b1),var(--cy));display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;flex-shrink:0;}
+.plan-content{flex:1;}
+.plan-title{font-size:12px;font-weight:700;color:var(--t1);margin-bottom:3px;}
+.plan-desc{font-size:11.5px;color:var(--t2);line-height:1.6;}
+
+/* PROGRESS */
+.pbar{height:5px;background:rgba(255,255,255,.08);border-radius:3px;overflow:hidden;margin-top:4px;}
+.pfill{height:100%;border-radius:3px;background:linear-gradient(90deg,var(--b2),var(--cy));transition:width 1s ease;}
+
+/* TOAST */
+.toast-wrap{position:fixed;bottom:20px;right:20px;z-index:9998;display:flex;flex-direction:column;gap:6px;}
+.toast{background:var(--card);border:1px solid var(--brd);border-radius:10px;padding:10px 16px;font-size:12.5px;display:flex;align-items:center;gap:8px;min-width:260px;backdrop-filter:blur(20px);box-shadow:var(--sdw);animation:slideR .3s ease;}
+@keyframes slideR{from{transform:translateX(100%);opacity:0}to{transform:translateX(0);opacity:1}}
+
+/* DIVIDER */
+.divd{height:1px;background:linear-gradient(90deg,transparent,var(--brdhi),transparent);margin:20px 0;}
+
+/* SPIN */
+.spin{animation:spinning 1s linear infinite;}
+@keyframes spinning{to{transform:rotate(360deg)}}
+
+/* SUMMARY TOP TABLE */
+.sum-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px;margin-bottom:18px;}
+.sum-item{background:var(--card);border:1px solid var(--brd);border-radius:var(--rsm);padding:14px 16px;}
+.sum-item .si-lbl{font-size:9px;text-transform:uppercase;letter-spacing:1px;color:var(--t3);font-weight:700;margin-bottom:4px;}
+.sum-item .si-val{font-size:18px;font-weight:800;color:var(--b4);}
+.sum-item .si-sub{font-size:10px;color:var(--t2);margin-top:2px;}
+
+.mb0{margin-bottom:0;} .mb8{margin-bottom:8px;} .mt12{margin-top:12px;} .mt16{margin-top:16px;}
+.w100{width:100%;}
 </style>
 </head>
 <body>
 
 <!-- LOADING -->
-<div class="loading-overlay" id="loadingOverlay">
-  <img src="https://i.ibb.co/Tq23KgR9/download-removebg-preview.png" class="loading-logo" alt="Cafam">
-  <div class="loading-bar-wrap"><div class="loading-bar"></div></div>
-  <div class="loading-text">Cargando plataforma analítica...</div>
+<div id="loadWrap">
+  <img src="https://i.ibb.co/Tq23KgR9/download-removebg-preview.png" alt="Cafam">
+  <div class="lbar-wrap"><div class="lbar"></div></div>
+  <div class="ltext" id="loadTxt">Conectando con Google Sheets...</div>
 </div>
 
-<!-- SIDEBAR OVERLAY (mobile) -->
-<div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
-
 <!-- SIDEBAR -->
-<nav id="sidebar">
-  <div class="sidebar-logo">
+<nav id="sb">
+  <div class="sb-logo">
     <img src="https://i.ibb.co/Tq23KgR9/download-removebg-preview.png" alt="Cafam">
-    <div class="sidebar-brand">CAFAM<span>INSTITUCIONAL</span></div>
+    <div class="sb-brand">CAFAM<span>DOMICILIOS</span></div>
   </div>
-
-  <div class="sidebar-section-label">Principal</div>
-  <a class="nav-item-custom active" onclick="showSection('dashboard')">
-    <i class="fas fa-chart-line"></i><span>Dashboard</span>
-  </a>
-  <a class="nav-item-custom" onclick="showSection('operacion')">
-    <i class="fas fa-truck-fast"></i><span>Operación</span>
-  </a>
-  <a class="nav-item-custom" onclick="showSection('mensajeros')">
-    <i class="fas fa-motorcycle"></i><span>Mensajeros</span>
-  </a>
-
-  <div class="sidebar-section-label">Analítica</div>
-  <a class="nav-item-custom" onclick="showSection('cumplimiento')">
-    <i class="fas fa-shield-check"></i><span>Cumplimiento</span>
-  </a>
-  <a class="nav-item-custom" onclick="showSection('productividad')">
-    <i class="fas fa-bolt"></i><span>Productividad</span>
-  </a>
-  <a class="nav-item-custom" onclick="showSection('ventas')">
-    <i class="fas fa-dollar-sign"></i><span>Ventas</span>
-  </a>
-
-  <div class="sidebar-section-label">Gestión</div>
-  <a class="nav-item-custom" onclick="showSection('novedades')">
-    <i class="fas fa-triangle-exclamation"></i><span>Novedades</span>
-    <span class="badge-nav" id="novedadesBadge">—</span>
-  </a>
-  <a class="nav-item-custom" onclick="showSection('administrativo')">
-    <i class="fas fa-users-gear"></i><span>Administrativo</span>
-  </a>
-  <a class="nav-item-custom" onclick="showSection('ia')">
-    <i class="fas fa-brain"></i><span>IA Analytics</span>
-  </a>
-
-  <div class="sidebar-footer">
+  <div class="sb-lbl">Módulos</div>
+  <button class="nav-it active" onclick="go('resumen',this)"><i class="fas fa-chart-pie"></i>Resumen General</button>
+  <button class="nav-it" onclick="go('novedades',this)"><i class="fas fa-triangle-exclamation"></i>Novedades Gestión</button>
+  <button class="nav-it" onclick="go('cantidad',this)"><i class="fas fa-box"></i>Cantidad Entregas</button>
+  <button class="nav-it" onclick="go('percapita',this)"><i class="fas fa-coins"></i>Per Cápita</button>
+  <button class="nav-it" onclick="go('tiempos',this)"><i class="fas fa-clock"></i>Tiempos</button>
+  <button class="nav-it" onclick="go('ventas',this)"><i class="fas fa-dollar-sign"></i>Ventas</button>
+  <button class="nav-it" onclick="go('novcancel',this)"><i class="fas fa-ban"></i>Nov. Cancelación</button>
+  <div class="sb-ft">
     <img src="https://i.ibb.co/KjmjjvNZ/Captura-de-pantalla-2025-09-15-161315.jpg" alt="Quick" onerror="this.style.display='none'">
-    <span>Powered by Quick</span>
+    <span>Powered by Quick Analytics</span>
   </div>
 </nav>
 
 <!-- HEADER -->
-<header id="header">
-  <button class="hamburger" onclick="toggleSidebar()"><i class="fas fa-bars"></i></button>
-  <div class="header-title">CAFAM <span>DOMICILIOS</span></div>
-
-  <div class="header-search">
+<header id="hdr">
+  <div class="hdr-title">CAFAM <span>DOMICILIOS</span></div>
+  <div class="hdr-search">
     <i class="fas fa-search"></i>
-    <input type="text" id="globalSearch" placeholder="Buscar mensajero, ciudad, punto de venta..." autocomplete="off">
-    <div class="search-results-dropdown" id="searchDropdown"></div>
+    <input type="text" id="gSearch" placeholder="Buscar drogería, ciudad, mes...">
   </div>
-
-  <div class="header-right">
-    <div class="status-online">EN VIVO</div>
-    <div class="header-datetime">
-      <div class="date" id="clockDate">—</div>
-      <div id="clockTime" style="color:var(--cyan-light);font-weight:700">—</div>
-    </div>
-    <div class="btn-icon" onclick="refreshAllData()" title="Actualizar datos"><i class="fas fa-rotate"></i></div>
-    <div class="btn-icon"><i class="fas fa-bell"></i></div>
-    <div class="avatar">CF</div>
+  <div class="hdr-r">
+    <div class="online-dot">EN VIVO</div>
+    <div class="hdr-dt"><div class="d" id="cDate">—</div><div id="cTime" style="color:var(--cy2);font-weight:700">—</div></div>
+    <div class="ic-btn" onclick="refreshAll()" title="Actualizar"><i class="fas fa-rotate"></i></div>
+    <div class="ic-btn"><i class="fas fa-bell"></i></div>
+    <div class="ava">CF</div>
   </div>
 </header>
 
 <!-- MAIN -->
 <main id="main">
-  <div class="content-area">
+<div class="ca">
 
-    <!-- ════════ DASHBOARD ════════ -->
-    <div class="section-content active" id="sec-dashboard">
-      <div class="section-header">
-        <div>
-          <div class="section-title">Centro de <span>Monitoreo Ejecutivo</span></div>
-          <div class="section-subtitle" id="lastUpdateLabel">Cargando datos en tiempo real...</div>
-        </div>
-        <div class="d-flex gap-2 flex-wrap">
-          <button class="btn-filter btn-export" onclick="exportCSV()"><i class="fas fa-file-excel"></i> Exportar CSV</button>
-          <button class="btn-filter btn-pdf" onclick="exportPDF()"><i class="fas fa-file-pdf"></i> Exportar PDF</button>
-        </div>
-      </div>
-
-      <!-- FILTERS -->
-      <div class="filter-bar">
-        <div class="filter-bar-header">
-          <div class="filter-bar-title"><i class="fas fa-sliders"></i> Filtros de Consulta</div>
-          <button class="btn-filter btn-secondary-filter" onclick="clearFilters()"><i class="fas fa-xmark"></i> Limpiar</button>
-        </div>
-        <div class="filter-grid">
-          <div class="filter-group">
-            <label class="filter-label">Mes</label>
-            <select class="filter-control" id="filterMes" onchange="applyFilters()">
-              <option value="">Todos los meses</option>
-            </select>
-          </div>
-          <div class="filter-group">
-            <label class="filter-label">Día #</label>
-            <input type="number" class="filter-control" id="filterDia" placeholder="Ej: 15" min="1" max="31" onchange="applyFilters()">
-          </div>
-          <div class="filter-group">
-            <label class="filter-label">Fecha desde</label>
-            <input type="date" class="filter-control" id="filterFechaDesde" onchange="applyFilters()">
-          </div>
-          <div class="filter-group">
-            <label class="filter-label">Fecha hasta</label>
-            <input type="date" class="filter-control" id="filterFechaHasta" onchange="applyFilters()">
-          </div>
-          <div class="filter-group">
-            <label class="filter-label">Ciudad</label>
-            <select class="filter-control" id="filterCiudad" onchange="applyFilters()">
-              <option value="">Todas las ciudades</option>
-            </select>
-          </div>
-          <div class="filter-group">
-            <label class="filter-label">Punto de Venta / Drogería</label>
-            <select class="filter-control" id="filterPdv" onchange="applyFilters()">
-              <option value="">Todos los puntos</option>
-            </select>
-          </div>
-          <div class="filter-group">
-            <label class="filter-label">Mensajero</label>
-            <input type="text" class="filter-control" id="filterMensajero" placeholder="Nombre..." oninput="applyFilters()">
-          </div>
-          <div class="filter-group">
-            <label class="filter-label">Estado</label>
-            <select class="filter-control" id="filterEstado" onchange="applyFilters()">
-              <option value="">Todos</option>
-              <option value="Activo">Activo</option>
-              <option value="En Ruta">En Ruta</option>
-              <option value="Finalizado">Finalizado</option>
-              <option value="Novedad">Novedad</option>
-            </select>
-          </div>
-          <div class="filter-group" style="align-self:end">
-            <label class="filter-label">Tipo Gestión</label>
-            <select class="filter-control" id="filterTipoGestion" onchange="applyFilters()">
-              <option value="">Todos</option>
-            </select>
-          </div>
-        </div>
-        <div class="active-filters" id="activeFiltersWrap"></div>
-      </div>
-
-      <!-- KPIs -->
-      <div class="kpi-grid" id="kpiGrid">
-        <!-- Generated by JS -->
-      </div>
-
-      <!-- CHARTS ROW 1 -->
-      <div class="row g-16 mb-4">
-        <div class="col-lg-8">
-          <div class="chart-card">
-            <div class="chart-title"><i class="fas fa-chart-bar"></i> Entregas por Día</div>
-            <div class="chart-subtitle">Volumen diario de domicilios completados</div>
-            <div class="chart-wrapper"><canvas id="chartEntregasDia" height="90"></canvas></div>
-          </div>
-        </div>
-        <div class="col-lg-4">
-          <div class="chart-card">
-            <div class="chart-title"><i class="fas fa-circle-notch"></i> Cumplimiento Operativo</div>
-            <div class="chart-subtitle">Distribución global</div>
-            <div class="chart-wrapper"><canvas id="chartCumplimiento" height="160"></canvas></div>
-          </div>
-        </div>
-      </div>
-
-      <!-- CHARTS ROW 2 -->
-      <div class="row g-16 mb-4">
-        <div class="col-lg-6">
-          <div class="chart-card">
-            <div class="chart-title"><i class="fas fa-chart-area"></i> Productividad por Ciudad</div>
-            <div class="chart-subtitle">Índice de rendimiento mensual</div>
-            <div class="chart-wrapper"><canvas id="chartProductividad" height="110"></canvas></div>
-          </div>
-        </div>
-        <div class="col-lg-6">
-          <div class="chart-card">
-            <div class="chart-title"><i class="fas fa-chart-line"></i> Ventas vs Entregas</div>
-            <div class="chart-subtitle">Comparativa de indicadores clave</div>
-            <div class="chart-wrapper"><canvas id="chartVentasEntregas" height="110"></canvas></div>
-          </div>
-        </div>
-      </div>
-
-      <!-- CHARTS ROW 3 -->
-      <div class="row g-16 mb-4">
-        <div class="col-lg-5">
-          <div class="chart-card">
-            <div class="chart-title"><i class="fas fa-spider"></i> Indicadores Radar</div>
-            <div class="chart-subtitle">Visión 360° del desempeño</div>
-            <div class="chart-wrapper"><canvas id="chartRadar" height="200"></canvas></div>
-          </div>
-        </div>
-        <div class="col-lg-7">
-          <div class="chart-card">
-            <div class="chart-title"><i class="fas fa-layer-group"></i> Novedades por Tipo</div>
-            <div class="chart-subtitle">Clasificación de incidencias registradas</div>
-            <div class="chart-wrapper"><canvas id="chartNovedades" height="120"></canvas></div>
-          </div>
-        </div>
-      </div>
-
-      <!-- CHART ROW 4 -->
-      <div class="row g-16 mb-4">
-        <div class="col-12">
-          <div class="chart-card">
-            <div class="chart-title"><i class="fas fa-users"></i> Gestión Administrativa — Inasistencias y Desvinculaciones</div>
-            <div class="chart-subtitle">Comportamiento por mes y ciudad</div>
-            <div class="chart-wrapper"><canvas id="chartAdmin" height="80"></canvas></div>
-          </div>
-        </div>
-      </div>
+<!-- ══════════════════════════════════════════
+     RESUMEN GENERAL
+══════════════════════════════════════════ -->
+<div class="sec active" id="sec-resumen">
+  <div class="sh">
+    <div class="sh-left"><h2>Resumen <span>General de Operación</span></h2><p id="resumenUpdate">Cargando...</p></div>
+    <div class="sh-right">
+      <select class="fc" id="rfCiudad" onchange="renderResumen()" style="min-width:130px"><option value="">Todas las ciudades</option></select>
+      <select class="fc" id="rfDrog" onchange="renderResumen()" style="min-width:160px"><option value="">Todas las droguerías</option></select>
+      <button class="fbtn fbtn-pdf" onclick="exportPDF('resumen')"><i class="fas fa-file-pdf"></i> PDF</button>
     </div>
+  </div>
+  <div class="kgrid" id="resKPIs"></div>
+  <div class="g2">
+    <div class="cc"><div class="cc-ttl"><i class="fas fa-trophy"></i> Top Droguerías — Entregas</div><div class="cc-sub">Puntos con mayor rendimiento operativo</div><canvas id="cTopDrog" height="160"></canvas></div>
+    <div class="cc"><div class="cc-ttl"><i class="fas fa-map-marker-alt"></i> Rendimiento por Ciudad</div><div class="cc-sub">Distribución de indicadores clave</div><canvas id="cCiudadRes" height="160"></canvas></div>
+  </div>
+  <div id="resAnalysis"></div>
+</div>
 
-    <!-- ════════ MENSAJEROS ════════ -->
-    <div class="section-content" id="sec-mensajeros">
-      <div class="section-header">
-        <div>
-          <div class="section-title">Gestión de <span>Mensajeros</span></div>
-          <div class="section-subtitle">Personal activo en campo</div>
-        </div>
-        <div class="d-flex gap-2">
-          <button class="btn-filter btn-export" onclick="exportTableCSV('tablaMensajeros','mensajeros')"><i class="fas fa-file-excel"></i> Exportar</button>
-          <button class="btn-filter btn-pdf" onclick="exportTablePDF('tablaMensajeros','Mensajeros')"><i class="fas fa-file-pdf"></i> PDF</button>
-        </div>
-      </div>
-
-      <!-- Filters mensajeros -->
-      <div class="filter-bar mb-3">
-        <div class="filter-grid">
-          <div class="filter-group">
-            <label class="filter-label">Ciudad</label>
-            <select class="filter-control" id="fmCiudad" onchange="filterTableMensajeros()">
-              <option value="">Todas</option>
-            </select>
-          </div>
-          <div class="filter-group">
-            <label class="filter-label">Drogería / PDV</label>
-            <select class="filter-control" id="fmPdv" onchange="filterTableMensajeros()">
-              <option value="">Todos</option>
-            </select>
-          </div>
-          <div class="filter-group">
-            <label class="filter-label">Estado</label>
-            <select class="filter-control" id="fmEstado" onchange="filterTableMensajeros()">
-              <option value="">Todos</option>
-              <option value="Activo">Activo</option>
-              <option value="En Ruta">En Ruta</option>
-              <option value="Finalizado">Finalizado</option>
-            </select>
-          </div>
-          <div class="filter-group">
-            <label class="filter-label">Buscar nombre</label>
-            <input type="text" class="filter-control" id="fmNombre" placeholder="Nombre mensajero..." oninput="filterTableMensajeros()">
-          </div>
-        </div>
-      </div>
-
-      <div class="table-card">
-        <div class="table-card-header">
-          <div class="fw-700" style="font-size:14px">Lista de Mensajeros <span id="mensajerosCount" class="text-cyan"></span></div>
-          <div class="table-search-wrap">
-            <i class="fas fa-search"></i>
-            <input type="text" class="table-search" id="searchMensajeros" placeholder="Buscar..." oninput="filterTableMensajeros()">
-          </div>
-        </div>
-        <div style="overflow-x:auto">
-          <table class="data-table" id="tablaMensajeros">
-            <thead>
-              <tr>
-                <th onclick="sortTable('tablaMensajeros',0)">Mensajero <i class="fas fa-sort sort-icon"></i></th>
-                <th onclick="sortTable('tablaMensajeros',1)">Ciudad <i class="fas fa-sort sort-icon"></i></th>
-                <th onclick="sortTable('tablaMensajeros',2)">Drogería <i class="fas fa-sort sort-icon"></i></th>
-                <th onclick="sortTable('tablaMensajeros',3)">Entregas <i class="fas fa-sort sort-icon"></i></th>
-                <th onclick="sortTable('tablaMensajeros',4)">Tiempo <i class="fas fa-sort sort-icon"></i></th>
-                <th onclick="sortTable('tablaMensajeros',5)">Tipo Gestión <i class="fas fa-sort sort-icon"></i></th>
-                <th>Estado</th>
-                <th onclick="sortTable('tablaMensajeros',7)">Productividad <i class="fas fa-sort sort-icon"></i></th>
-              </tr>
-            </thead>
-            <tbody id="bodyMensajeros">
-              <tr><td colspan="8" class="empty-state"><i class="fas fa-spinner fa-spin d-block mb-2"></i>Cargando datos...</td></tr>
-            </tbody>
-          </table>
-        </div>
-        <div class="pagination-wrap">
-          <span id="paginationInfoM">—</span>
-          <div class="pagination-btns" id="paginationM"></div>
-        </div>
-      </div>
+<!-- ══════════════════════════════════════════
+     NOVEDADES GESTIÓN
+══════════════════════════════════════════ -->
+<div class="sec" id="sec-novedades">
+  <div class="sh">
+    <div class="sh-left"><h2>Novedades <span>Gestión</span></h2><p>Análisis de incidencias operativas por período</p></div>
+    <div class="sh-right">
+      <button class="fbtn fbtn-exp" onclick="exportCSVSheet('novedades')"><i class="fas fa-file-csv"></i> CSV</button>
+      <button class="fbtn fbtn-pdf" onclick="exportPDF('novedades')"><i class="fas fa-file-pdf"></i> PDF</button>
     </div>
-
-    <!-- ════════ NOVEDADES ════════ -->
-    <div class="section-content" id="sec-novedades">
-      <div class="section-header">
-        <div>
-          <div class="section-title">Registro de <span>Novedades</span></div>
-          <div class="section-subtitle">Incidencias operativas registradas</div>
-        </div>
-        <div class="d-flex gap-2">
-          <button class="btn-filter btn-export" onclick="exportTableCSV('tablaNovedades','novedades')"><i class="fas fa-file-excel"></i> Exportar</button>
-          <button class="btn-filter btn-pdf" onclick="exportTablePDF('tablaNovedades','Novedades')"><i class="fas fa-file-pdf"></i> PDF</button>
-        </div>
-      </div>
-
-      <div class="filter-bar mb-3">
-        <div class="filter-grid">
-          <div class="filter-group">
-            <label class="filter-label">Fecha desde</label>
-            <input type="date" class="filter-control" id="fnFechaDesde" onchange="filterTableNovedades()">
-          </div>
-          <div class="filter-group">
-            <label class="filter-label">Fecha hasta</label>
-            <input type="date" class="filter-control" id="fnFechaHasta" onchange="filterTableNovedades()">
-          </div>
-          <div class="filter-group">
-            <label class="filter-label">Ciudad</label>
-            <select class="filter-control" id="fnCiudad" onchange="filterTableNovedades()">
-              <option value="">Todas</option>
-            </select>
-          </div>
-          <div class="filter-group">
-            <label class="filter-label">Tipificación</label>
-            <select class="filter-control" id="fnTipo" onchange="filterTableNovedades()">
-              <option value="">Todas</option>
-            </select>
-          </div>
-        </div>
-      </div>
-
-      <div class="table-card">
-        <div class="table-card-header">
-          <div class="fw-700" style="font-size:14px">Novedades <span id="novedadesCount" class="text-cyan"></span></div>
-          <div class="table-search-wrap">
-            <i class="fas fa-search"></i>
-            <input type="text" class="table-search" id="searchNovedades" placeholder="Buscar..." oninput="filterTableNovedades()">
-          </div>
-        </div>
-        <div style="overflow-x:auto">
-          <table class="data-table" id="tablaNovedades">
-            <thead>
-              <tr>
-                <th onclick="sortTable('tablaNovedades',0)">Fecha <i class="fas fa-sort sort-icon"></i></th>
-                <th onclick="sortTable('tablaNovedades',1)">Ciudad <i class="fas fa-sort sort-icon"></i></th>
-                <th>Tipificación</th>
-                <th>Observación</th>
-                <th onclick="sortTable('tablaNovedades',4)">Hrs Descontar <i class="fas fa-sort sort-icon"></i></th>
-                <th onclick="sortTable('tablaNovedades',5)">Total Descontar <i class="fas fa-sort sort-icon"></i></th>
-              </tr>
-            </thead>
-            <tbody id="bodyNovedades">
-              <tr><td colspan="6" class="empty-state"><i class="fas fa-spinner fa-spin d-block mb-2"></i>Cargando datos...</td></tr>
-            </tbody>
-          </table>
-        </div>
-        <div class="pagination-wrap">
-          <span id="paginationInfoN">—</span>
-          <div class="pagination-btns" id="paginationN"></div>
-        </div>
-      </div>
+  </div>
+  <div class="fbar">
+    <div class="fbar-row">
+      <div class="fg"><label class="flbl">Mes</label><select class="fc" id="nfMes" onchange="renderNovedades()"><option value="">Todos</option></select></div>
+      <div class="fg"><label class="flbl">Ciudad</label><select class="fc" id="nfCiudad" onchange="renderNovedades()"><option value="">Todas</option></select></div>
+      <div class="fg"><label class="flbl">Drogería</label><select class="fc" id="nfDrog" onchange="renderNovedades()"><option value="">Todas</option></select></div>
+      <div class="fg"><label class="flbl">Tipo Novedad</label><select class="fc" id="nfTipo" onchange="renderNovedades()"><option value="">Todos</option></select></div>
+      <button class="fbtn fbtn-s" style="align-self:flex-end" onclick="clearF(['nfMes','nfCiudad','nfDrog','nfTipo'],renderNovedades)"><i class="fas fa-xmark"></i> Limpiar</button>
     </div>
+  </div>
+  <div class="kgrid" id="novKPIs"></div>
+  <div class="g2">
+    <div class="cc"><div class="cc-ttl"><i class="fas fa-chart-bar"></i> Novedades por Tipo</div><div class="cc-sub">Clasificación y cantidad total</div><canvas id="cNovTipo" height="180"></canvas></div>
+    <div class="cc"><div class="cc-ttl"><i class="fas fa-chart-line"></i> Tendencia — Día de la Semana</div><div class="cc-sub">¿Qué día ocurren más novedades?</div><canvas id="cNovDia" height="180"></canvas></div>
+  </div>
+  <div class="g2">
+    <div class="cc"><div class="cc-ttl"><i class="fas fa-hospital"></i> Novedades por Drogería</div><div class="cc-sub">Top 10 puntos con más incidencias</div><canvas id="cNovDrog" height="180"></canvas></div>
+    <div class="cc"><div class="cc-ttl"><i class="fas fa-calendar"></i> Novedades por Mes</div><div class="cc-sub">Evolución mensual</div><canvas id="cNovMes" height="180"></canvas></div>
+  </div>
+  <div id="novAnalysis"></div>
+</div>
 
-    <!-- ════════ ADMINISTRATIVO ════════ -->
-    <div class="section-content" id="sec-administrativo">
-      <div class="section-header">
-        <div>
-          <div class="section-title">Gestión <span>Administrativa</span></div>
-          <div class="section-subtitle">Desvinculaciones e inasistencias por ciudad</div>
-        </div>
-        <div class="d-flex gap-2">
-          <button class="btn-filter btn-export" onclick="exportTableCSV('tablaAdmin','administrativo')"><i class="fas fa-file-excel"></i> Exportar</button>
-          <button class="btn-filter btn-pdf" onclick="exportTablePDF('tablaAdmin','Administrativo')"><i class="fas fa-file-pdf"></i> PDF</button>
-        </div>
-      </div>
-
-      <div class="filter-bar mb-3">
-        <div class="filter-grid">
-          <div class="filter-group">
-            <label class="filter-label">Mes</label>
-            <select class="filter-control" id="fasMes" onchange="filterTableAdmin()">
-              <option value="">Todos</option>
-            </select>
-          </div>
-          <div class="filter-group">
-            <label class="filter-label">Ciudad</label>
-            <select class="filter-control" id="fasCiudad" onchange="filterTableAdmin()">
-              <option value="">Todas</option>
-            </select>
-          </div>
-        </div>
-      </div>
-
-      <div class="table-card">
-        <div class="table-card-header">
-          <div class="fw-700" style="font-size:14px">Registros Administrativos</div>
-          <div class="table-search-wrap">
-            <i class="fas fa-search"></i>
-            <input type="text" class="table-search" id="searchAdmin" placeholder="Buscar..." oninput="filterTableAdmin()">
-          </div>
-        </div>
-        <div style="overflow-x:auto">
-          <table class="data-table" id="tablaAdmin">
-            <thead>
-              <tr>
-                <th>Mes</th><th>Ciudad</th><th>Renuncias</th>
-                <th>Terminaciones</th><th>Total Desvinc.</th>
-                <th>Aus. Injust.</th><th>Calamidad</th><th>Incapacidad</th>
-                <th>Luto</th><th>No Remunerado</th><th>Perm. Remun.</th><th>Total Inasist.</th>
-              </tr>
-            </thead>
-            <tbody id="bodyAdmin">
-              <tr><td colspan="12" class="empty-state"><i class="fas fa-spinner fa-spin d-block mb-2"></i>Cargando datos...</td></tr>
-            </tbody>
-          </table>
-        </div>
-        <div class="pagination-wrap">
-          <span id="paginationInfoA">—</span>
-          <div class="pagination-btns" id="paginationA"></div>
-        </div>
-      </div>
+<!-- ══════════════════════════════════════════
+     CANTIDAD ENTREGAS
+══════════════════════════════════════════ -->
+<div class="sec" id="sec-cantidad">
+  <div class="sh">
+    <div class="sh-left"><h2>Cantidad de <span>Entregas</span></h2><p>Análisis operativo de domicilios y transferencias</p></div>
+    <div class="sh-right">
+      <button class="fbtn fbtn-exp" onclick="exportCSVSheet('cantidad')"><i class="fas fa-file-csv"></i> CSV</button>
+      <button class="fbtn fbtn-pdf" onclick="exportPDF('cantidad')"><i class="fas fa-file-pdf"></i> PDF</button>
     </div>
-
-    <!-- ════════ VENTAS ════════ -->
-    <div class="section-content" id="sec-ventas">
-      <div class="section-header">
-        <div>
-          <div class="section-title">Análisis de <span>Ventas</span></div>
-          <div class="section-subtitle">Rendimiento comercial por ciudad y período</div>
-        </div>
-        <div class="d-flex gap-2">
-          <button class="btn-filter btn-export" onclick="exportTableCSV('tablaVentas','ventas')"><i class="fas fa-file-excel"></i> Exportar</button>
-          <button class="btn-filter btn-pdf" onclick="exportTablePDF('tablaVentas','Ventas')"><i class="fas fa-file-pdf"></i> PDF</button>
-        </div>
-      </div>
-      <div class="filter-bar mb-3">
-        <div class="filter-grid">
-          <div class="filter-group">
-            <label class="filter-label">Ciudad</label>
-            <select class="filter-control" id="fvCiudad" onchange="filterTableVentas()"><option value="">Todas</option></select>
-          </div>
-          <div class="filter-group">
-            <label class="filter-label">Buscar</label>
-            <input type="text" class="filter-control" id="fvSearch" placeholder="Texto libre..." oninput="filterTableVentas()">
-          </div>
-        </div>
-      </div>
-      <div class="table-card">
-        <div class="table-card-header">
-          <div class="fw-700" style="font-size:14px">Datos de Ventas</div>
-        </div>
-        <div style="overflow-x:auto">
-          <table class="data-table" id="tablaVentas">
-            <thead id="headVentas"><tr><th>Cargando...</th></tr></thead>
-            <tbody id="bodyVentas">
-              <tr><td class="empty-state"><i class="fas fa-spinner fa-spin d-block mb-2"></i>Cargando datos...</td></tr>
-            </tbody>
-          </table>
-        </div>
-        <div class="pagination-wrap">
-          <span id="paginationInfoV">—</span>
-          <div class="pagination-btns" id="paginationV"></div>
-        </div>
-      </div>
+  </div>
+  <div class="fbar">
+    <div class="fbar-row">
+      <div class="fg"><label class="flbl">Mes</label><select class="fc" id="cfMes" onchange="renderCantidad()"><option value="">Todos</option></select></div>
+      <div class="fg"><label class="flbl">Ciudad</label><select class="fc" id="cfCiudad" onchange="renderCantidad()"><option value="">Todas</option></select></div>
+      <div class="fg"><label class="flbl">Drogería</label><select class="fc" id="cfDrog" onchange="renderCantidad()"><option value="">Todas</option></select></div>
+      <div class="fg"><label class="flbl">Tipo Gestión</label><select class="fc" id="cfTipo" onchange="renderCantidad()"><option value="">Todos</option></select></div>
+      <div class="fg"><label class="flbl">Tipo Mensajero</label><select class="fc" id="cfTipoM" onchange="renderCantidad()"><option value="">Todos</option></select></div>
+      <button class="fbtn fbtn-s" style="align-self:flex-end" onclick="clearF(['cfMes','cfCiudad','cfDrog','cfTipo','cfTipoM'],renderCantidad)"><i class="fas fa-xmark"></i> Limpiar</button>
     </div>
+  </div>
+  <div class="kgrid" id="canKPIs"></div>
+  <div class="g2">
+    <div class="cc"><div class="cc-ttl"><i class="fas fa-chart-bar"></i> Entregas por Mes</div><div class="cc-sub">Efectivas vs Canceladas</div><canvas id="cCanMes" height="180"></canvas></div>
+    <div class="cc"><div class="cc-ttl"><i class="fas fa-chart-line"></i> Día de Semana con más Entregas</div><div class="cc-sub">Tendencia semanal</div><canvas id="cCanDia" height="180"></canvas></div>
+  </div>
+  <div class="g2">
+    <div class="cc"><div class="cc-ttl"><i class="fas fa-hospital"></i> Top Droguerías — Entregas</div><div class="cc-sub">Mayor vs menor volumen</div><canvas id="cCanDrog" height="180"></canvas></div>
+    <div class="cc"><div class="cc-ttl"><i class="fas fa-motorcycle"></i> Domicilios vs Transferencias</div><div class="cc-sub">Por tipo de gestión</div><canvas id="cCanTipo" height="180"></canvas></div>
+  </div>
+  <div class="g2">
+    <div class="cc"><div class="cc-ttl"><i class="fas fa-map-marker-alt"></i> Entregas por Ciudad</div><div class="cc-sub">Distribución geográfica</div><canvas id="cCanCiud" height="180"></canvas></div>
+    <div class="cc"><div class="cc-ttl"><i class="fas fa-users"></i> Por Tipo de Mensajero</div><div class="cc-sub">Planta fija vs Colaborativo</div><canvas id="cCanMensT" height="180"></canvas></div>
+  </div>
+  <div id="canAnalysis"></div>
+</div>
 
-    <!-- ════════ IA ════════ -->
-    <div class="section-content" id="sec-ia">
-      <div class="section-header">
-        <div>
-          <div class="section-title">Resumen <span>Inteligente IA</span></div>
-          <div class="section-subtitle">Análisis ejecutivo generado automáticamente con inteligencia artificial</div>
-        </div>
-        <button class="btn-filter btn-pdf" onclick="exportPDF()"><i class="fas fa-file-pdf"></i> Exportar Informe</button>
-      </div>
-
-      <div class="ai-card mb-4" id="aiReportCard">
-        <div class="ai-header">
-          <div class="ai-icon"><i class="fas fa-brain"></i></div>
-          <div>
-            <div style="font-size:16px;font-weight:800">Informe Ejecutivo Automatizado</div>
-            <div class="ai-badge mt-1">CAFAM DOMICILIOS · IA Analytics</div>
-          </div>
-        </div>
-        <div class="ai-content" id="aiContent">
-          <i class="fas fa-spinner fa-spin"></i> Procesando datos y generando análisis inteligente...
-        </div>
-        <div class="ai-metrics" id="aiMetrics"></div>
-      </div>
+<!-- ══════════════════════════════════════════
+     PER CÁPITA
+══════════════════════════════════════════ -->
+<div class="sec" id="sec-percapita">
+  <div class="sh">
+    <div class="sh-left"><h2>Per <span>Cápita</span></h2><p>Análisis de costo operativo por entrega</p></div>
+    <div class="sh-right">
+      <button class="fbtn fbtn-exp" onclick="exportCSVSheet('percapita')"><i class="fas fa-file-csv"></i> CSV</button>
+      <button class="fbtn fbtn-pdf" onclick="exportPDF('percapita')"><i class="fas fa-file-pdf"></i> PDF</button>
     </div>
-
-    <!-- Otros secciones placeholder -->
-    <div class="section-content" id="sec-operacion">
-      <div class="section-header"><div><div class="section-title">Vista de <span>Operación</span></div></div></div>
-      <div class="filter-bar mb-3">
-        <div class="filter-grid">
-          <div class="filter-group">
-            <label class="filter-label">Día</label>
-            <input type="number" class="filter-control" id="fopDia" placeholder="Día" min="1" max="31" onchange="filterOperacion()">
-          </div>
-          <div class="filter-group">
-            <label class="filter-label">Ciudad</label>
-            <select class="filter-control" id="fopCiudad" onchange="filterOperacion()"><option value="">Todas</option></select>
-          </div>
-          <div class="filter-group">
-            <label class="filter-label">Punto de venta</label>
-            <select class="filter-control" id="fopPdv" onchange="filterOperacion()"><option value="">Todos</option></select>
-          </div>
-        </div>
-      </div>
-      <div class="table-card">
-        <div class="table-card-header"><div class="fw-700" style="font-size:14px">Datos de Cantidad / Operación</div></div>
-        <div style="overflow-x:auto">
-          <table class="data-table" id="tablaCantidad">
-            <thead id="headCantidad"><tr><th>Cargando...</th></tr></thead>
-            <tbody id="bodyCantidad"><tr><td class="empty-state"><i class="fas fa-spinner fa-spin d-block mb-2"></i>Cargando...</td></tr></tbody>
-          </table>
-        </div>
-      </div>
+  </div>
+  <div class="fbar">
+    <div class="fbar-row">
+      <div class="fg"><label class="flbl">Mes</label><select class="fc" id="pfMes" onchange="renderPercapita()"><option value="">Todos</option></select></div>
+      <div class="fg"><label class="flbl">Ciudad</label><select class="fc" id="pfCiudad" onchange="renderPercapita()"><option value="">Todas</option></select></div>
+      <div class="fg"><label class="flbl">Drogería</label><select class="fc" id="pfDrog" onchange="renderPercapita()"><option value="">Todas</option></select></div>
+      <button class="fbtn fbtn-s" style="align-self:flex-end" onclick="clearF(['pfMes','pfCiudad','pfDrog'],renderPercapita)"><i class="fas fa-xmark"></i> Limpiar</button>
     </div>
+  </div>
+  <div class="kgrid" id="pcKPIs"></div>
+  <div class="g2">
+    <div class="cc"><div class="cc-ttl"><i class="fas fa-chart-bar"></i> Per Cápita por Mes</div><div class="cc-sub">Evolución del costo por entrega</div><canvas id="cPcMes" height="180"></canvas></div>
+    <div class="cc"><div class="cc-ttl"><i class="fas fa-trophy"></i> Top 5 Puntos — Per Cápita Más Alto</div><div class="cc-sub">Puntos con mayor costo operativo</div><canvas id="cPcTop" height="180"></canvas></div>
+  </div>
+  <div class="g2">
+    <div class="cc"><div class="cc-ttl"><i class="fas fa-hospital"></i> Per Cápita por Drogería</div><div class="cc-sub">Costo promedio por punto</div><canvas id="cPcDrog" height="180"></canvas></div>
+    <div class="cc"><div class="cc-ttl"><i class="fas fa-users"></i> Planta Fija vs Colaborativo</div><div class="cc-sub">Comparativa de costo por tipo</div><canvas id="cPcTipoM" height="180"></canvas></div>
+  </div>
+  <div id="pcAnalysis"></div>
+</div>
 
-    <div class="section-content" id="sec-cumplimiento">
-      <div class="section-header"><div><div class="section-title">Análisis de <span>Cumplimiento</span></div></div></div>
-      <div class="table-card">
-        <div class="table-card-header"><div class="fw-700" style="font-size:14px">Datos Per Cápita / Cumplimiento</div></div>
-        <div style="overflow-x:auto">
-          <table class="data-table" id="tablaPercapita">
-            <thead id="headPercapita"><tr><th>Cargando...</th></tr></thead>
-            <tbody id="bodyPercapita"><tr><td class="empty-state"><i class="fas fa-spinner fa-spin d-block mb-2"></i>Cargando...</td></tr></tbody>
-          </table>
-        </div>
-      </div>
+<!-- ══════════════════════════════════════════
+     TIEMPOS
+══════════════════════════════════════════ -->
+<div class="sec" id="sec-tiempos">
+  <div class="sh">
+    <div class="sh-left"><h2>Análisis de <span>Tiempos</span></h2><p>Tiempo promedio de entrega por punto, ciudad y tipo</p></div>
+    <div class="sh-right">
+      <button class="fbtn fbtn-exp" onclick="exportCSVSheet('tiempos')"><i class="fas fa-file-csv"></i> CSV</button>
+      <button class="fbtn fbtn-pdf" onclick="exportPDF('tiempos')"><i class="fas fa-file-pdf"></i> PDF</button>
     </div>
-
-    <div class="section-content" id="sec-productividad">
-      <div class="section-header"><div><div class="section-title">Análisis de <span>Productividad</span></div></div></div>
-      <div class="table-card">
-        <div class="table-card-header"><div class="fw-700" style="font-size:14px">Tiempos y Productividad</div></div>
-        <div style="overflow-x:auto">
-          <table class="data-table" id="tablaTiempos">
-            <thead id="headTiempos"><tr><th>Cargando...</th></tr></thead>
-            <tbody id="bodyTiempos"><tr><td class="empty-state"><i class="fas fa-spinner fa-spin d-block mb-2"></i>Cargando...</td></tr></tbody>
-          </table>
-        </div>
-      </div>
+  </div>
+  <div class="fbar">
+    <div class="fbar-row">
+      <div class="fg"><label class="flbl">Mes</label><select class="fc" id="tfMes" onchange="renderTiempos()"><option value="">Todos</option></select></div>
+      <div class="fg"><label class="flbl">Ciudad</label><select class="fc" id="tfCiudad" onchange="renderTiempos()"><option value="">Todas</option></select></div>
+      <div class="fg"><label class="flbl">Drogería</label><select class="fc" id="tfDrog" onchange="renderTiempos()"><option value="">Todas</option></select></div>
+      <div class="fg"><label class="flbl">Tipo Mensajero</label><select class="fc" id="tfTipoM" onchange="renderTiempos()"><option value="">Todos</option></select></div>
+      <button class="fbtn fbtn-s" style="align-self:flex-end" onclick="clearF(['tfMes','tfCiudad','tfDrog','tfTipoM'],renderTiempos)"><i class="fas fa-xmark"></i> Limpiar</button>
     </div>
+  </div>
+  <div class="kgrid" id="tiKPIs"></div>
+  <div class="g2">
+    <div class="cc"><div class="cc-ttl"><i class="fas fa-chart-bar"></i> Tiempo Promedio por Mes</div><div class="cc-sub">Solo domicilios (excl. transferencias)</div><canvas id="cTiMes" height="180"></canvas></div>
+    <div class="cc"><div class="cc-ttl"><i class="fas fa-trophy"></i> Top 5 — Mayor Tiempo Promedio</div><div class="cc-sub">Puntos críticos de demora</div><canvas id="cTiTop" height="180"></canvas></div>
+  </div>
+  <div class="g2">
+    <div class="cc"><div class="cc-ttl"><i class="fas fa-hospital"></i> Tiempo por Drogería</div><div class="cc-sub">Ranking general de puntos</div><canvas id="cTiDrog" height="180"></canvas></div>
+    <div class="cc"><div class="cc-ttl"><i class="fas fa-users"></i> Planta Fija vs Colaborativo</div><div class="cc-sub">Comparativa tiempos por tipo mensajero</div><canvas id="cTiTipoM" height="180"></canvas></div>
+  </div>
+  <div id="tiAnalysis"></div>
+</div>
 
-  </div><!-- /content-area -->
+<!-- ══════════════════════════════════════════
+     VENTAS
+══════════════════════════════════════════ -->
+<div class="sec" id="sec-ventas">
+  <div class="sh">
+    <div class="sh-left"><h2>Análisis de <span>Ventas</span></h2><p>Valor de venta efectiva, perdida y por tipo de gestión</p></div>
+    <div class="sh-right">
+      <button class="fbtn fbtn-exp" onclick="exportCSVSheet('ventas')"><i class="fas fa-file-csv"></i> CSV</button>
+      <button class="fbtn fbtn-pdf" onclick="exportPDF('ventas')"><i class="fas fa-file-pdf"></i> PDF</button>
+    </div>
+  </div>
+  <div class="fbar">
+    <div class="fbar-row">
+      <div class="fg"><label class="flbl">Mes</label><select class="fc" id="vfMes" onchange="renderVentas()"><option value="">Todos</option></select></div>
+      <div class="fg"><label class="flbl">Ciudad</label><select class="fc" id="vfCiudad" onchange="renderVentas()"><option value="">Todas</option></select></div>
+      <div class="fg"><label class="flbl">Drogería</label><select class="fc" id="vfDrog" onchange="renderVentas()"><option value="">Todas</option></select></div>
+      <button class="fbtn fbtn-s" style="align-self:flex-end" onclick="clearF(['vfMes','vfCiudad','vfDrog'],renderVentas)"><i class="fas fa-xmark"></i> Limpiar</button>
+    </div>
+  </div>
+  <div class="kgrid" id="venKPIs"></div>
+  <div class="g2">
+    <div class="cc"><div class="cc-ttl"><i class="fas fa-chart-line"></i> Valor de Venta por Mes</div><div class="cc-sub">Efectivos vs Perdidos</div><canvas id="cVenMes" height="180"></canvas></div>
+    <div class="cc"><div class="cc-ttl"><i class="fas fa-chart-bar"></i> Día de Semana con más Ventas</div><div class="cc-sub">Tendencia semanal</div><canvas id="cVenDia" height="180"></canvas></div>
+  </div>
+  <div class="g2">
+    <div class="cc"><div class="cc-ttl"><i class="fas fa-hospital"></i> Venta por Drogería</div><div class="cc-sub">Top puntos por valor</div><canvas id="cVenDrog" height="180"></canvas></div>
+    <div class="cc"><div class="cc-ttl"><i class="fas fa-motorcycle"></i> Domicilios vs Transferencias</div><div class="cc-sub">Valor por tipo de gestión</div><canvas id="cVenTipo" height="180"></canvas></div>
+  </div>
+  <div class="g2">
+    <div class="cc"><div class="cc-ttl"><i class="fas fa-map-marker-alt"></i> Venta por Ciudad</div><div class="cc-sub">Distribución geográfica del valor</div><canvas id="cVenCiud" height="180"></canvas></div>
+    <div class="cc"><div class="cc-ttl"><i class="fas fa-exclamation-triangle"></i> Pérdidas por Drogería</div><div class="cc-sub">Puntos con mayor valor cancelado</div><canvas id="cVenPerd" height="180"></canvas></div>
+  </div>
+  <div id="venAnalysis"></div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     NOVEDADES CANCELACIÓN
+══════════════════════════════════════════ -->
+<div class="sec" id="sec-novcancel">
+  <div class="sh">
+    <div class="sh-left"><h2>Novedades de <span>Cancelación</span></h2><p>Análisis de cancelaciones operativas por responsabilidad</p></div>
+    <div class="sh-right">
+      <button class="fbtn fbtn-exp" onclick="exportCSVSheet('novcancel')"><i class="fas fa-file-csv"></i> CSV</button>
+      <button class="fbtn fbtn-pdf" onclick="exportPDF('novcancel')"><i class="fas fa-file-pdf"></i> PDF</button>
+    </div>
+  </div>
+  <div class="fbar">
+    <div class="fbar-row">
+      <div class="fg"><label class="flbl">Mes</label><select class="fc" id="ncfMes" onchange="renderNovCancel()"><option value="">Todos</option></select></div>
+      <div class="fg"><label class="flbl">Ciudad</label><select class="fc" id="ncfCiudad" onchange="renderNovCancel()"><option value="">Todas</option></select></div>
+      <div class="fg"><label class="flbl">Drogería</label><select class="fc" id="ncfDrog" onchange="renderNovCancel()"><option value="">Todas</option></select></div>
+      <button class="fbtn fbtn-s" style="align-self:flex-end" onclick="clearF(['ncfMes','ncfCiudad','ncfDrog'],renderNovCancel)"><i class="fas fa-xmark"></i> Limpiar</button>
+    </div>
+  </div>
+  <div class="kgrid" id="ncKPIs"></div>
+  <div class="g2">
+    <div class="cc"><div class="cc-ttl"><i class="fas fa-chart-bar"></i> Novedades por Tipo</div><div class="cc-sub">Todos los tipos registrados</div><canvas id="cNcTipo" height="180"></canvas></div>
+    <div class="cc"><div class="cc-ttl"><i class="fas fa-users"></i> Planta Fija vs Colaborativo</div><div class="cc-sub">Cantidad por tipo de mensajero</div><canvas id="cNcTipoM" height="180"></canvas></div>
+  </div>
+  <div class="g2">
+    <div class="cc"><div class="cc-ttl"><i class="fas fa-calendar"></i> Novedades por Mes</div><div class="cc-sub">Evolución mensual</div><canvas id="cNcMes" height="180"></canvas></div>
+    <div class="cc"><div class="cc-ttl"><i class="fas fa-hospital"></i> Por Drogería</div><div class="cc-sub">Puntos con mayor incidencia</div><canvas id="cNcDrog" height="180"></canvas></div>
+  </div>
+  <div class="g2">
+    <div class="cc"><div class="cc-ttl"><i class="fas fa-pie-chart"></i> Responsabilidad Quick vs Cafam</div><div class="cc-sub">% de responsabilidad por novedad</div><canvas id="cNcResp" height="180"></canvas></div>
+    <div class="cc"><div class="cc-ttl"><i class="fas fa-map-marker-alt"></i> Por Ciudad</div><div class="cc-sub">Distribución geográfica</div><canvas id="cNcCiud" height="180"></canvas></div>
+  </div>
+  <div id="ncAnalysis"></div>
+</div>
+
+</div><!-- /ca -->
 </main>
 
-<!-- TOAST CONTAINER -->
-<div class="toast-container" id="toastContainer"></div>
+<div class="toast-wrap" id="tw"></div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/js/bootstrap.bundle.min.js"></script>
 <script>
-// ═══════════════════════════════════
-// GLOBAL STATE
-// ═══════════════════════════════════
-const CSV_URLS = {
-  administrativo: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQNfxBykrkeBy4J4jvi2-nDNkMfDMbm-jbwgmBz9FjNUIBQGk257yuU1PH_QmXi0rV0AervZoNyJ9XO/pub?gid=1268086895&single=true&output=csv',
-  novedades: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQNfxBykrkeBy4J4jvi2-nDNkMfDMbm-jbwgmBz9FjNUIBQGk257yuU1PH_QmXi0rV0AervZoNyJ9XO/pub?gid=1091468477&single=true&output=csv',
-  cantidad: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQNfxBykrkeBy4J4jvi2-nDNkMfDMbm-jbwgmBz9FjNUIBQGk257yuU1PH_QmXi0rV0AervZoNyJ9XO/pub?gid=0&single=true&output=csv',
-  percapita: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQNfxBykrkeBy4J4jvi2-nDNkMfDMbm-jbwgmBz9FjNUIBQGk257yuU1PH_QmXi0rV0AervZoNyJ9XO/pub?gid=276501764&single=true&output=csv',
-  tiempos: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQNfxBykrkeBy4J4jvi2-nDNkMfDMbm-jbwgmBz9FjNUIBQGk257yuU1PH_QmXi0rV0AervZoNyJ9XO/pub?gid=1183579745&single=true&output=csv',
-  ventas: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQNfxBykrkeBy4J4jvi2-nDNkMfDMbm-jbwgmBz9FjNUIBQGk257yuU1PH_QmXi0rV0AervZoNyJ9XO/pub?gid=41915920&single=true&output=csv',
-  mensajeros: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQNfxBykrkeBy4J4jvi2-nDNkMfDMbm-jbwgmBz9FjNUIBQGk257yuU1PH_QmXi0rV0AervZoNyJ9XO/pub?gid=1152602474&single=true&output=csv'
+// ═══════════════════════════════════════════════
+// GLOBAL DATA STORE
+// ═══════════════════════════════════════════════
+const CSV={
+  novedades:'https://docs.google.com/spreadsheets/d/e/2PACX-1vQNfxBykrkeBy4J4jvi2-nDNkMfDMbm-jbwgmBz9FjNUIBQGk257yuU1PH_QmXi0rV0AervZoNyJ9XO/pub?gid=1091468477&single=true&output=csv',
+  cantidad:'https://docs.google.com/spreadsheets/d/e/2PACX-1vQNfxBykrkeBy4J4jvi2-nDNkMfDMbm-jbwgmBz9FjNUIBQGk257yuU1PH_QmXi0rV0AervZoNyJ9XO/pub?gid=0&single=true&output=csv',
+  percapita:'https://docs.google.com/spreadsheets/d/e/2PACX-1vQNfxBykrkeBy4J4jvi2-nDNkMfDMbm-jbwgmBz9FjNUIBQGk257yuU1PH_QmXi0rV0AervZoNyJ9XO/pub?gid=276501764&single=true&output=csv',
+  tiempos:'https://docs.google.com/spreadsheets/d/e/2PACX-1vQNfxBykrkeBy4J4jvi2-nDNkMfDMbm-jbwgmBz9FjNUIBQGk257yuU1PH_QmXi0rV0AervZoNyJ9XO/pub?gid=1183579745&single=true&output=csv',
+  ventas:'https://docs.google.com/spreadsheets/d/e/2PACX-1vQNfxBykrkeBy4J4jvi2-nDNkMfDMbm-jbwgmBz9FjNUIBQGk257yuU1PH_QmXi0rV0AervZoNyJ9XO/pub?gid=41915920&single=true&output=csv',
+  novcancel:'https://docs.google.com/spreadsheets/d/e/2PACX-1vQNfxBykrkeBy4J4jvi2-nDNkMfDMbm-jbwgmBz9FjNUIBQGk257yuU1PH_QmXi0rV0AervZoNyJ9XO/pub?gid=1615312577&single=true&output=csv'
 };
+let D={novedades:[],cantidad:[],percapita:[],tiempos:[],ventas:[],novcancel:[]};
+let CHARTS={};
+const DIAS=['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
+const COLS=['#2563eb','#06b6d4','#8b5cf6','#10b981','#f59e0b','#ef4444','#ec4899','#14b8a6','#f97316','#a855f7','#84cc16','#0ea5e9'];
 
-let DATA = { administrativo:[], novedades:[], cantidad:[], percapita:[], tiempos:[], ventas:[], mensajeros:[] };
-let FILTERED = { mensajeros:[], novedades:[], administrativo:[], ventas:[], cantidad:[], percapita:[], tiempos:[] };
-let CHARTS = {};
-let PAGES = { mensajeros:1, novedades:1, administrativo:1, ventas:1 };
-const PAGE_SIZE = 15;
-let currentSection = 'dashboard';
-let activeFilters = {};
-
-// ═══════════════════════════════════
-// CLOCK
-// ═══════════════════════════════════
-function updateClock() {
-  const now = new Date();
-  const d = now.toLocaleDateString('es-CO', {weekday:'short', day:'2-digit', month:'short', year:'numeric'});
-  const t = now.toLocaleTimeString('es-CO', {hour:'2-digit', minute:'2-digit', second:'2-digit', hour12:false});
-  document.getElementById('clockDate').textContent = d.toUpperCase();
-  document.getElementById('clockTime').textContent = t;
-}
-setInterval(updateClock, 1000);
-updateClock();
-
-// ═══════════════════════════════════
-// TOAST
-// ═══════════════════════════════════
-function showToast(msg, type='info') {
-  const icons = {info:'circle-info', success:'circle-check', error:'circle-xmark', warning:'triangle-exclamation'};
-  const colors = {info:'#3b82f6', success:'#10b981', error:'#ef4444', warning:'#f59e0b'};
-  const el = document.createElement('div');
-  el.className = 'toast-item';
-  el.innerHTML = `<i class="fas fa-${icons[type]}" style="color:${colors[type]}"></i><span>${msg}</span>`;
-  document.getElementById('toastContainer').appendChild(el);
-  setTimeout(() => el.remove(), 3500);
-}
-
-// ═══════════════════════════════════
-// CSV FETCH
-// ═══════════════════════════════════
-function fetchCSV(url, key) {
-  return new Promise(resolve => {
-    Papa.parse(url, {
-      download: true, header: true, skipEmptyLines: true,
-      complete: r => { DATA[key] = r.data; resolve(r.data); },
-      error: () => { showToast(`Error cargando ${key}`, 'error'); resolve([]); }
-    });
-  });
-}
-
-async function loadAllData() {
-  const promises = Object.entries(CSV_URLS).map(([k,u]) => fetchCSV(u,k));
-  await Promise.all(promises);
-  return true;
-}
-
-// ═══════════════════════════════════
-// SECTION NAVIGATION
-// ═══════════════════════════════════
-function showSection(name) {
-  document.querySelectorAll('.section-content').forEach(s => s.classList.remove('active'));
-  document.querySelectorAll('.nav-item-custom').forEach(n => n.classList.remove('active'));
-  const el = document.getElementById(`sec-${name}`);
-  if (el) el.classList.add('active');
-  event && event.currentTarget && event.currentTarget.classList.add('active');
-  currentSection = name;
-  if (name === 'ia') generateAIReport();
-  // Close mobile sidebar
-  document.getElementById('sidebar').classList.remove('mobile-open');
-  document.getElementById('sidebarOverlay').classList.remove('active');
-}
-
-function toggleSidebar() {
-  document.getElementById('sidebar').classList.toggle('mobile-open');
-  document.getElementById('sidebarOverlay').classList.toggle('active');
-}
-
-// ═══════════════════════════════════
-// POPULATE FILTERS
-// ═══════════════════════════════════
-function populateSelectFromData(selectId, data, fieldNames) {
-  const sel = document.getElementById(selectId);
-  if (!sel) return;
-  const current = sel.value;
-  const vals = new Set();
-  data.forEach(row => {
-    for (const f of fieldNames) {
-      const v = (row[f] || '').trim();
-      if (v) vals.add(v);
-    }
-  });
-  const options = Array.from(vals).sort();
-  const firstOpt = sel.options[0];
-  sel.innerHTML = '';
-  sel.appendChild(firstOpt);
-  options.forEach(v => {
-    const o = document.createElement('option');
-    o.value = v; o.textContent = v;
-    sel.appendChild(o);
-  });
-  if (current) sel.value = current;
-}
-
-function populateAllFilters() {
-  const ciudadFields = ['CIUDAD','Ciudad','ciudad','CITY'];
-  const pdvFields = ['DROGUERIA','DROGERÍA','PUNTO DE VENTA','Drogería','Drogueria','PDV'];
-  const tipoGestFields = ['TIPO GESTIÓN','TIPO GESTION','Tipo Gestión','Tipo Gestion'];
-
-  // Dashboard filters
-  populateSelectFromData('filterCiudad', [...DATA.mensajeros, ...DATA.novedades, ...DATA.administrativo], ciudadFields);
-  populateSelectFromData('filterPdv', DATA.mensajeros, pdvFields);
-  populateSelectFromData('filterTipoGestion', DATA.mensajeros, tipoGestFields);
-  populateSelectFromData('filterMes', DATA.administrativo, ['MES','Mes','mes']);
-
-  // Mensajeros filters
-  populateSelectFromData('fmCiudad', DATA.mensajeros, ciudadFields);
-  populateSelectFromData('fmPdv', DATA.mensajeros, pdvFields);
-
-  // Novedades filters
-  populateSelectFromData('fnCiudad', DATA.novedades, ciudadFields);
-  populateSelectFromData('fnTipo', DATA.novedades, ['TIPIFICACION','TIPIFICACIÓN','Tipificación','Tipo']);
-
-  // Admin filters
-  populateSelectFromData('fasMes', DATA.administrativo, ['MES','Mes']);
-  populateSelectFromData('fasCiudad', DATA.administrativo, ciudadFields);
-
-  // Ventas filters
-  populateSelectFromData('fvCiudad', DATA.ventas, ciudadFields);
-
-  // Operacion filters
-  populateSelectFromData('fopCiudad', DATA.cantidad, ciudadFields);
-  populateSelectFromData('fopPdv', DATA.cantidad, pdvFields);
-
-  // Novedades badge
-  document.getElementById('novedadesBadge').textContent = DATA.novedades.length;
-}
-
-// ═══════════════════════════════════
-// FILTER UTILITIES
-// ═══════════════════════════════════
-function getVal(id) { const el = document.getElementById(id); return el ? el.value.trim().toLowerCase() : ''; }
-
-function matchField(row, fields, search) {
-  if (!search) return true;
-  for (const f of fields) {
-    if ((row[f]||'').toLowerCase().includes(search)) return true;
-  }
-  return false;
-}
-
-function parseDate(str) {
-  if (!str) return null;
-  const parts = str.split('/');
-  if (parts.length === 3) return new Date(parts[2], parts[1]-1, parts[0]);
-  return new Date(str);
-}
-
-// ═══════════════════════════════════
-// GLOBAL FILTER (KPIs / Charts)
-// ═══════════════════════════════════
-function applyFilters() {
-  renderKPIs();
-  renderCharts();
-  renderActiveFilters();
-}
-
-function clearFilters() {
-  ['filterMes','filterCiudad','filterPdv','filterEstado','filterTipoGestion'].forEach(id => {
-    const el = document.getElementById(id);
-    if(el) el.value = '';
-  });
-  ['filterDia','filterFechaDesde','filterFechaHasta','filterMensajero'].forEach(id => {
-    const el = document.getElementById(id);
-    if(el) el.value = '';
-  });
-  activeFilters = {};
-  applyFilters();
-}
-
-function renderActiveFilters() {
-  const wrap = document.getElementById('activeFiltersWrap');
-  if (!wrap) return;
-  const filters = [];
-  const map = {
-    filterMes:'Mes', filterDia:'Día', filterFechaDesde:'Desde', filterFechaHasta:'Hasta',
-    filterCiudad:'Ciudad', filterPdv:'PDV', filterMensajero:'Mensajero',
-    filterEstado:'Estado', filterTipoGestion:'Tipo Gestión'
+// ═══════════════════════════════════════════════
+// UTILS
+// ═══════════════════════════════════════════════
+function gv(id){const e=document.getElementById(id);return e?e.value.trim().toLowerCase():'';}
+function num(v){if(!v)return 0;const n=parseFloat(String(v).replace(/[^0-9.,-]/g,'').replace(',','.'));return isNaN(n)?0:n;}
+function cop(v){return new Intl.NumberFormat('es-CO',{style:'currency',currency:'COP',minimumFractionDigits:0}).format(v||0);}
+function pct(a,b){return b?((a/b)*100).toFixed(1)+'%':'—';}
+function fld(row){var keys=Array.prototype.slice.call(arguments,1);for(var ki=0;ki<keys.length;ki++){var k=keys[ki];var v=row[k];if(v!==undefined&&v!==null&&String(v).trim()!=='')return String(v).trim();}return '';}
+function sum(arr,fn){return arr.reduce((s,r)=>s+(fn(r)||0),0);}
+function groupBy(arr,fn){const m={};arr.forEach(r=>{const k=fn(r)||'N/D';m[k]=(m[k]||[]); m[k].push(r);});return m;}
+function sumGroup(arr,keyFn,valFn){const m={};arr.forEach(r=>{const k=keyFn(r)||'N/D';m[k]=(m[k]||0)+num(valFn(r));});return m;}
+function sortObj(obj,desc=true){return Object.entries(obj).sort((a,b)=>desc?b[1]-a[1]:a[1]-b[1]);}
+function topN(obj,n,desc){if(desc===undefined)desc=true;return sortObj(obj,desc).slice(0,n);}
+function parseDate(s){if(!s)return null;const p=String(s).split(/[\/\-]/);if(p.length===3){const[a,b,c]=p;const yr=a.length===4?parseInt(a):parseInt(c),mo=a.length===4?parseInt(b)-1:parseInt(b)-1,dy=a.length===4?parseInt(c):parseInt(a);const d=new Date(yr,mo,dy);return isNaN(d)?null:d;}return null;}
+function clearF(ids,fn){ids.forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});fn();}
+function toast(msg,type='info'){const c={'info':'#3b82f6','success':'#10b981','error':'#ef4444','warn':'#f59e0b'};const ico={'info':'circle-info','success':'circle-check','error':'circle-xmark','warn':'triangle-exclamation'};const el=document.createElement('div');el.className='toast';el.innerHTML=`<i class="fas fa-${ico[type]}" style="color:${c[type]}"></i><span>${msg}</span>`;document.getElementById('tw').appendChild(el);setTimeout(()=>el.remove(),3500);}
+function kpiCard(ico,lbl,val,trend,dir,color){return`<div class="kc"><div class="kc-bg"><i class="${ico}"></i></div><div class="kc-ico" style="background:${color}22;color:${color}"><i class="${ico}"></i></div><div class="kc-val">${val}</div><div class="kc-lbl">${lbl}</div><div class="kc-tr ${dir}"><i class="fas fa-${dir==='up'?'arrow-trend-up':dir==='dn'?'arrow-trend-down':'minus'}"></i>${trend}</div></div>`;}
+function destroyC(id){if(CHARTS[id]){CHARTS[id].destroy();delete CHARTS[id];}}
+function grad(ctx,c1,c2){const g=ctx.createLinearGradient(0,0,0,400);g.addColorStop(0,c1);g.addColorStop(1,c2);return g;}
+function makeChart(id,type,labels,datasets,opts){
+  destroyC(id);
+  var canvas=document.getElementById(id);
+  if(!canvas)return;
+  var ctx=canvas.getContext('2d');
+  var isPie=(type==='pie'||type==='doughnut');
+  var scales=isPie?{}:{
+    x:{ticks:{color:'#64748b',font:{size:9},maxRotation:35},grid:{color:'rgba(255,255,255,.04)'}},
+    y:{ticks:{color:'#64748b',font:{size:9}},grid:{color:'rgba(255,255,255,.04)'}}
   };
-  Object.entries(map).forEach(([id, label]) => {
-    const el = document.getElementById(id);
-    if (el && el.value) {
-      filters.push({id, label, val: el.value});
-    }
-  });
-  wrap.innerHTML = filters.map(f =>
-    `<div class="filter-tag">${f.label}: <strong>${f.val}</strong>
-      <span class="remove" onclick="clearSingleFilter('${f.id}')"><i class="fas fa-xmark"></i></span>
-    </div>`
-  ).join('');
-}
-
-function clearSingleFilter(id) {
-  const el = document.getElementById(id);
-  if (el) el.value = '';
-  applyFilters();
-}
-
-function getFilteredMensajeros() {
-  const ciudad = getVal('filterCiudad') || getVal('fmCiudad');
-  const pdv = getVal('filterPdv') || getVal('fmPdv');
-  const estado = getVal('filterEstado') || getVal('fmEstado');
-  const mensajero = getVal('filterMensajero') || getVal('fmNombre');
-  const tipoG = getVal('filterTipoGestion');
-  const searchGlobal = getVal('searchMensajeros');
-  const dia = getVal('filterDia');
-
-  const cidF = ['CIUDAD','Ciudad','ciudad'];
-  const pdvF = ['DROGUERIA','DROGERÍA','PUNTO DE VENTA','Drogería'];
-  const estF = ['ESTADO','Estado','estado'];
-  const nomF = ['NOMBRE','Nombre','MENSAJERO','Mensajero'];
-  const tgF = ['TIPO GESTIÓN','TIPO GESTION','Tipo Gestión'];
-
-  return DATA.mensajeros.filter(row => {
-    if (ciudad && !matchField(row, cidF, ciudad)) return false;
-    if (pdv && !matchField(row, pdvF, pdv)) return false;
-    if (estado && !matchField(row, estF, estado)) return false;
-    if (mensajero && !matchField(row, nomF, mensajero)) return false;
-    if (tipoG && !matchField(row, tgF, tipoG)) return false;
-    if (searchGlobal) {
-      const allVals = Object.values(row).join(' ').toLowerCase();
-      if (!allVals.includes(searchGlobal)) return false;
-    }
-    return true;
-  });
-}
-
-// ═══════════════════════════════════
-// KPI RENDERING
-// ═══════════════════════════════════
-function getFirstField(row, fields) {
-  for (const f of fields) {
-    if (row[f] !== undefined) return row[f] || '';
-  }
-  return '';
-}
-
-function formatCOP(n) {
-  if (isNaN(n)) return '—';
-  return new Intl.NumberFormat('es-CO', {style:'currency', currency:'COP', minimumFractionDigits:0}).format(n);
-}
-
-function renderKPIs() {
-  const grid = document.getElementById('kpiGrid');
-  if (!grid) return;
-
-  const totalEntregas = DATA.mensajeros.reduce((s,r) => {
-    const v = parseInt(getFirstField(r, ['ENTREGAS','Entregas','entregas','CANTIDAD','Cantidad'])) || 0;
-    return s + v;
-  }, 0);
-
-  const totalVentas = DATA.ventas.reduce((s,r) => {
-    const vals = Object.values(r).map(v => parseFloat((v||'').replace(/[^0-9.-]/g,''))).filter(v => !isNaN(v));
-    return s + (vals.reduce((a,b)=>a+b,0));
-  }, 0);
-
-  const mensajerosActivos = DATA.mensajeros.length;
-
-  const totalNovedades = DATA.novedades.length;
-
-  const desvinc = DATA.administrativo.reduce((s,r) => {
-    return s + (parseInt(getFirstField(r,['TOTAL','Total'])) || 0);
-  }, 0);
-
-  const inasistencias = DATA.administrativo.reduce((s,r) => {
-    return s + (parseInt(getFirstField(r,['TOTAL INASISTENCIAS','Total Inasistencias'])) || 0);
-  }, 0);
-
-  const kpis = [
-    { icon:'fas fa-box', label:'Total Entregas', value: totalEntregas.toLocaleString('es-CO'), trend:'+8.2%', dir:'up', color:'#2563eb' },
-    { icon:'fas fa-dollar-sign', label:'Total Ventas', value: formatCOP(totalVentas), trend:'+12.4%', dir:'up', color:'#06b6d4' },
-    { icon:'fas fa-motorcycle', label:'Mensajeros', value: mensajerosActivos, trend:'Activos', dir:'neutral', color:'#8b5cf6' },
-    { icon:'fas fa-shield-check', label:'Cumplimiento', value:'94%', trend:'+2.1%', dir:'up', color:'#10b981' },
-    { icon:'fas fa-bolt', label:'Productividad', value:'87%', trend:'+5.3%', dir:'up', color:'#f59e0b' },
-    { icon:'fas fa-clock', label:'Tiempo Prom.', value:'45 min', trend:'-3 min', dir:'up', color:'#06b6d4' },
-    { icon:'fas fa-triangle-exclamation', label:'Novedades', value: totalNovedades, trend:'registradas', dir:'neutral', color:'#ef4444' },
-    { icon:'fas fa-users-slash', label:'Desvinculaciones', value: desvinc, trend:'total', dir:'neutral', color:'#f87171' },
-    { icon:'fas fa-calendar-xmark', label:'Inasistencias', value: inasistencias, trend:'total', dir:'neutral', color:'#fb923c' },
-    { icon:'fas fa-city', label:'Ciudades', value: new Set(DATA.mensajeros.map(r=>getFirstField(r,['CIUDAD','Ciudad']))).size, trend:'cobertura', dir:'neutral', color:'#3b82f6' },
-  ];
-
-  grid.innerHTML = kpis.map(k => `
-    <div class="kpi-card">
-      <div class="kpi-bg-icon"><i class="${k.icon}"></i></div>
-      <div class="kpi-icon" style="background:${k.color}22; color:${k.color}">
-        <i class="${k.icon}"></i>
-      </div>
-      <div class="kpi-value">${k.value}</div>
-      <div class="kpi-label">${k.label}</div>
-      <div class="kpi-trend ${k.dir}">
-        <i class="fas fa-${k.dir==='up'?'arrow-trend-up':k.dir==='down'?'arrow-trend-down':'minus'}"></i>
-        ${k.trend}
-      </div>
-    </div>
-  `).join('');
-
-  // last update
-  const lbl = document.getElementById('lastUpdateLabel');
-  if(lbl) lbl.textContent = `Última actualización: ${new Date().toLocaleString('es-CO')} · ${DATA.mensajeros.length} mensajeros · ${DATA.novedades.length} novedades`;
-}
-
-// ═══════════════════════════════════
-// CHARTS
-// ═══════════════════════════════════
-const CHART_DEFAULTS = {
-  color: (ctx, from, to) => {
-    const g = ctx.chart.ctx.createLinearGradient(0,0,0,ctx.chart.height);
-    g.addColorStop(0, from); g.addColorStop(1, to); return g;
-  }
-};
-
-function destroyChart(id) { if (CHARTS[id]) { CHARTS[id].destroy(); delete CHARTS[id]; } }
-
-function getChartColors() {
-  return ['#2563eb','#06b6d4','#8b5cf6','#10b981','#f59e0b','#ef4444','#ec4899','#14b8a6'];
-}
-
-function renderCharts() {
-  renderChartEntregas();
-  renderChartCumplimiento();
-  renderChartProductividad();
-  renderChartVentasEntregas();
-  renderChartRadar();
-  renderChartNovedades();
-  renderChartAdmin();
-}
-
-function buildGradient(ctx, c1, c2) {
-  const g = ctx.createLinearGradient(0,0,0,400);
-  g.addColorStop(0, c1); g.addColorStop(1, c2);
-  return g;
-}
-
-function renderChartEntregas() {
-  destroyChart('chartEntregasDia');
-  const canvas = document.getElementById('chartEntregasDia');
-  if (!canvas) return;
-  const ctx = canvas.getContext('2d');
-
-  // Group by date or index
-  const dayMap = {};
-  DATA.mensajeros.forEach(r => {
-    const k = getFirstField(r, ['FECHA','Fecha','fecha','DIA','Dia','día']) || 'Sin fecha';
-    const v = parseInt(getFirstField(r, ['ENTREGAS','Entregas','CANTIDAD','Cantidad'])) || 0;
-    dayMap[k] = (dayMap[k]||0) + v;
-  });
-
-  const labels = Object.keys(dayMap).slice(-20);
-  const values = labels.map(l => dayMap[l]);
-
-  const grad = buildGradient(ctx, 'rgba(37,99,235,0.8)', 'rgba(6,182,212,0.3)');
-
-  CHARTS['chartEntregasDia'] = new Chart(ctx, {
-    type:'bar',
-    data: {
-      labels,
-      datasets:[{ label:'Entregas', data: values, backgroundColor: grad, borderColor:'#3b82f6', borderWidth:1.5, borderRadius:6 }]
-    },
-    options: {
-      responsive:true, plugins:{legend:{display:false}, tooltip:{callbacks:{label:c=>`${c.parsed.y.toLocaleString('es-CO')} entregas`}}},
-      scales:{
-        x:{ticks:{color:'#64748b', font:{size:10}}, grid:{color:'rgba(255,255,255,0.04)'}},
-        y:{ticks:{color:'#64748b', font:{size:10}}, grid:{color:'rgba(255,255,255,0.04)'}}
-      }
-    }
-  });
-}
-
-function renderChartCumplimiento() {
-  destroyChart('chartCumplimiento');
-  const canvas = document.getElementById('chartCumplimiento');
-  if (!canvas) return;
-  const ctx = canvas.getContext('2d');
-  CHARTS['chartCumplimiento'] = new Chart(ctx, {
-    type:'doughnut',
-    data: {
-      labels:['Cumplido','Pendiente','Novedad'],
-      datasets:[{
-        data:[94,3,3],
-        backgroundColor:['#2563eb','rgba(59,130,246,0.25)','rgba(239,68,68,0.5)'],
-        borderColor:['#3b82f6','rgba(59,130,246,0.4)','rgba(239,68,68,0.6)'],
-        borderWidth:1.5, hoverOffset:6
-      }]
-    },
-    options: {
-      responsive:true, cutout:'72%',
+  var config={
+    type:type,
+    data:{labels:labels,datasets:datasets},
+    options:{
+      responsive:true,
+      maintainAspectRatio:true,
       plugins:{
-        legend:{position:'bottom', labels:{color:'#94a3b8', font:{size:11}, padding:12, boxWidth:12}},
-        tooltip:{callbacks:{label:c=>`${c.label}: ${c.parsed}%`}}
-      }
+        legend:{display:true,labels:{color:'#94a3b8',font:{size:10},boxWidth:10}},
+        tooltip:{mode:'index'}
+      },
+      scales:scales
     }
-  });
+  };
+  CHARTS[id]=new Chart(ctx,config);
+  return CHARTS[id];
+}
+function barDS(label,data,color,stack){var ds={label:label,data:data,backgroundColor:color+'bb',borderColor:color,borderWidth:1.5,borderRadius:4};if(stack)ds.stack=stack;return ds;}
+function lineDS(label,data,color,fill){var f=(fill===undefined)?false:fill;return{label:label,data:data,borderColor:color,backgroundColor:color+'22',borderWidth:2.5,fill:f,tension:.4,pointBackgroundColor:color,pointRadius:3};}
+
+function fillSelect(id,values,currentVal){const el=document.getElementById(id);if(!el)return;const sorted=[...new Set(values)].filter(Boolean).sort();const first=el.options[0];el.innerHTML='';el.appendChild(first);sorted.forEach(v=>{const o=document.createElement('option');o.value=v;o.textContent=v;el.appendChild(o);});if(currentVal)el.value=currentVal;}
+
+// ═══════════════════════════════════════════════
+// CLOCK
+// ═══════════════════════════════════════════════
+function clock(){const n=new Date();document.getElementById('cDate').textContent=n.toLocaleDateString('es-CO',{weekday:'short',day:'2-digit',month:'short',year:'numeric'}).toUpperCase();document.getElementById('cTime').textContent=n.toLocaleTimeString('es-CO',{hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false});}
+setInterval(clock,1000);clock();
+
+// ═══════════════════════════════════════════════
+// NAVIGATION
+// ═══════════════════════════════════════════════
+function go(name,btn){
+  document.querySelectorAll('.sec').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('.nav-it').forEach(b=>b.classList.remove('active'));
+  const s=document.getElementById('sec-'+name);if(s)s.classList.add('active');
+  if(btn)btn.classList.add('active');
+  const renders={resumen:renderResumen,novedades:renderNovedades,cantidad:renderCantidad,percapita:renderPercapita,tiempos:renderTiempos,ventas:renderVentas,novcancel:renderNovCancel};
+  if(renders[name])renders[name]();
 }
 
-function renderChartProductividad() {
-  destroyChart('chartProductividad');
-  const canvas = document.getElementById('chartProductividad');
-  if (!canvas) return;
-  const ctx = canvas.getContext('2d');
+// ═══════════════════════════════════════════════
+// CSV FETCH
+// ═══════════════════════════════════════════════
+function fetchCSV(url,key){
+  return new Promise(function(res){
+    // Timeout individual por hoja: 8 segundos
+    var done=false;
+    var timer=setTimeout(function(){
+      if(!done){done=true;console.warn('Timeout:',key);D[key]=[];res([]);}
+    },8000);
 
-  const ciudades = [...new Set(DATA.mensajeros.map(r=>getFirstField(r,['CIUDAD','Ciudad'])).filter(Boolean))].slice(0,8);
-  const values = ciudades.map(() => Math.floor(Math.random()*30+70));
-
-  const grad = buildGradient(ctx, 'rgba(6,182,212,0.6)', 'rgba(6,182,212,0.05)');
-
-  CHARTS['chartProductividad'] = new Chart(ctx, {
-    type:'line',
-    data: {
-      labels: ciudades.length ? ciudades : ['Bogotá','Medellín','Cali','Barranquilla','Bucaramanga'],
-      datasets:[{
-        label:'Productividad %', data: values.length ? values : [92,88,85,79,82],
-        backgroundColor: grad, borderColor:'#06b6d4', borderWidth:2.5,
-        fill:true, tension:.4, pointBackgroundColor:'#06b6d4', pointRadius:4
-      }]
-    },
-    options:{
-      responsive:true, plugins:{legend:{display:false}},
-      scales:{
-        x:{ticks:{color:'#64748b',font:{size:10}}, grid:{color:'rgba(255,255,255,0.04)'}},
-        y:{ticks:{color:'#64748b',font:{size:10}}, grid:{color:'rgba(255,255,255,0.04)'}, min:0, max:100}
-      }
-    }
-  });
-}
-
-function renderChartVentasEntregas() {
-  destroyChart('chartVentasEntregas');
-  const canvas = document.getElementById('chartVentasEntregas');
-  if (!canvas) return;
-  const ctx = canvas.getContext('2d');
-
-  const labels = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'].slice(0, Math.max(DATA.ventas.length, 6));
-
-  CHARTS['chartVentasEntregas'] = new Chart(ctx, {
-    type:'line',
-    data: {
-      labels,
-      datasets:[
-        { label:'Ventas', data: labels.map((_,i)=>Math.floor(Math.random()*5000+8000)), borderColor:'#2563eb', backgroundColor:'rgba(37,99,235,0.1)', borderWidth:2.5, fill:true, tension:.4, pointRadius:4 },
-        { label:'Entregas', data: labels.map((_,i)=>Math.floor(Math.random()*3000+5000)), borderColor:'#06b6d4', backgroundColor:'rgba(6,182,212,0.08)', borderWidth:2.5, fill:true, tension:.4, pointRadius:4 }
-      ]
-    },
-    options:{
-      responsive:true,
-      plugins:{legend:{labels:{color:'#94a3b8',font:{size:11}}}},
-      scales:{
-        x:{ticks:{color:'#64748b',font:{size:10}}, grid:{color:'rgba(255,255,255,0.04)'}},
-        y:{ticks:{color:'#64748b',font:{size:10}}, grid:{color:'rgba(255,255,255,0.04)'}}
-      }
-    }
-  });
-}
-
-function renderChartRadar() {
-  destroyChart('chartRadar');
-  const canvas = document.getElementById('chartRadar');
-  if (!canvas) return;
-  const ctx = canvas.getContext('2d');
-  CHARTS['chartRadar'] = new Chart(ctx, {
-    type:'radar',
-    data: {
-      labels:['Cumplimiento','Productividad','Cobertura','Satisfacción','Puntualidad','Ventas'],
-      datasets:[{
-        label:'Operacional', data:[94,87,79,91,85,88],
-        backgroundColor:'rgba(37,99,235,0.2)', borderColor:'#3b82f6', borderWidth:2, pointBackgroundColor:'#3b82f6', pointRadius:4
-      },{
-        label:'Meta', data:[95,90,85,95,90,95],
-        backgroundColor:'rgba(6,182,212,0.1)', borderColor:'#06b6d4', borderWidth:1.5, borderDash:[4,4], pointBackgroundColor:'#06b6d4', pointRadius:3
-      }]
-    },
-    options:{
-      responsive:true,
-      plugins:{legend:{labels:{color:'#94a3b8',font:{size:11}}}},
-      scales:{r:{
-        ticks:{color:'#475569', font:{size:9}, backdropColor:'transparent'},
-        grid:{color:'rgba(255,255,255,0.08)'},
-        pointLabels:{color:'#94a3b8', font:{size:10}},
-        min:0, max:100
-      }}
-    }
-  });
-}
-
-function renderChartNovedades() {
-  destroyChart('chartNovedades');
-  const canvas = document.getElementById('chartNovedades');
-  if (!canvas) return;
-  const ctx = canvas.getContext('2d');
-
-  const tipoMap = {};
-  DATA.novedades.forEach(r => {
-    const t = getFirstField(r, ['TIPIFICACION','TIPIFICACIÓN','Tipificación','Tipo','tipo']) || 'Otro';
-    tipoMap[t] = (tipoMap[t]||0) + 1;
-  });
-
-  const labels = Object.keys(tipoMap).slice(0,8);
-  const values = labels.map(l=>tipoMap[l]);
-  const colors = getChartColors();
-
-  CHARTS['chartNovedades'] = new Chart(ctx, {
-    type:'bar',
-    data: {
-      labels: labels.length ? labels : ['Disciplinaria','Operativa','Administrativa','Logística'],
-      datasets:[{
-        label:'Novedades',
-        data: values.length ? values : [23,18,12,9],
-        backgroundColor: colors,
-        borderColor: colors.map(c=>c+'cc'),
-        borderWidth:1.5, borderRadius:6
-      }]
-    },
-    options:{
-      responsive:true, indexAxis:'y',
-      plugins:{legend:{display:false}},
-      scales:{
-        x:{ticks:{color:'#64748b',font:{size:10}}, grid:{color:'rgba(255,255,255,0.04)'}},
-        y:{ticks:{color:'#94a3b8',font:{size:10}}, grid:{color:'rgba(255,255,255,0.04)'}}
-      }
-    }
-  });
-}
-
-function renderChartAdmin() {
-  destroyChart('chartAdmin');
-  const canvas = document.getElementById('chartAdmin');
-  if (!canvas) return;
-  const ctx = canvas.getContext('2d');
-
-  const mesMap = {};
-  DATA.administrativo.forEach(r => {
-    const mes = getFirstField(r,['MES','Mes','mes']) || 'N/D';
-    if (!mesMap[mes]) mesMap[mes] = { renuncias:0, terminaciones:0, inasistencias:0, incapacidades:0 };
-    mesMap[mes].renuncias += parseInt(getFirstField(r,['RENUNCIA','Renuncia'])) || 0;
-    mesMap[mes].terminaciones += parseInt(getFirstField(r,['TERMINACIÓN DE CONTRATO','Terminación de contrato','TERMINACION'])) || 0;
-    mesMap[mes].inasistencias += parseInt(getFirstField(r,['AUSENCIA INJUSTIFICADA','Ausencia Injustificada'])) || 0;
-    mesMap[mes].incapacidades += parseInt(getFirstField(r,['INCAPACIDAD','Incapacidad'])) || 0;
-  });
-
-  const labels = Object.keys(mesMap);
-
-  CHARTS['chartAdmin'] = new Chart(ctx, {
-    type:'bar',
-    data: {
-      labels: labels.length ? labels : ['Enero','Febrero','Marzo','Abril','Mayo','Junio'],
-      datasets:[
-        {label:'Renuncias', data: labels.map(l=>mesMap[l].renuncias), backgroundColor:'rgba(239,68,68,0.7)', borderRadius:4, stack:'desv'},
-        {label:'Terminaciones', data: labels.map(l=>mesMap[l].terminaciones), backgroundColor:'rgba(248,113,113,0.7)', borderRadius:4, stack:'desv'},
-        {label:'Inasistencias', data: labels.map(l=>mesMap[l].inasistencias), backgroundColor:'rgba(251,191,36,0.7)', borderRadius:4, stack:'inas'},
-        {label:'Incapacidades', data: labels.map(l=>mesMap[l].incapacidades), backgroundColor:'rgba(96,165,250,0.7)', borderRadius:4, stack:'inas'},
-      ]
-    },
-    options:{
-      responsive:true,
-      plugins:{legend:{labels:{color:'#94a3b8',font:{size:11}}}},
-      scales:{
-        x:{ticks:{color:'#64748b',font:{size:10}}, grid:{color:'rgba(255,255,255,0.04)'}},
-        y:{ticks:{color:'#64748b',font:{size:10}}, grid:{color:'rgba(255,255,255,0.04)'}, stacked:true}
-      }
-    }
-  });
-}
-
-// ═══════════════════════════════════
-// TABLE RENDERING (generic)
-// ═══════════════════════════════════
-function renderGenericTable(data, headEl, bodyEl, pageInfoEl, paginEl, page, pageKey) {
-  if (!headEl || !bodyEl) return;
-  if (data.length === 0) {
-    headEl.innerHTML = '<tr><th>Sin datos</th></tr>';
-    bodyEl.innerHTML = '<tr><td class="empty-state"><i class="fas fa-database d-block mb-2"></i>No hay datos disponibles</td></tr>';
-    if(pageInfoEl) pageInfoEl.textContent = '0 registros';
-    if(paginEl) paginEl.innerHTML = '';
-    return;
-  }
-  const headers = Object.keys(data[0]);
-  headEl.innerHTML = '<tr>' + headers.map(h => `<th onclick="sortTable('${bodyEl.id.replace('body','tabla')}',${headers.indexOf(h)})">${h} <i class="fas fa-sort sort-icon"></i></th>`).join('') + '</tr>';
-
-  const total = data.length;
-  const totalPages = Math.ceil(total / PAGE_SIZE);
-  const start = (page-1)*PAGE_SIZE;
-  const pageData = data.slice(start, start+PAGE_SIZE);
-
-  bodyEl.innerHTML = pageData.map(row =>
-    '<tr>' + headers.map(h => `<td>${row[h]||'—'}</td>`).join('') + '</tr>'
-  ).join('');
-
-  if(pageInfoEl) pageInfoEl.textContent = `${start+1}–${Math.min(start+PAGE_SIZE,total)} de ${total} registros`;
-
-  if(paginEl) {
-    let btns = '';
-    if(page>1) btns += `<button class="page-btn" onclick="${pageKey}Page(${page-1})"><i class="fas fa-chevron-left"></i></button>`;
-    for(let i=Math.max(1,page-2); i<=Math.min(totalPages, page+2); i++) {
-      btns += `<button class="page-btn${i===page?' active':''}" onclick="${pageKey}Page(${i})">${i}</button>`;
-    }
-    if(page<totalPages) btns += `<button class="page-btn" onclick="${pageKey}Page(${page+1})"><i class="fas fa-chevron-right"></i></button>`;
-    paginEl.innerHTML = btns;
-  }
-}
-
-// ═══════════════════════════════════
-// MENSAJEROS TABLE
-// ═══════════════════════════════════
-function filterTableMensajeros() {
-  FILTERED.mensajeros = getFilteredMensajeros();
-  PAGES.mensajeros = 1;
-  renderMensajerosTable();
-}
-
-function renderMensajerosTable() {
-  const data = FILTERED.mensajeros.length || Object.keys(activeFilters).length ? FILTERED.mensajeros : DATA.mensajeros;
-  document.getElementById('mensajerosCount').textContent = `(${data.length})`;
-  const nomF=['NOMBRE','Nombre','MENSAJERO','Mensajero'];
-  const cidF=['CIUDAD','Ciudad'];
-  const pdvF=['DROGUERIA','DROGERÍA','Drogueria','Drogería'];
-  const entF=['ENTREGAS','Entregas','CANTIDAD','Cantidad'];
-  const tieF=['TIEMPO','Tiempo','TIEMPO PROMEDIO'];
-  const tgF=['TIPO GESTIÓN','TIPO GESTION','Tipo Gestión'];
-  const estF=['ESTADO','Estado'];
-
-  const pageData = data.slice((PAGES.mensajeros-1)*PAGE_SIZE, PAGES.mensajeros*PAGE_SIZE);
-  const tbody = document.getElementById('bodyMensajeros');
-
-  if (!data.length) {
-    tbody.innerHTML = '<tr><td colspan="8" class="empty-state"><i class="fas fa-inbox d-block mb-2"></i>Sin resultados</td></tr>';
-    document.getElementById('paginationInfoM').textContent = '0 registros';
-    document.getElementById('paginationM').innerHTML = '';
-    return;
-  }
-
-  const estados = ['Activo','En Ruta','Finalizado','Novedad'];
-  const badgeClass = ['badge-active','badge-route','badge-done','badge-novedad'];
-
-  tbody.innerHTML = pageData.map(r => {
-    const nom = getFirstField(r, nomF) || '—';
-    const cid = getFirstField(r, cidF) || '—';
-    const pdv = getFirstField(r, pdvF) || '—';
-    const ent = getFirstField(r, entF) || '0';
-    const tie = getFirstField(r, tieF) || '—';
-    const tg  = getFirstField(r, tgF) || '—';
-    const rawEst = getFirstField(r, estF);
-    const estIdx = rawEst ? estados.findIndex(e=>e.toLowerCase()===rawEst.toLowerCase()) : Math.floor(Math.random()*3);
-    const est = estIdx>=0 ? estados[estIdx] : estados[Math.floor(Math.random()*3)];
-    const bc = estIdx>=0 ? badgeClass[estIdx] : badgeClass[Math.floor(Math.random()*3)];
-    const prod = Math.floor(Math.random()*30+70);
-    return `<tr>
-      <td>${nom}</td><td>${cid}</td><td>${pdv}</td><td>${parseInt(ent).toLocaleString('es-CO')}</td>
-      <td>${tie}</td><td>${tg}</td>
-      <td><span class="badge-status ${bc}">${est}</span></td>
-      <td>
-        <div style="display:flex;align-items:center;gap:8px">
-          <div class="progress-bar-custom" style="width:80px"><div class="progress-fill" style="width:${prod}%"></div></div>
-          <span style="font-size:11px;color:var(--cyan-light)">${prod}%</span>
-        </div>
-      </td>
-    </tr>`;
-  }).join('');
-
-  document.getElementById('paginationInfoM').textContent = `${(PAGES.mensajeros-1)*PAGE_SIZE+1}–${Math.min(PAGES.mensajeros*PAGE_SIZE, data.length)} de ${data.length}`;
-  renderPagination('paginationM', PAGES.mensajeros, Math.ceil(data.length/PAGE_SIZE), 'mensajerosPg');
-}
-
-function mensajerosPgPage(p) { PAGES.mensajeros=p; renderMensajerosTable(); }
-
-// ═══════════════════════════════════
-// NOVEDADES TABLE
-// ═══════════════════════════════════
-function filterTableNovedades() {
-  const ciudadV = getVal('fnCiudad');
-  const tipoV = getVal('fnTipo');
-  const desde = document.getElementById('fnFechaDesde').value;
-  const hasta = document.getElementById('fnFechaHasta').value;
-  const search = getVal('searchNovedades');
-
-  FILTERED.novedades = DATA.novedades.filter(r => {
-    const cid = getFirstField(r,['CIUDAD','Ciudad','ciudad']).toLowerCase();
-    const tipo = getFirstField(r,['TIPIFICACION','TIPIFICACIÓN','Tipificación']).toLowerCase();
-    if (ciudadV && !cid.includes(ciudadV)) return false;
-    if (tipoV && !tipo.includes(tipoV)) return false;
-    if (desde || hasta) {
-      const fechaStr = getFirstField(r,['FECHA','Fecha','fecha']);
-      const fecha = parseDate(fechaStr);
-      if (fecha) {
-        if (desde && fecha < new Date(desde)) return false;
-        if (hasta && fecha > new Date(hasta)) return false;
-      }
-    }
-    if (search) {
-      const all = Object.values(r).join(' ').toLowerCase();
-      if (!all.includes(search)) return false;
-    }
-    return true;
-  });
-  PAGES.novedades = 1;
-  renderNovedadesTable();
-}
-
-function renderNovedadesTable() {
-  const data = FILTERED.novedades.length > 0 || getVal('fnCiudad') || getVal('fnTipo') || getVal('searchNovedades')
-    ? FILTERED.novedades : DATA.novedades;
-  document.getElementById('novedadesCount').textContent = `(${data.length})`;
-  const fechaF=['FECHA','Fecha'];
-  const cidF=['CIUDAD','Ciudad'];
-  const tipoF=['TIPIFICACION','TIPIFICACIÓN','Tipificación'];
-  const obsF=['OBSERVACION','OBSERVACIÓN','Observación','Obs'];
-  const hrsF=['HORAS DESCONTAR','Horas descontar','HORAS'];
-  const totF=['TOTAL DESCONTAR','Total descontar','TOTAL'];
-
-  const pageData = data.slice((PAGES.novedades-1)*PAGE_SIZE, PAGES.novedades*PAGE_SIZE);
-  const tbody = document.getElementById('bodyNovedades');
-
-  if (!data.length) {
-    tbody.innerHTML = '<tr><td colspan="6" class="empty-state"><i class="fas fa-inbox d-block mb-2"></i>Sin novedades</td></tr>';
-    document.getElementById('paginationInfoN').textContent = '0 registros';
-    document.getElementById('paginationN').innerHTML = '';
-    return;
-  }
-
-  tbody.innerHTML = pageData.map(r => {
-    const tipo = getFirstField(r, tipoF) || 'N/D';
-    const esRiesgo = tipo.toLowerCase().includes('riesgo') || tipo.toLowerCase().includes('terminacion');
-    return `<tr>
-      <td>${getFirstField(r,fechaF)||'—'}</td>
-      <td>${getFirstField(r,cidF)||'—'}</td>
-      <td><span class="badge-status ${esRiesgo?'badge-risk':'badge-novedad'}">${tipo}</span></td>
-      <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${getFirstField(r,obsF)}">${getFirstField(r,obsF)||'—'}</td>
-      <td>${getFirstField(r,hrsF)||'—'}</td>
-      <td>${getFirstField(r,totF)||'—'}</td>
-    </tr>`;
-  }).join('');
-
-  document.getElementById('paginationInfoN').textContent = `${(PAGES.novedades-1)*PAGE_SIZE+1}–${Math.min(PAGES.novedades*PAGE_SIZE,data.length)} de ${data.length}`;
-  renderPagination('paginationN', PAGES.novedades, Math.ceil(data.length/PAGE_SIZE), 'novedadesPg');
-}
-
-function novedadesPgPage(p) { PAGES.novedades=p; renderNovedadesTable(); }
-
-// ═══════════════════════════════════
-// ADMIN TABLE
-// ═══════════════════════════════════
-function filterTableAdmin() {
-  const mes = getVal('fasMes');
-  const ciudad = getVal('fasCiudad');
-  const search = getVal('searchAdmin');
-  FILTERED.administrativo = DATA.administrativo.filter(r => {
-    if (mes && getFirstField(r,['MES','Mes']).toLowerCase() !== mes) return false;
-    if (ciudad && !getFirstField(r,['CIUDAD','Ciudad']).toLowerCase().includes(ciudad)) return false;
-    if (search && !Object.values(r).join(' ').toLowerCase().includes(search)) return false;
-    return true;
-  });
-  PAGES.administrativo = 1;
-  renderAdminTable();
-}
-
-function renderAdminTable() {
-  const data = FILTERED.administrativo;
-  const tbody = document.getElementById('bodyAdmin');
-  if (!data.length) {
-    tbody.innerHTML = '<tr><td colspan="12" class="empty-state"><i class="fas fa-inbox d-block mb-2"></i>Sin datos</td></tr>';
-    document.getElementById('paginationInfoA').textContent = '0 registros';
-    document.getElementById('paginationA').innerHTML = '';
-    return;
-  }
-  const pageData = data.slice((PAGES.administrativo-1)*PAGE_SIZE, PAGES.administrativo*PAGE_SIZE);
-  const fields = [
-    ['MES','Mes'],['CIUDAD','Ciudad'],['RENUNCIA','Renuncia'],
-    ['TERMINACIÓN DE CONTRATO','Terminación de contrato','TERMINACION'],['TOTAL','Total'],
-    ['AUSENCIA INJUSTIFICADA','Ausencia Injustificada'],['CALAMIDAD','Calamidad'],
-    ['INCAPACIDAD','Incapacidad'],['LICENCIA POR LUTO','Licencia por luto','LUTO'],
-    ['NO REMUNERADO','No remunerado'],['PERMISO REMUNERADO','Permiso remunerado'],
-    ['TOTAL INASISTENCIAS','Total Inasistencias']
-  ];
-  tbody.innerHTML = pageData.map(r =>
-    '<tr>' + fields.map(f => `<td>${getFirstField(r,f)||'—'}</td>`).join('') + '</tr>'
-  ).join('');
-  document.getElementById('paginationInfoA').textContent = `${(PAGES.administrativo-1)*PAGE_SIZE+1}–${Math.min(PAGES.administrativo*PAGE_SIZE,data.length)} de ${data.length}`;
-  renderPagination('paginationA', PAGES.administrativo, Math.ceil(data.length/PAGE_SIZE), 'adminPg');
-}
-// Initialize admin filtered
-function initAdmin() { FILTERED.administrativo = DATA.administrativo; renderAdminTable(); }
-function adminPgPage(p) { PAGES.administrativo=p; renderAdminTable(); }
-
-// ═══════════════════════════════════
-// VENTAS TABLE
-// ═══════════════════════════════════
-function filterTableVentas() {
-  const ciudad = getVal('fvCiudad');
-  const search = getVal('fvSearch');
-  FILTERED.ventas = DATA.ventas.filter(r => {
-    if (ciudad && !Object.values(r).join(' ').toLowerCase().includes(ciudad)) return false;
-    if (search && !Object.values(r).join(' ').toLowerCase().includes(search)) return false;
-    return true;
-  });
-  PAGES.ventas = 1;
-  renderVentasTable();
-}
-
-function renderVentasTable() {
-  renderGenericTable(
-    FILTERED.ventas.length > 0 ? FILTERED.ventas : DATA.ventas,
-    document.getElementById('headVentas'),
-    document.getElementById('bodyVentas'),
-    document.getElementById('paginationInfoV'),
-    document.getElementById('paginationV'),
-    PAGES.ventas, 'ventasPg'
-  );
-}
-function ventasPgPage(p) { PAGES.ventas=p; renderVentasTable(); }
-
-// Generic tables
-function renderCantidadTable() {
-  renderGenericTable(DATA.cantidad, document.getElementById('headCantidad'), document.getElementById('bodyCantidad'), null, null, 1, 'cantPg');
-}
-function renderPercapitaTable() {
-  renderGenericTable(DATA.percapita, document.getElementById('headPercapita'), document.getElementById('bodyPercapita'), null, null, 1, 'percPg');
-}
-function renderTiemposTable() {
-  renderGenericTable(DATA.tiempos, document.getElementById('headTiempos'), document.getElementById('bodyTiempos'), null, null, 1, 'tiePg');
-}
-
-function filterOperacion() {
-  const dia = getVal('fopDia');
-  const ciudad = getVal('fopCiudad');
-  const pdv = getVal('fopPdv');
-  const filtered = DATA.cantidad.filter(r => {
-    if (dia) {
-      const f = getFirstField(r,['FECHA','Fecha','DIA','Dia']);
-      if (f) { const d = parseDate(f); if (d && d.getDate()!=parseInt(dia)) return false; }
-    }
-    if (ciudad && !Object.values(r).join(' ').toLowerCase().includes(ciudad)) return false;
-    if (pdv && !Object.values(r).join(' ').toLowerCase().includes(pdv)) return false;
-    return true;
-  });
-  renderGenericTable(filtered, document.getElementById('headCantidad'), document.getElementById('bodyCantidad'), null, null, 1, 'cantPg');
-}
-
-// ═══════════════════════════════════
-// PAGINATION RENDER
-// ═══════════════════════════════════
-function renderPagination(containerId, current, total, fnName) {
-  const el = document.getElementById(containerId);
-  if (!el) return;
-  if (total <= 1) { el.innerHTML = ''; return; }
-  let btns = '';
-  if(current>1) btns += `<button class="page-btn" onclick="${fnName}Page(${current-1})"><i class="fas fa-chevron-left"></i></button>`;
-  for(let i=Math.max(1,current-2); i<=Math.min(total,current+2); i++) {
-    btns += `<button class="page-btn${i===current?' active':''}" onclick="${fnName}Page(${i})">${i}</button>`;
-  }
-  if(current<total) btns += `<button class="page-btn" onclick="${fnName}Page(${current+1})"><i class="fas fa-chevron-right"></i></button>`;
-  el.innerHTML = btns;
-}
-
-// ═══════════════════════════════════
-// SORT TABLE
-// ═══════════════════════════════════
-function sortTable(tableId, colIdx) {
-  const table = document.getElementById(tableId);
-  if (!table) return;
-  const tbody = table.querySelector('tbody');
-  const rows = Array.from(tbody.querySelectorAll('tr'));
-  const asc = table.dataset.sortAsc !== String(colIdx);
-  table.dataset.sortAsc = asc ? String(colIdx) : '';
-  rows.sort((a,b) => {
-    const aVal = a.cells[colIdx]?.textContent.trim() || '';
-    const bVal = b.cells[colIdx]?.textContent.trim() || '';
-    const aNum = parseFloat(aVal.replace(/[^0-9.-]/g,''));
-    const bNum = parseFloat(bVal.replace(/[^0-9.-]/g,''));
-    if (!isNaN(aNum) && !isNaN(bNum)) return asc ? aNum-bNum : bNum-aNum;
-    return asc ? aVal.localeCompare(bVal,'es') : bVal.localeCompare(aVal,'es');
-  });
-  rows.forEach(r => tbody.appendChild(r));
-}
-
-// ═══════════════════════════════════
-// GLOBAL SEARCH
-// ═══════════════════════════════════
-let searchTimeout;
-document.getElementById('globalSearch').addEventListener('input', function() {
-  clearTimeout(searchTimeout);
-  searchTimeout = setTimeout(() => {
-    const q = this.value.trim().toLowerCase();
-    const dropdown = document.getElementById('searchDropdown');
-    if (!q) { dropdown.classList.remove('active'); return; }
-
-    const results = [];
-    const allData = [...DATA.mensajeros, ...DATA.novedades, ...DATA.cantidad];
-    allData.forEach(row => {
-      const match = Object.values(row).join(' ').toLowerCase().includes(q);
-      if (match && results.length < 8) {
-        const keys = Object.keys(row);
-        const name = row[keys[0]] || '—';
-        const type = DATA.mensajeros.includes(row) ? 'Mensajero' : DATA.novedades.includes(row) ? 'Novedad' : 'Operación';
-        results.push({name, type, row});
+    Papa.parse(url,{
+      download:true,header:true,skipEmptyLines:true,
+      complete:function(r){
+        if(!done){done=true;clearTimeout(timer);D[key]=r.data||[];res(D[key]);}
+      },
+      error:function(err){
+        if(done)return;
+        console.warn('Direct failed for '+key+', trying proxy...');
+        var proxyUrl='https://corsproxy.io/?'+encodeURIComponent(url);
+        Papa.parse(proxyUrl,{
+          download:true,header:true,skipEmptyLines:true,
+          complete:function(r2){
+            if(!done){done=true;clearTimeout(timer);D[key]=r2.data||[];res(D[key]);}
+          },
+          error:function(){
+            if(!done){done=true;clearTimeout(timer);D[key]=[];res([]);}
+          }
+        });
       }
     });
+  });
+}
 
-    if (!results.length) {
-      dropdown.innerHTML = '<div class="search-result-item text-dim">Sin resultados</div>';
-    } else {
-      dropdown.innerHTML = results.map(r =>
-        `<div class="search-result-item" onclick="handleSearchResult('${r.type}')">
-          <div class="tag">${r.type}</div>
-          <div>${r.name}</div>
-        </div>`
-      ).join('');
+// ═══════════════════════════════════════════════
+// FIELD DETECTION — Auto-detects column names
+// ═══════════════════════════════════════════════
+function detect(rows){var candidates=Array.prototype.slice.call(arguments,1);if(!rows||!rows.length)return '';var keys=Object.keys(rows[0]);for(var ci=0;ci<candidates.length;ci++){var c=candidates[ci];var m=keys.find(function(k){return k.toLowerCase().indexOf(c.toLowerCase())!==-1;});if(m)return m;}return '';}
+function dFld(rows){var cands=Array.prototype.slice.call(arguments,1);var k=detect.apply(null,[rows].concat(cands));return function(r){return k?fld(r,k):'';}}
+
+// Key field accessors built after data loads
+let A={};
+function buildAccessors(){
+  A.nov={
+    mes:dFld(D.novedades,'mes','month'),
+    ciudad:r=>fld(r,...Object.keys(r).filter(k=>k.toLowerCase().includes('ciudad'))||['H']),
+    drog:r=>fld(r,...Object.keys(r).filter(k=>k.toLowerCase().includes('drog')||k.toLowerCase().includes('punto'))||['N']),
+    tipo:r=>fld(r,...Object.keys(r).filter(k=>k.toLowerCase().includes('tipo')||k.toLowerCase().includes('novedad'))||['tipo']),
+    modelo:r=>fld(r,...Object.keys(r).filter(k=>k.toLowerCase().includes('modelo'))||['modelo']),
+    fecha:r=>fld(r,...Object.keys(r).filter(k=>k.toLowerCase().includes('fecha'))||['fecha']),
+    horas:r=>num(fld(r,...Object.keys(r).filter(k=>k.toLowerCase().includes('hora'))||['horas'])),
+    valor:r=>num(fld(r,...Object.keys(r).filter(k=>k.toLowerCase().includes('valor')||k.toLowerCase().includes('descont'))||['valor']))
+  };
+  A.can={
+    mes:dFld(D.cantidad,'mes','month'),
+    ciudad:r=>fld(r,...Object.keys(r).filter(k=>k.toLowerCase().includes('ciudad'))||['ciudad']),
+    drog:r=>fld(r,...Object.keys(r).filter(k=>k.toLowerCase().includes('drog')||k.toLowerCase().includes('punto'))||['drog']),
+    tipo:r=>fld(r,...Object.keys(r).filter(k=>k.toLowerCase().includes('gesti')||k.toLowerCase().includes('tipo'))||['tipo']),
+    tipoM:r=>fld(r,...Object.keys(r).filter(k=>k.toLowerCase().includes('mensajero')||k.toLowerCase().includes('planta')||k.toLowerCase().includes('colabo'))||['tipo mensajero']),
+    efectiva:r=>num(fld(r,...Object.keys(r).filter(k=>k.toLowerCase().includes('efectiv'))||['efectiva'])),
+    cancelada:r=>num(fld(r,...Object.keys(r).filter(k=>k.toLowerCase().includes('cancel'))||['cancelada'])),
+    total:r=>num(fld(r,...Object.keys(r).filter(k=>k.toLowerCase().includes('total')||k.toLowerCase().includes('cantidad'))||['total'])),
+    fecha:r=>fld(r,...Object.keys(r).filter(k=>k.toLowerCase().includes('fecha'))||['fecha']),
+    mensajeros:r=>num(fld(r,...Object.keys(r).filter(k=>k.toLowerCase().includes('mensajero')&&k.toLowerCase().includes('cant'))||['cant mensajero','mensajeros']))
+  };
+  A.pc={
+    mes:dFld(D.percapita,'mes','month'),
+    ciudad:r=>fld(r,...Object.keys(r).filter(k=>k.toLowerCase().includes('ciudad'))||['ciudad']),
+    drog:r=>fld(r,...Object.keys(r).filter(k=>k.toLowerCase().includes('drog')||k.toLowerCase().includes('punto'))||['drog']),
+    tipoM:r=>fld(r,...Object.keys(r).filter(k=>k.toLowerCase().includes('tipo')&&(k.toLowerCase().includes('mens')||k.toLowerCase().includes('plant')||k.toLowerCase().includes('cola')))||['tipo']),
+    costo:r=>num(fld(r,...Object.keys(r).filter(k=>k.toLowerCase().includes('costo')||k.toLowerCase().includes('valor'))||['costo'])),
+    percapita:r=>num(fld(r,...Object.keys(r).filter(k=>k.toLowerCase().includes('percap')||k.toLowerCase().includes('per cap'))||['percapita'])),
+    entregas:r=>num(fld(r,...Object.keys(r).filter(k=>k.toLowerCase().includes('entrega')||k.toLowerCase().includes('cantidad'))||['entregas']))
+  };
+  A.ti={
+    mes:dFld(D.tiempos,'mes','month'),
+    ciudad:r=>fld(r,...Object.keys(r).filter(k=>k.toLowerCase().includes('ciudad'))||['ciudad']),
+    drog:r=>fld(r,...Object.keys(r).filter(k=>k.toLowerCase().includes('drog')||k.toLowerCase().includes('punto'))||['drog']),
+    tipoM:r=>fld(r,...Object.keys(r).filter(k=>k.toLowerCase().includes('tipo')&&(k.toLowerCase().includes('mens')||k.toLowerCase().includes('plant')||k.toLowerCase().includes('cola')))||['tipo mensajero']),
+    tipoG:r=>fld(r,...Object.keys(r).filter(k=>k.toLowerCase().includes('gesti'))||['tipo gestion']),
+    tiempo:r=>num(fld(r,...Object.keys(r).filter(k=>k.toLowerCase().includes('tiempo')||k.toLowerCase().includes('promedio')||k.toLowerCase().includes('minuto'))||['tiempo'])),
+    tiempoDom:r=>num(fld(r,...Object.keys(r).filter(k=>k.toLowerCase().includes('domicilio')&&k.toLowerCase().includes('tiempo'))||['tiempo domicilio'])),
+    tiempoTrans:r=>num(fld(r,...Object.keys(r).filter(k=>k.toLowerCase().includes('transf')&&k.toLowerCase().includes('tiempo'))||['tiempo transferencia']))
+  };
+  A.ven={
+    mes:dFld(D.ventas,'mes','month'),
+    ciudad:r=>fld(r,...Object.keys(r).filter(k=>k.toLowerCase().includes('ciudad'))||['ciudad']),
+    drog:r=>fld(r,...Object.keys(r).filter(k=>k.toLowerCase().includes('drog')||k.toLowerCase().includes('punto'))||['drog']),
+    tipo:r=>fld(r,...Object.keys(r).filter(k=>k.toLowerCase().includes('gesti')||k.toLowerCase().includes('tipo'))||['tipo']),
+    total:r=>num(fld(r,...Object.keys(r).filter(k=>k.toLowerCase().includes('total')||k.toLowerCase().includes('venta'))||['total'])),
+    efectivo:r=>num(fld(r,...Object.keys(r).filter(k=>k.toLowerCase().includes('efectiv'))||['efectivo'])),
+    cancelado:r=>num(fld(r,...Object.keys(r).filter(k=>k.toLowerCase().includes('cancel'))||['cancelado'])),
+    fecha:r=>fld(r,...Object.keys(r).filter(k=>k.toLowerCase().includes('fecha'))||['fecha'])
+  };
+  A.nc={
+    mes:dFld(D.novcancel,'mes','month'),
+    ciudad:r=>fld(r,...Object.keys(r).filter(k=>k.toLowerCase().includes('ciudad'))||['ciudad']),
+    drog:r=>fld(r,...Object.keys(r).filter(k=>k.toLowerCase().includes('drog')||k.toLowerCase().includes('punto'))||['drog']),
+    tipo:r=>fld(r,...Object.keys(r).filter(k=>k.toLowerCase().includes('tipo')||k.toLowerCase().includes('novedad'))||['tipo']),
+    tipoM:r=>fld(r,...Object.keys(r).filter(k=>k.toLowerCase().includes('mensajero')||k.toLowerCase().includes('planta')||k.toLowerCase().includes('colabo'))||['tipo mensajero']),
+    resp:r=>fld(r,...Object.keys(r).filter(k=>k.toLowerCase().includes('resp')||k.toLowerCase().includes('quick')||k.toLowerCase().includes('cafam'))||['responsable'])
+  };
+}
+
+// ═══════════════════════════════════════════════
+// FILTER HELPERS
+// ═══════════════════════════════════════════════
+function applyRowFilter(rows,acc,filters){
+  return rows.filter(r=>{
+    for(const[key,val]of Object.entries(filters)){
+      if(!val)continue;
+      const rv=(acc[key]?acc[key](r):fld(r,key)||'').toLowerCase();
+      if(!rv.includes(val.toLowerCase()))return false;
     }
-    dropdown.classList.add('active');
-  }, 300);
-});
+    return true;
+  });
+}
 
-document.addEventListener('click', e => {
-  if (!e.target.closest('.header-search')) {
-    document.getElementById('searchDropdown').classList.remove('active');
+// ═══════════════════════════════════════════════
+// POPULATE SELECT FILTERS
+// ═══════════════════════════════════════════════
+function popFilters(rows,acc,defs){
+  defs.forEach(([id,fn])=>{
+    const vals=rows.map(r=>fn(r)).filter(Boolean);
+    fillSelect(id,vals);
+  });
+}
+
+// ═══════════════════════════════════════════════
+// RENDER NOVEDADES
+// ═══════════════════════════════════════════════
+function renderNovedades(){
+  const rows=applyRowFilter(D.novedades,A.nov,{mes:gv('nfMes'),ciudad:gv('nfCiudad'),drog:gv('nfDrog'),tipo:gv('nfTipo')});
+  popFilters(D.novedades,A.nov,[['nfMes',A.nov.mes],['nfCiudad',A.nov.ciudad],['nfDrog',A.nov.drog],['nfTipo',A.nov.tipo]]);
+
+  const totalHoras=sum(rows,r=>A.nov.horas(r));
+  const totalValor=sum(rows,r=>A.nov.valor(r));
+  const byDrog=sumGroup(rows,r=>A.nov.drog(r),r=>1);
+  const byDrogVal=sumGroup(rows,r=>A.nov.drog(r),r=>A.nov.valor(r));
+  const topD=sortObj(byDrog);const botD=sortObj(byDrog,false);
+  const byCiudad=sumGroup(rows,r=>A.nov.ciudad(r),r=>1);
+  const topC=sortObj(byCiudad);
+
+  // KPIs
+  document.getElementById('novKPIs').innerHTML=[
+    kpiCard('fas fa-triangle-exclamation','Total Novedades',rows.length.toLocaleString('es-CO'),'registradas','ne','#ef4444'),
+    kpiCard('fas fa-clock','Horas Descontadas',totalHoras.toLocaleString('es-CO'),'horas totales','dn','#f59e0b'),
+    kpiCard('fas fa-dollar-sign','Valor Descontado',cop(totalValor),'total período','dn','#ef4444'),
+    kpiCard('fas fa-hospital','Drog. Más Novedades',topD[0]?topD[0][0]:'—',topD[0]?topD[0][1]+' eventos':'—','dn','#8b5cf6'),
+    kpiCard('fas fa-map-marker-alt','Ciudad Más Novedades',topC[0]?topC[0][0]:'—',topC[0]?topC[0][1]+' eventos':'—','ne','#3b82f6'),
+    kpiCard('fas fa-check-circle','Drog. Menos Nov.',botD[0]?botD[0][0]:'—',botD[0]?botD[0][1]+' eventos':'ok','up','#10b981'),
+  ].join('');
+
+  // Gráfica por tipo
+  const byTipo=sumGroup(rows,r=>A.nov.tipo(r),r=>1);
+  const tipoE=sortObj(byTipo);
+  makeChart('cNovTipo','bar',tipoE.map(e=>e[0].slice(0,22)),[barDS('Cantidad',tipoE.map(e=>e[1]),'#ef4444')]);
+
+  // Tendencia día de la semana
+  const diasCount=Array(7).fill(0);
+  rows.forEach(r=>{const d=parseDate(A.nov.fecha(r));if(d)diasCount[d.getDay()]++;});
+  makeChart('cNovDia','line',DIAS,[lineDS('Novedades por día',diasCount,'#f59e0b',true)]);
+
+  // Por drogería top10
+  const topDrogArr=topN(byDrog,10);
+  makeChart('cNovDrog','bar',topDrogArr.map(e=>e[0].slice(0,18)),[barDS('Novedades',topDrogArr.map(e=>e[1]),'#8b5cf6')]);
+
+  // Por mes
+  const byMes=sumGroup(rows,r=>A.nov.mes(r),r=>1);
+  const mesArr=sortObj(byMes,false).reverse();
+  makeChart('cNovMes','line',mesArr.map(e=>e[0]),[lineDS('Novedades',mesArr.map(e=>e[1]),'#ef4444',true)]);
+
+  // Análisis de modelos top4
+  const byModelo=sumGroup(rows,r=>A.nov.modelo(r)||A.nov.tipo(r),r=>1);
+  const top4=topN(byModelo,4);
+  const fijo=sum(rows,r=>(A.nov.modelo(r)||A.nov.tipo(r)).toLowerCase().includes('fija')||((A.nov.modelo(r)||A.nov.tipo(r)).toLowerCase().includes('plant'))?1:0);
+  const colabo=sum(rows,r=>(A.nov.modelo(r)||A.nov.tipo(r)).toLowerCase().includes('cola')?1:0);
+
+  // Analysis
+  document.getElementById('novAnalysis').innerHTML=`
+    <div class="ac"><div class="ac-ttl"><i class="fas fa-brain"></i> Análisis Inteligente — Novedades de Gestión</div><div class="ac-body">
+      <strong>Total de novedades registradas:</strong> <span class="hi">${rows.length}</span> eventos en el período seleccionado, con <span class="bad">${totalHoras.toLocaleString('es-CO')} horas descontadas</span> y un valor total de <span class="bad">${cop(totalValor)}</span>.<br><br>
+      <strong>🔴 Droguerías con más novedades:</strong> <span class="bad">${topD.slice(0,3).map(e=>`${e[0]} (${e[1]})`).join(', ')}</span>. Estos puntos requieren intervención prioritaria.<br>
+      <strong>🟢 Droguerías con menos novedades:</strong> <span class="ok">${botD.slice(0,3).map(e=>`${e[0]} (${e[1]})`).join(', ')}</span>. Modelos a replicar.<br><br>
+      <strong>Top 4 tipos de novedad más frecuentes:</strong> ${top4.map((e,i)=>`<span class="${i<2?'bad':'warn'}">${e[0]}: ${e[1]}</span>`).join(' · ')}<br><br>
+      <strong>Por modelo:</strong> Planta fija: <span class="hi">${fijo}</span> eventos · Colaborativo: <span class="hi">${colabo}</span> eventos.
+    </div></div>`;
+}
+
+// ═══════════════════════════════════════════════
+// RENDER CANTIDAD
+// ═══════════════════════════════════════════════
+function renderCantidad(){
+  const rows=applyRowFilter(D.cantidad,A.can,{mes:gv('cfMes'),ciudad:gv('cfCiudad'),drog:gv('cfDrog'),tipo:gv('cfTipo'),tipoM:gv('cfTipoM')});
+  popFilters(D.cantidad,A.can,[['cfMes',A.can.mes],['cfCiudad',A.can.ciudad],['cfDrog',A.can.drog],['cfTipo',A.can.tipo],['cfTipoM',A.can.tipoM]]);
+
+  const totEf=sum(rows,r=>A.can.efectiva(r)||A.can.total(r));
+  const totCan=sum(rows,r=>A.can.cancelada(r));
+  const totTot=totEf+totCan||totEf;
+  const cumpl=totTot?((totEf/totTot)*100).toFixed(1):0;
+
+  const byDrog=sumGroup(rows,r=>A.can.drog(r),r=>A.can.total(r)||A.can.efectiva(r));
+  const topD=sortObj(byDrog);const botD=sortObj(byDrog,false);
+  const byCiudad=sumGroup(rows,r=>A.can.ciudad(r),r=>A.can.total(r)||A.can.efectiva(r));
+  const byMes=sumGroup(rows,r=>A.can.mes(r),r=>A.can.total(r)||A.can.efectiva(r));
+  const byTipo=sumGroup(rows,r=>A.can.tipo(r),r=>A.can.total(r)||A.can.efectiva(r));
+  const byTipoM=sumGroup(rows,r=>A.can.tipoM(r),r=>A.can.total(r)||A.can.efectiva(r));
+
+  // Análisis mensajeros por punto
+  const mensMap=sumGroup(rows,r=>A.can.drog(r),r=>A.can.mensajeros(r));
+  const entPMens={};Object.keys(byDrog).forEach(k=>{const m=mensMap[k]||1;entPMens[k]=byDrog[k]/m;});
+  const sobrecost=sortObj(entPMens,false).filter(e=>e[1]<30);
+  const subserv=sortObj(entPMens).filter(e=>e[1]>80);
+
+  document.getElementById('canKPIs').innerHTML=[
+    kpiCard('fas fa-box','Total Entregas',totEf.toLocaleString('es-CO'),'efectivas','up','#2563eb'),
+    kpiCard('fas fa-check-circle','Efectivas',totEf.toLocaleString('es-CO'),`${cumpl}% cumpl.`,'up','#10b981'),
+    kpiCard('fas fa-times-circle','Canceladas',totCan.toLocaleString('es-CO'),'del total','dn','#ef4444'),
+    kpiCard('fas fa-percent','Cumplimiento',cumpl+'%','meta 95%',parseFloat(cumpl)>=95?'up':'dn','#8b5cf6'),
+    kpiCard('fas fa-hospital','Mayor Volumen',topD[0]?topD[0][0]:'—',topD[0]?topD[0][1].toLocaleString('es-CO')+' entregas':'—','up','#06b6d4'),
+    kpiCard('fas fa-arrow-down','Menor Volumen',botD[0]?botD[0][0]:'—',botD[0]?botD[0][1].toLocaleString('es-CO')+' entregas':'—','ne','#f59e0b'),
+  ].join('');
+
+  // Por mes
+  const mesArr=Object.entries(byMes);
+  const byMesEf=sumGroup(rows,r=>A.can.mes(r),r=>A.can.efectiva(r)||A.can.total(r));
+  const byMesCan=sumGroup(rows,r=>A.can.mes(r),r=>A.can.cancelada(r));
+  makeChart('cCanMes','bar',mesArr.map(e=>e[0]),[barDS('Efectivas',mesArr.map(e=>byMesEf[e[0]]||0),'#10b981','s'),barDS('Canceladas',mesArr.map(e=>byMesCan[e[0]]||0),'#ef4444','s')],{extra:{plugins:{legend:{display:true}}}});
+
+  // Día de semana
+  const diasCnt=Array(7).fill(0);
+  rows.forEach(r=>{const d=parseDate(A.can.fecha(r));if(d)diasCnt[d.getDay()]+=(A.can.total(r)||A.can.efectiva(r));});
+  makeChart('cCanDia','line',DIAS,[lineDS('Entregas',diasCnt,'#2563eb',true)]);
+
+  // Top droguería
+  const topDArr=topN(byDrog,10);
+  makeChart('cCanDrog','bar',topDArr.map(e=>e[0].slice(0,18)),[barDS('Entregas',topDArr.map(e=>e[1]),'#2563eb')]);
+
+  // Tipo (dom vs trans)
+  const tipoArr=sortObj(byTipo);
+  makeChart('cCanTipo','doughnut',tipoArr.map(e=>e[0]),[{data:tipoArr.map(e=>e[1]),backgroundColor:COLS,borderColor:COLS.map(c=>c+'cc'),borderWidth:1.5,hoverOffset:5}]);
+
+  // Por ciudad
+  const ciudArr=sortObj(byCiudad);
+  makeChart('cCanCiud','bar',ciudArr.map(e=>e[0]),[barDS('Entregas',ciudArr.map(e=>e[1]),'#06b6d4')]);
+
+  // Por tipo mensajero
+  const tipoMArr=sortObj(byTipoM);
+  makeChart('cCanMensT','doughnut',tipoMArr.map(e=>e[0]),[{data:tipoMArr.map(e=>e[1]),backgroundColor:['#2563eb','#06b6d4','#8b5cf6'],borderColor:['#3b82f6bb','#22d3eebb','#a855f7bb'],borderWidth:1.5,hoverOffset:5}]);
+
+  document.getElementById('canAnalysis').innerHTML=`
+    <div class="g2">
+      <div class="ac"><div class="ac-ttl"><i class="fas fa-brain"></i> Análisis Operativo — Entregas</div><div class="ac-body">
+        <strong>Cumplimiento general: <span class="${parseFloat(cumpl)>=95?'ok':'bad'}">${cumpl}%</span></strong> (Meta: 95%).<br>
+        <strong>Droguerías líder:</strong> <span class="ok">${topD.slice(0,3).map(e=>`${e[0]} (${e[1].toLocaleString('es-CO')})`).join(' · ')}</span><br>
+        <strong>Droguerías de menor volumen:</strong> <span class="warn">${botD.slice(0,3).map(e=>`${e[0]} (${e[1].toLocaleString('es-CO')})`).join(' · ')}</span><br><br>
+        <strong>Canceladas totales:</strong> <span class="bad">${totCan.toLocaleString('es-CO')}</span> representan el <span class="bad">${totTot?((totCan/totTot)*100).toFixed(1):0}%</span> de la operación total.
+      </div></div>
+      <div class="ac"><div class="ac-ttl"><i class="fas fa-users"></i> Análisis de Mensajeros por Punto</div><div class="ac-body">
+        <strong>Puntos con posible sobre-costo</strong> (menos de 30 entregas/mensajero):<br><span class="warn">${sobrecost.slice(0,4).map(e=>`${e[0]} (${e[1].toFixed(0)} ent/mens)`).join('<br>')|| 'Sin datos suficientes'}</span><br><br>
+        <strong>Puntos que pueden necesitar más mensajeros</strong> (más de 80 ent/mens):<br><span class="bad">${subserv.slice(0,4).map(e=>`${e[0]} (${e[1].toFixed(0)} ent/mens)`).join('<br>')||'Sin datos suficientes'}</span>
+      </div></div>
+    </div>
+    <div class="plan"><div class="plan-ttl"><i class="fas fa-clipboard-list"></i> Plan de Acción — Cantidad</div>
+      ${[['Revisar puntos con cancelaciones elevadas','Analizar causas raíz y aplicar protocolos de recuperación de entrega.'],
+         ['Fortalecer puntos sub-servidos','Asignar mensajero adicional en puntos con más de 80 entregas por mensajero.'],
+         ['Evaluar sobre-costo en puntos de bajo volumen','Revisar viabilidad de puntos con menos de 30 entregas por mensajero.'],
+         ['Concentrar esfuerzos en días pico','Garantizar disponibilidad máxima en el día de mayor demanda semanal.']].map((p,i)=>
+        `<div class="plan-item"><div class="plan-num">${i+1}</div><div class="plan-content"><div class="plan-title">${p[0]}</div><div class="plan-desc">${p[1]}</div></div></div>`).join('')}
+    </div>`;
+}
+
+// ═══════════════════════════════════════════════
+// RENDER PER CÁPITA
+// ═══════════════════════════════════════════════
+function renderPercapita(){
+  const rows=applyRowFilter(D.percapita,A.pc,{mes:gv('pfMes'),ciudad:gv('pfCiudad'),drog:gv('pfDrog')});
+  popFilters(D.percapita,A.pc,[['pfMes',A.pc.mes],['pfCiudad',A.pc.ciudad],['pfDrog',A.pc.drog]]);
+
+  const pcByDrog={};const costoByDrog={};const entByDrog={};
+  rows.forEach(r=>{const d=A.pc.drog(r)||'N/D';const pc=A.pc.percapita(r);const co=A.pc.costo(r);const en=A.pc.entregas(r);if(!pcByDrog[d]){pcByDrog[d]=[];costoByDrog[d]=0;entByDrog[d]=0;}if(pc>0)pcByDrog[d].push(pc);costoByDrog[d]+=co;entByDrog[d]+=en;});
+  const avgPcByDrog={};Object.keys(pcByDrog).forEach(k=>{const arr=pcByDrog[k];avgPcByDrog[k]=arr.length?arr.reduce((s,v)=>s+v,0)/arr.length:0;});
+  const topPC=sortObj(avgPcByDrog);const botPC=sortObj(avgPcByDrog,false);
+
+  const pcByMes={};const costoFijo=[];const costoColabo=[];
+  rows.forEach(r=>{const m=A.pc.mes(r)||'N/D';if(!pcByMes[m])pcByMes[m]=[];const pc=A.pc.percapita(r);if(pc>0)pcByMes[m].push(pc);const tm=A.pc.tipoM(r).toLowerCase();if(tm.includes('fij')||tm.includes('plant'))costoFijo.push(A.pc.costo(r));else if(tm.includes('cola'))costoColabo.push(A.pc.costo(r));});
+  const avgPcByMes={};Object.keys(pcByMes).forEach(k=>{const arr=pcByMes[k];avgPcByMes[k]=arr.length?arr.reduce((s,v)=>s+v,0)/arr.length:0;});
+
+  const globalPC=Object.values(avgPcByDrog).filter(v=>v>0);
+  const globalPCAvg=globalPC.length?globalPC.reduce((s,v)=>s+v,0)/globalPC.length:0;
+  const totalCosto=sum(rows,r=>A.pc.costo(r));
+  const avgCFijo=costoFijo.length?costoFijo.reduce((s,v)=>s+v,0)/costoFijo.length:0;
+  const avgCColabo=costoColabo.length?costoColabo.reduce((s,v)=>s+v,0)/costoColabo.length:0;
+
+  document.getElementById('pcKPIs').innerHTML=[
+    kpiCard('fas fa-coins','Per Cápita Global Prom.',cop(globalPCAvg),'promedio todos los puntos','ne','#f59e0b'),
+    kpiCard('fas fa-arrow-up','PC Más Alto',topPC[0]?topPC[0][0]:'—',topPC[0]?cop(topPC[0][1]):'—','dn','#ef4444'),
+    kpiCard('fas fa-arrow-down','PC Más Bajo',botPC[0]?botPC[0][0]:'—',botPC[0]?cop(botPC[0][1]):'—','up','#10b981'),
+    kpiCard('fas fa-dollar-sign','Costo Total',cop(totalCosto),'período seleccionado','ne','#8b5cf6'),
+    kpiCard('fas fa-id-badge','PC Planta Fija',cop(avgCFijo),'costo prom. fijo','ne','#2563eb'),
+    kpiCard('fas fa-handshake','PC Colaborativo',cop(avgCColabo),'costo prom. colabo.','ne','#06b6d4'),
+  ].join('');
+
+  // PC por mes
+  const mesArr=Object.entries(avgPcByMes);
+  makeChart('cPcMes','line',mesArr.map(e=>e[0]),[lineDS('Per Cápita Prom.',mesArr.map(e=>e[1]),'#f59e0b',false)]);
+
+  // Top 5 PC más alto
+  const top5=topPC.slice(0,5);
+  makeChart('cPcTop','bar',top5.map(e=>e[0].slice(0,20)),[barDS('Per Cápita',top5.map(e=>e[1]),'#ef4444')]);
+
+  // PC por drogería (todos)
+  const drogArr=sortObj(avgPcByDrog).slice(0,12);
+  makeChart('cPcDrog','bar',drogArr.map(e=>e[0].slice(0,18)),[barDS('Per Cápita',drogArr.map(e=>e[1]),'#f59e0b')]);
+
+  // Planta vs Colabo
+  makeChart('cPcTipoM','doughnut',['Planta Fija','Colaborativo'],[{data:[avgCFijo,avgCColabo],backgroundColor:['#2563ebbb','#06b6d4bb'],borderColor:['#3b82f6','#22d3ee'],borderWidth:1.5,hoverOffset:5}]);
+
+  document.getElementById('pcAnalysis').innerHTML=`
+    <div class="ac"><div class="ac-ttl"><i class="fas fa-brain"></i> Análisis de Per Cápita — Alertas y Oportunidades</div><div class="ac-body">
+      <strong>Per Cápita promedio global:</strong> <span class="hi">${cop(globalPCAvg)}</span> por entrega.<br><br>
+      <strong>🔴 Top 5 puntos más costosos:</strong><br>
+      ${topPC.slice(0,5).map((e,i)=>`${i+1}. <span class="bad">${e[0]}</span>: ${cop(e[1])} por entrega`).join('<br>')}<br><br>
+      <strong>🟢 Top 5 puntos más eficientes:</strong><br>
+      ${botPC.slice(0,5).map((e,i)=>`${i+1}. <span class="ok">${e[0]}</span>: ${cop(e[1])} por entrega`).join('<br>')}<br><br>
+      <strong>⚠ Puntos en alerta</strong> (PC superior al promedio global en +30%):<br>
+      ${topPC.filter(e=>e[1]>globalPCAvg*1.3).slice(0,4).map(e=>`<span class="bad">${e[0]}</span>: ${cop(e[1])} (${((e[1]/globalPCAvg-1)*100).toFixed(0)}% sobre el promedio)`).join('<br>')||'<span class="ok">Ninguno fuera de rango</span>'}
+    </div></div>
+    <div class="plan"><div class="plan-ttl"><i class="fas fa-clipboard-list"></i> Plan de Acción — Per Cápita</div>
+      ${[['Auditar puntos con PC superior al 130% del promedio','Revisar rutas, volúmenes y tiempos en puntos de alto costo.'],
+         ['Evaluar modelo de contratación','Comparar costo real entre planta fija y colaborativo por punto.'],
+         ['Incrementar volumen en puntos de alto PC','Aumentar entregas para diluir costo fijo mensual.'],
+         ['Renegociar condiciones en puntos críticos','Presentar análisis al cliente para ajuste de modelo de servicio.']].map((p,i)=>
+        `<div class="plan-item"><div class="plan-num">${i+1}</div><div class="plan-content"><div class="plan-title">${p[0]}</div><div class="plan-desc">${p[1]}</div></div></div>`).join('')}
+    </div>`;
+}
+
+// ═══════════════════════════════════════════════
+// RENDER TIEMPOS
+// ═══════════════════════════════════════════════
+function renderTiempos(){
+  const rows=applyRowFilter(D.tiempos,A.ti,{mes:gv('tfMes'),ciudad:gv('tfCiudad'),drog:gv('tfDrog'),tipoM:gv('tfTipoM')});
+  popFilters(D.tiempos,A.ti,[['tfMes',A.ti.mes],['tfCiudad',A.ti.ciudad],['tfDrog',A.ti.drog],['tfTipoM',A.ti.tipoM]]);
+
+  // Solo domicilios (excluir transferencias)
+  const domRows=rows.filter(r=>!A.ti.tipoG(r).toLowerCase().includes('transf'));
+  const transRows=rows.filter(r=>A.ti.tipoG(r).toLowerCase().includes('transf'));
+
+  const avgTi=(arr)=>{const v=arr.map(r=>A.ti.tiempo(r)).filter(v=>v>0);return v.length?v.reduce((s,x)=>s+x,0)/v.length:0;};
+  const globalDom=avgTi(domRows);
+  const globalTrans=avgTi(transRows);
+  const globalTotal=avgTi(rows);
+
+  const tiByDrog={};rows.forEach(r=>{const d=A.ti.drog(r)||'N/D';if(!tiByDrog[d])tiByDrog[d]=[];const t=A.ti.tiempo(r);if(t>0)tiByDrog[d].push(t);});
+  const avgByDrog={};Object.keys(tiByDrog).forEach(k=>{const a=tiByDrog[k];avgByDrog[k]=a.length?a.reduce((s,v)=>s+v,0)/a.length:0;});
+  const topD=sortObj(avgByDrog);const botD=sortObj(avgByDrog,false);
+
+  const tiByMes={};rows.forEach(r=>{const m=A.ti.mes(r)||'N/D';if(!tiByMes[m])tiByMes[m]=[];const t=A.ti.tiempo(r);if(t>0)tiByMes[m].push(t);});
+  const avgByMes={};Object.keys(tiByMes).forEach(k=>{const a=tiByMes[k];avgByMes[k]=a.length?a.reduce((s,v)=>s+v,0)/a.length:0;});
+
+  const tiByTipoM={fijo:[],colabo:[]};
+  rows.forEach(r=>{const tm=A.ti.tipoM(r).toLowerCase();const t=A.ti.tiempo(r);if(t<=0)return;if(tm.includes('fij')||tm.includes('plant'))tiByTipoM.fijo.push(t);else if(tm.includes('cola'))tiByTipoM.colabo.push(t);});
+  const avgFijo=tiByTipoM.fijo.length?tiByTipoM.fijo.reduce((s,v)=>s+v,0)/tiByTipoM.fijo.length:0;
+  const avgColabo=tiByTipoM.colabo.length?tiByTipoM.colabo.reduce((s,v)=>s+v,0)/tiByTipoM.colabo.length:0;
+
+  document.getElementById('tiKPIs').innerHTML=[
+    kpiCard('fas fa-clock','T. Prom. Domicilios',globalDom.toFixed(1)+' min','solo domicilios','ne','#2563eb'),
+    kpiCard('fas fa-truck','T. Prom. Transferencias',globalTrans.toFixed(1)+' min','transferencias','ne','#8b5cf6'),
+    kpiCard('fas fa-stopwatch','T. Prom. Total',globalTotal.toFixed(1)+' min','todos los tipos','ne','#06b6d4'),
+    kpiCard('fas fa-arrow-up','Mayor Tiempo',topD[0]?topD[0][0]:'—',topD[0]?topD[0][1].toFixed(0)+' min':'—','dn','#ef4444'),
+    kpiCard('fas fa-arrow-down','Menor Tiempo',botD[0]?botD[0][0]:'—',botD[0]?botD[0][1].toFixed(0)+' min':'—','up','#10b981'),
+    kpiCard('fas fa-id-badge','T. Planta Fija',avgFijo.toFixed(1)+' min','promedio fijos','ne','#f59e0b'),
+  ].join('');
+
+  // Por mes (domicilios)
+  const mesArr=Object.entries(avgByMes);
+  makeChart('cTiMes','line',mesArr.map(e=>e[0]),[lineDS('T. Prom. (min)',mesArr.map(e=>e[1]),'#2563eb',false)]);
+
+  // Top 5 mayor tiempo
+  const top5=topD.slice(0,5);
+  makeChart('cTiTop','bar',top5.map(e=>e[0].slice(0,18)),[barDS('Tiempo (min)',top5.map(e=>e[1]),'#ef4444')]);
+
+  // Por drogería
+  const drogArr=topD.slice(0,12);
+  makeChart('cTiDrog','bar',drogArr.map(e=>e[0].slice(0,18)),[barDS('T. Prom. (min)',drogArr.map(e=>e[1]),'#3b82f6')]);
+
+  // Tipo mensajero
+  makeChart('cTiTipoM','bar',['Planta Fija','Colaborativo'],[barDS('T. Prom. (min)',[avgFijo,avgColabo],'#06b6d4')]);
+
+  document.getElementById('tiAnalysis').innerHTML=`
+    <div class="ac"><div class="ac-ttl"><i class="fas fa-brain"></i> Análisis de Tiempos</div><div class="ac-body">
+      <strong>Tiempo promedio global domicilios:</strong> <span class="hi">${globalDom.toFixed(1)} min</span><br>
+      <strong>Tiempo promedio transferencias:</strong> <span class="hi">${globalTrans.toFixed(1)} min</span><br><br>
+      <strong>🔴 Top 5 puntos con mayor tiempo:</strong><br>
+      ${topD.slice(0,5).map((e,i)=>`${i+1}. <span class="bad">${e[0]}</span>: ${e[1].toFixed(0)} min`).join('<br>')}<br><br>
+      <strong>🟢 Top 5 puntos más rápidos:</strong><br>
+      ${botD.slice(0,5).map((e,i)=>`${i+1}. <span class="ok">${e[0]}</span>: ${e[1].toFixed(0)} min`).join('<br>')}
+    </div></div>
+    <div class="plan"><div class="plan-ttl"><i class="fas fa-clipboard-list"></i> Plan de Acción — Tiempos</div>
+      ${[['Intervención inmediata en puntos críticos de tiempo','Revisar rutas, zonas de cobertura y disponibilidad del mensajero en los 5 puntos más lentos.'],
+         ['Análisis de causa raíz de demoras','Identificar si el tiempo excesivo corresponde a congestión, distancia o procesos internos de la drogería.'],
+         ['Estandarizar procesos en puntos lentos','Implementar protocolo de preparación de pedido antes de la llegada del mensajero.'],
+         ['Comparar rendimiento fijo vs colaborativo','Si el colaborativo es más lento, reforzar capacitación o reasignar zonas.'],
+         ['Establecer SLA por zona','Definir tiempo máximo por tipo de zona (urbana: 35 min, periférica: 60 min).']].map((p,i)=>
+        `<div class="plan-item"><div class="plan-num">${i+1}</div><div class="plan-content"><div class="plan-title">${p[0]}</div><div class="plan-desc">${p[1]}</div></div></div>`).join('')}
+    </div>`;
+}
+
+// ═══════════════════════════════════════════════
+// RENDER VENTAS
+// ═══════════════════════════════════════════════
+function renderVentas(){
+  const rows=applyRowFilter(D.ventas,A.ven,{mes:gv('vfMes'),ciudad:gv('vfCiudad'),drog:gv('vfDrog')});
+  popFilters(D.ventas,A.ven,[['vfMes',A.ven.mes],['vfCiudad',A.ven.ciudad],['vfDrog',A.ven.drog]]);
+
+  const totTotal=sum(rows,r=>A.ven.total(r));
+  const totEf=sum(rows,r=>A.ven.efectivo(r)||A.ven.total(r));
+  const totCan=sum(rows,r=>A.ven.cancelado(r));
+
+  const byDrogEf=sumGroup(rows,r=>A.ven.drog(r),r=>A.ven.efectivo(r)||A.ven.total(r));
+  const byDrogCan=sumGroup(rows,r=>A.ven.drog(r),r=>A.ven.cancelado(r));
+  const topEf=sortObj(byDrogEf);const topPerd=sortObj(byDrogCan);
+
+  const byMesEf=sumGroup(rows,r=>A.ven.mes(r),r=>A.ven.efectivo(r)||A.ven.total(r));
+  const byMesCan=sumGroup(rows,r=>A.ven.mes(r),r=>A.ven.cancelado(r));
+  const byTipo=sumGroup(rows,r=>A.ven.tipo(r),r=>A.ven.efectivo(r)||A.ven.total(r));
+  const byCiudad=sumGroup(rows,r=>A.ven.ciudad(r),r=>A.ven.efectivo(r)||A.ven.total(r));
+
+  const diasVen=Array(7).fill(0);
+  rows.forEach(r=>{const d=parseDate(A.ven.fecha(r));if(d)diasVen[d.getDay()]+=(A.ven.efectivo(r)||A.ven.total(r));});
+
+  document.getElementById('venKPIs').innerHTML=[
+    kpiCard('fas fa-dollar-sign','Valor Total Ventas',cop(totTotal),'período seleccionado','ne','#2563eb'),
+    kpiCard('fas fa-check-circle','Valor Efectivo',cop(totEf),'servicios entregados','up','#10b981'),
+    kpiCard('fas fa-times-circle','Valor Perdido',cop(totCan),'servicios cancelados','dn','#ef4444'),
+    kpiCard('fas fa-trophy','Mayor Venta',topEf[0]?topEf[0][0]:'—',topEf[0]?cop(topEf[0][1]):'—','up','#f59e0b'),
+    kpiCard('fas fa-exclamation-triangle','Mayor Pérdida',topPerd[0]?topPerd[0][0]:'—',topPerd[0]?cop(topPerd[0][1]):'—','dn','#8b5cf6'),
+    kpiCard('fas fa-percent','% Pérdida',totTotal?((totCan/totTotal)*100).toFixed(1)+'%':'0%','del total','dn','#ef4444'),
+  ].join('');
+
+  // Por mes
+  const mesKeys=[...new Set([...Object.keys(byMesEf),...Object.keys(byMesCan)])];
+  makeChart('cVenMes','bar',mesKeys,[barDS('Efectivo',mesKeys.map(k=>byMesEf[k]||0),'#10b981','s'),barDS('Perdido',mesKeys.map(k=>byMesCan[k]||0),'#ef4444','s')],{extra:{plugins:{legend:{display:true}}}});
+
+  // Día de semana
+  makeChart('cVenDia','bar',DIAS,[barDS('Valor Venta',diasVen,'#2563eb')]);
+
+  // Por drogería
+  const topEfArr=topEf.slice(0,10);
+  makeChart('cVenDrog','bar',topEfArr.map(e=>e[0].slice(0,18)),[barDS('Valor Efectivo',topEfArr.map(e=>e[1]),'#10b981')]);
+
+  // Por tipo (dom vs trans)
+  const tipoArr=sortObj(byTipo);
+  makeChart('cVenTipo','doughnut',tipoArr.map(e=>e[0]),[{data:tipoArr.map(e=>e[1]),backgroundColor:COLS,borderColor:COLS.map(c=>c+'cc'),borderWidth:1.5,hoverOffset:5}]);
+
+  // Por ciudad
+  const ciudArr=sortObj(byCiudad);
+  makeChart('cVenCiud','bar',ciudArr.map(e=>e[0]),[barDS('Valor',ciudArr.map(e=>e[1]),'#06b6d4')]);
+
+  // Pérdidas por drogería
+  const perdArr=topPerd.slice(0,8);
+  makeChart('cVenPerd','bar',perdArr.map(e=>e[0].slice(0,18)),[barDS('Valor Perdido',perdArr.map(e=>e[1]),'#ef4444')]);
+
+  document.getElementById('venAnalysis').innerHTML=`
+    <div class="ac"><div class="ac-ttl"><i class="fas fa-brain"></i> Análisis de Ventas</div><div class="ac-body">
+      <strong>Valor total:</strong> <span class="hi">${cop(totTotal)}</span> · <strong>Efectivo:</strong> <span class="ok">${cop(totEf)}</span> · <strong>Perdido:</strong> <span class="bad">${cop(totCan)}</span> (${totTotal?((totCan/totTotal)*100).toFixed(1):0}% de pérdida)<br><br>
+      <strong>🏆 Puntos más rentables:</strong> ${topEf.slice(0,3).map(e=>`<span class="ok">${e[0]}</span>: ${cop(e[1])}`).join(' · ')}<br>
+      <strong>🔴 Puntos con mayor pérdida:</strong> ${topPerd.slice(0,3).map(e=>`<span class="bad">${e[0]}</span>: ${cop(e[1])}`).join(' · ')}<br><br>
+      <strong>Plan de acción:</strong> Priorizar recuperación de ventas en los 3 puntos con mayor valor cancelado. Analizar causas de cancelación (rechazo cliente, stock, tiempo de espera) e implementar mejoras específicas.
+    </div></div>`;
+}
+
+// ═══════════════════════════════════════════════
+// RENDER NOV CANCELACION
+// ═══════════════════════════════════════════════
+function renderNovCancel(){
+  const rows=applyRowFilter(D.novcancel,A.nc,{mes:gv('ncfMes'),ciudad:gv('ncfCiudad'),drog:gv('ncfDrog')});
+  popFilters(D.novcancel,A.nc,[['ncfMes',A.nc.mes],['ncfCiudad',A.nc.ciudad],['ncfDrog',A.nc.drog]]);
+
+  const fijo=rows.filter(r=>{const t=A.nc.tipoM(r).toLowerCase();return t.includes('fij')||t.includes('plant');});
+  const colabo=rows.filter(r=>A.nc.tipoM(r).toLowerCase().includes('cola'));
+  const quick=rows.filter(r=>A.nc.resp(r).toLowerCase().includes('quick'));
+  const cafam=rows.filter(r=>A.nc.resp(r).toLowerCase().includes('cafam'));
+
+  const byTipo=sumGroup(rows,r=>A.nc.tipo(r),r=>1);
+  const byDrog=sumGroup(rows,r=>A.nc.drog(r),r=>1);
+  const byMes=sumGroup(rows,r=>A.nc.mes(r),r=>1);
+  const byCiudad=sumGroup(rows,r=>A.nc.ciudad(r),r=>1);
+  const topD=sortObj(byDrog);const botD=sortObj(byDrog,false);
+
+  document.getElementById('ncKPIs').innerHTML=[
+    kpiCard('fas fa-ban','Total Novedades Cancel.',rows.length.toLocaleString('es-CO'),'registradas','ne','#ef4444'),
+    kpiCard('fas fa-id-badge','Planta Fija',fijo.length.toLocaleString('es-CO'),pct(fijo.length,rows.length),'ne','#2563eb'),
+    kpiCard('fas fa-handshake','Colaborativo',colabo.length.toLocaleString('es-CO'),pct(colabo.length,rows.length),'ne','#06b6d4'),
+    kpiCard('fas fa-building','Resp. Quick',quick.length.toLocaleString('es-CO'),pct(quick.length,rows.length),'ne','#8b5cf6'),
+    kpiCard('fas fa-hospital','Resp. Cafam',cafam.length.toLocaleString('es-CO'),pct(cafam.length,rows.length),'ne','#f59e0b'),
+    kpiCard('fas fa-exclamation','Mayor Incidencia',topD[0]?topD[0][0]:'—',topD[0]?topD[0][1]+' novedades':'—','dn','#red'),
+  ].join('');
+
+  // Por tipo
+  const tipoArr=sortObj(byTipo);
+  makeChart('cNcTipo','bar',tipoArr.map(e=>e[0].slice(0,22)),[barDS('Cantidad',tipoArr.map(e=>e[1]),'#ef4444')]);
+
+  // Planta vs Colabo
+  makeChart('cNcTipoM','doughnut',['Planta Fija','Colaborativo'],[{data:[fijo.length,colabo.length],backgroundColor:['#2563ebbb','#06b6d4bb'],borderColor:['#3b82f6','#22d3ee'],borderWidth:1.5,hoverOffset:5}]);
+
+  // Por mes
+  const mesArr=Object.entries(byMes);
+  makeChart('cNcMes','line',mesArr.map(e=>e[0]),[lineDS('Novedades',mesArr.map(e=>e[1]),'#ef4444',true)]);
+
+  // Por drogería
+  const topDArr=topD.slice(0,10);
+  makeChart('cNcDrog','bar',topDArr.map(e=>e[0].slice(0,18)),[barDS('Novedades',topDArr.map(e=>e[1]),'#8b5cf6')]);
+
+  // Quick vs Cafam
+  const quickPct=rows.length?((quick.length/rows.length)*100).toFixed(1):0;
+  const cafamPct=rows.length?((cafam.length/rows.length)*100).toFixed(1):0;
+  const otroPct=rows.length?(((rows.length-quick.length-cafam.length)/rows.length)*100).toFixed(1):0;
+  makeChart('cNcResp','doughnut',['Quick','Cafam','Sin clasificar'],[{data:[quick.length,cafam.length,rows.length-quick.length-cafam.length],backgroundColor:['#2563ebbb','#f59e0bbb','#475569bb'],borderColor:['#3b82f6','#fbbf24','#64748b'],borderWidth:1.5,hoverOffset:5}]);
+
+  // Por ciudad
+  const ciudArr=sortObj(byCiudad);
+  makeChart('cNcCiud','bar',ciudArr.map(e=>e[0]),[barDS('Novedades',ciudArr.map(e=>e[1]),'#06b6d4')]);
+
+  document.getElementById('ncAnalysis').innerHTML=`
+    <div class="g2">
+      <div class="ac"><div class="ac-ttl"><i class="fas fa-brain"></i> Análisis — Novedades de Cancelación</div><div class="ac-body">
+        <strong>Total:</strong> <span class="bad">${rows.length}</span> novedades de cancelación registradas.<br>
+        <strong>Planta Fija:</strong> <span class="hi">${fijo.length}</span> (${pct(fijo.length,rows.length)}) · <strong>Colaborativo:</strong> <span class="hi">${colabo.length}</span> (${pct(colabo.length,rows.length)})<br><br>
+        <strong>Responsabilidad:</strong><br>
+        · Quick: <span class="${quickPct>50?'bad':'warn'}">${quickPct}%</span> (${quick.length} eventos)<br>
+        · Cafam: <span class="warn">${cafamPct}%</span> (${cafam.length} eventos)<br><br>
+        <strong>🔴 Droguerías críticas:</strong> ${topD.slice(0,3).map(e=>`<span class="bad">${e[0]}</span>: ${e[1]}`).join(' · ')}<br>
+        <strong>🟢 Droguerías con menos incidencias:</strong> ${botD.slice(0,3).map(e=>`<span class="ok">${e[0]}</span>: ${e[1]}`).join(' · ')}
+      </div></div>
+      <div class="plan"><div class="plan-ttl"><i class="fas fa-clipboard-list"></i> Plan de Acción — Mitigación</div>
+        ${[['Protocolo de recuperación inmediata','Para novedades de Quick: activar mensajero de apoyo en los 3 puntos críticos.'],
+           ['Mesa de trabajo con Cafam','Agendar sesión mensual para revisar novedades atribuibles al cliente.'],
+           ['Seguimiento diario en puntos críticos','Monitoreo en tiempo real de los 3 puntos con mayor incidencia.'],
+           ['Capacitación a mensajeros colaborativos','Reforzar protocolos de entrega y manejo de novedades.']].map((p,i)=>
+          `<div class="plan-item"><div class="plan-num">${i+1}</div><div class="plan-content"><div class="plan-title">${p[0]}</div><div class="plan-desc">${p[1]}</div></div></div>`).join('')}
+      </div>
+    </div>`;
+}
+
+// ═══════════════════════════════════════════════
+// RENDER RESUMEN GENERAL
+// ═══════════════════════════════════════════════
+function renderResumen(){
+  const rfCiud=gv('rfCiudad').toLowerCase();
+  const rfDrog=gv('rfDrog').toLowerCase();
+
+  const fCan=D.cantidad.filter(r=>(!rfCiud||A.can.ciudad(r).toLowerCase().includes(rfCiud))&&(!rfDrog||A.can.drog(r).toLowerCase().includes(rfDrog)));
+  const fVen=D.ventas.filter(r=>(!rfCiud||A.ven.ciudad(r).toLowerCase().includes(rfCiud))&&(!rfDrog||A.ven.drog(r).toLowerCase().includes(rfDrog)));
+  const fNov=D.novedades.filter(r=>(!rfCiud||A.nov.ciudad(r).toLowerCase().includes(rfCiud))&&(!rfDrog||A.nov.drog(r).toLowerCase().includes(rfDrog)));
+  const fNc=D.novcancel.filter(r=>(!rfCiud||A.nc.ciudad(r).toLowerCase().includes(rfCiud))&&(!rfDrog||A.nc.drog(r).toLowerCase().includes(rfDrog)));
+
+  popFilters(D.cantidad,A.can,[['rfCiudad',A.can.ciudad],['rfDrog',A.can.drog]]);
+
+  const totEnt=sum(fCan,r=>A.can.total(r)||A.can.efectiva(r));
+  const totEf=sum(fCan,r=>A.can.efectiva(r)||A.can.total(r));
+  const totCan2=sum(fCan,r=>A.can.cancelada(r));
+  const cumpl=totEnt?((totEf/totEnt)*100).toFixed(1):0;
+  const totVen=sum(fVen,r=>A.ven.efectivo(r)||A.ven.total(r));
+  const totPerd=sum(fVen,r=>A.ven.cancelado(r));
+  const totNov=fNov.length+fNc.length;
+
+  const byDrogEnt=sumGroup(fCan,r=>A.can.drog(r),r=>A.can.total(r)||A.can.efectiva(r));
+  const topDEnt=sortObj(byDrogEnt);const botDEnt=sortObj(byDrogEnt,false);
+  const byCiudEnt=sumGroup(fCan,r=>A.can.ciudad(r),r=>A.can.total(r)||A.can.efectiva(r));
+
+  document.getElementById('resKPIs').innerHTML=[
+    kpiCard('fas fa-box','Total Entregas',totEnt.toLocaleString('es-CO'),'período total','ne','#2563eb'),
+    kpiCard('fas fa-percent','Cumplimiento',cumpl+'%','efectividad','up','#10b981'),
+    kpiCard('fas fa-dollar-sign','Valor Ventas',cop(totVen),'efectivas','up','#f59e0b'),
+    kpiCard('fas fa-exclamation-triangle','Valor Perdido',cop(totPerd),'cancelaciones','dn','#ef4444'),
+    kpiCard('fas fa-triangle-exclamation','Total Novedades',totNov.toLocaleString('es-CO'),'gestión + cancel.','ne','#8b5cf6'),
+    kpiCard('fas fa-trophy','Top Drogería',topDEnt[0]?topDEnt[0][0]:'—',topDEnt[0]?topDEnt[0][1].toLocaleString('es-CO')+' ent.':'—','up','#06b6d4'),
+  ].join('');
+
+  // Top droguería chart
+  const topDA=topDEnt.slice(0,8);
+  makeChart('cTopDrog','bar',topDA.map(e=>e[0].slice(0,16)),[barDS('Entregas',topDA.map(e=>e[1]),'#2563eb')]);
+
+  // Ciudad chart
+  const ciudArr=sortObj(byCiudEnt);
+  makeChart('cCiudadRes','bar',ciudArr.map(e=>e[0]),[barDS('Entregas',ciudArr.map(e=>e[1]),'#06b6d4')]);
+
+  // Analysis per drogería
+  const byDrogNov=sumGroup(fNov,r=>A.nov.drog(r),r=>1);
+  const byDrogNc=sumGroup(fNc,r=>A.nc.drog(r),r=>1);
+  const byDrogVen=sumGroup(fVen,r=>A.ven.drog(r),r=>A.ven.efectivo(r)||A.ven.total(r));
+  const byDrogPerd=sumGroup(fVen,r=>A.ven.drog(r),r=>A.ven.cancelado(r));
+
+  const topDNov=sortObj(byDrogNov);
+
+  const bestMes=sortObj(sumGroup(fCan,r=>A.can.mes(r),r=>A.can.total(r)||A.can.efectiva(r)))[0];
+  const worstMes=sortObj(sumGroup(fCan,r=>A.can.mes(r),r=>A.can.total(r)||A.can.efectiva(r)),false)[0];
+
+  document.getElementById('resumenUpdate').textContent=`Última actualización: ${new Date().toLocaleString('es-CO')}`;
+
+  // Generar análisis por drogería
+  const drogerias=[...new Set([...Object.keys(byDrogEnt),...Object.keys(byDrogVen)].filter(d=>d&&d!=='N/D'))].slice(0,8);
+  let drogHTML=drogerias.map(d=>{
+    const ent=byDrogEnt[d]||0;const ven=byDrogVen[d]||0;const perd=byDrogPerd[d]||0;const nov=(byDrogNov[d]||0)+(byDrogNc[d]||0);
+    const isTop=topDEnt[0]&&topDEnt[0][0]===d;const isBot=botDEnt[0]&&botDEnt[0][0]===d;
+    const statusClass=isTop?'ok':isBot?'bad':'warn';
+    return `<div class="kc" style="padding:14px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+        <span style="font-size:12px;font-weight:700;color:var(--t1)">${d.slice(0,24)}</span>
+        <span class="bdg bdg-${isTop?'ok':isBot?'bad':'info'}">${isTop?'TOP':'•'}</span>
+      </div>
+      <div style="font-size:10px;color:var(--t2);line-height:1.8">
+        Entregas: <strong style="color:var(--b4)">${ent.toLocaleString('es-CO')}</strong><br>
+        Ventas: <strong style="color:var(--green)">${cop(ven)}</strong><br>
+        Pérdidas: <strong style="color:var(--red)">${cop(perd)}</strong><br>
+        Novedades: <strong style="color:var(--amber)">${nov}</strong>
+      </div>
+      <div class="pbar mt12"><div class="pfill" style="width:${Math.min(100,(ent/Math.max(...Object.values(byDrogEnt)))*100).toFixed(0)}%"></div></div>
+    </div>`;
+  }).join('');
+
+  document.getElementById('resAnalysis').innerHTML=`
+    <div class="ac mb0" style="margin-bottom:16px"><div class="ac-ttl"><i class="fas fa-brain"></i> Análisis Ejecutivo — Resumen de la Operación</div><div class="ac-body">
+      <strong>Período analizado:</strong> Operación completa CAFAM Domicilios.<br>
+      <strong>Cumplimiento global:</strong> <span class="${parseFloat(cumpl)>=95?'ok':'bad'}">${cumpl}%</span> (${totEf.toLocaleString('es-CO')} de ${totEnt.toLocaleString('es-CO')} entregas efectivas).<br>
+      <strong>Valor total efectivo:</strong> <span class="ok">${cop(totVen)}</span> · <strong>Pérdidas:</strong> <span class="bad">${cop(totPerd)}</span><br><br>
+      <strong>🏆 Drogería TOP:</strong> <span class="ok">${topDEnt[0]?topDEnt[0][0]:'—'}</span> con <span class="hi">${topDEnt[0]?topDEnt[0][1].toLocaleString('es-CO'):0} entregas</span><br>
+      <strong>⚠ Drogería con menor rendimiento:</strong> <span class="bad">${botDEnt[0]?botDEnt[0][0]:'—'}</span> con <span class="warn">${botDEnt[0]?botDEnt[0][1].toLocaleString('es-CO'):0} entregas</span><br>
+      <strong>📅 Mejor mes:</strong> <span class="ok">${bestMes?bestMes[0]:'—'}</span> · <strong>Mes más bajo:</strong> <span class="warn">${worstMes?worstMes[0]:'—'}</span><br><br>
+      <strong>Total novedades (gestión + cancelación):</strong> <span class="${totNov>50?'bad':'warn'}">${totNov}</span>
+    </div></div>
+    <div style="font-size:12px;font-weight:700;color:var(--t2);margin:16px 0 10px;letter-spacing:.5px">ANÁLISIS POR DROGERÍA</div>
+    <div class="sum-grid">${drogHTML}</div>
+    <div class="plan"><div class="plan-ttl"><i class="fas fa-rocket"></i> Recomendaciones Ejecutivas Generales</div>
+      ${[['Elevar cumplimiento al 95%+','Revisar puntos con cancelación >10% e implementar protocolo de recuperación de entrega.'],
+         ['Reducir pérdida de valor en cancelaciones','Priorizar los 3 puntos con mayor valor cancelado e identificar causas raíz.'],
+         ['Optimizar per cápita en puntos críticos','Evaluar modelo de servicio (fijo vs colaborativo) en los 5 puntos con mayor costo.'],
+         ['Mitigar novedades recurrentes','Implementar mesa de trabajo mensual con las droguerías con más de 5 novedades/mes.'],
+         ['Fortalecer puntos de bajo volumen','Evaluar viabilidad operativa y costo-beneficio de puntos con menos de 50 entregas/mes.']].map((p,i)=>
+        `<div class="plan-item"><div class="plan-num">${i+1}</div><div class="plan-content"><div class="plan-title">${p[0]}</div><div class="plan-desc">${p[1]}</div></div></div>`).join('')}
+    </div>`;
+}
+
+// ═══════════════════════════════════════════════
+// EXPORT
+// ═══════════════════════════════════════════════
+function exportCSVSheet(key){
+  const rows=D[key];if(!rows||!rows.length){toast('Sin datos','warn');return;}
+  const headers=Object.keys(rows[0]);
+  let csv=headers.join(',')+'\n';
+  rows.forEach(r=>{csv+=headers.map(h=>`"${(r[h]||'').toString().replace(/"/g,'""')}"`).join(',')+'\n';});
+  const blob=new Blob([csv],{type:'text/csv'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`cafam_${key}_${new Date().toISOString().slice(0,10)}.csv`;a.click();
+  toast(`CSV ${key} exportado`,'success');
+}
+
+function exportPDF(section){
+  toast('Generando PDF...','info');
+  const {jsPDF}=window.jspdf;
+  const doc=new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
+  doc.setFillColor(5,12,26);doc.rect(0,0,210,297,'F');
+  doc.setFillColor(37,99,235);doc.rect(0,0,210,30,'F');
+  doc.setTextColor(255,255,255);doc.setFontSize(16);doc.setFont('helvetica','bold');
+  doc.text('CAFAM DOMICILIOS',15,14);
+  doc.setFontSize(9);doc.setFont('helvetica','normal');
+  doc.text(`Módulo: ${section.toUpperCase()}`,15,22);
+  doc.text(new Date().toLocaleDateString('es-CO'),155,22);
+  doc.setTextColor(148,163,184);doc.setFontSize(9);
+  let y=42;
+  const el=document.getElementById('sec-'+section);
+  if(el){
+    const kpis=el.querySelectorAll('.kc-lbl,.kc-val');
+    kpis.forEach((e,i)=>{if(i%2===0){doc.setTextColor(100,150,200);doc.text(e.textContent,15,y);}else{doc.setTextColor(200,220,255);doc.setFont('helvetica','bold');doc.text(e.textContent.slice(0,30),80,y);doc.setFont('helvetica','normal');y+=8;}if(y>270){doc.addPage();doc.setFillColor(5,12,26);doc.rect(0,0,210,297,'F');y=20;}});
+    const acs=el.querySelectorAll('.ac-body');
+    acs.forEach(ac=>{y+=8;const lines=doc.splitTextToSize(ac.textContent.replace(/\s+/g,' ').trim(),180);doc.setTextColor(148,163,184);doc.setFontSize(8);doc.text(lines,15,y);y+=lines.length*5+8;});
   }
+  doc.setFillColor(37,99,235);doc.rect(0,285,210,12,'F');
+  doc.setTextColor(255,255,255);doc.setFontSize(7);
+  doc.text('CAFAM DOMICILIOS — Plataforma Analítica Corporativa',15,292);
+  doc.save(`CAFAM_${section}_${new Date().toISOString().slice(0,10)}.pdf`);
+  toast('PDF generado','success');
+}
+
+// ═══════════════════════════════════════════════
+// REFRESH
+// ═══════════════════════════════════════════════
+async function refreshAll(){
+  toast('Actualizando datos...','info');
+  await Promise.all(Object.entries(CSV).map(([k,u])=>fetchCSV(u,k)));
+  buildAccessors();
+  const active=document.querySelector('.sec.active');
+  const id=active?active.id.replace('sec-',''):'resumen';
+  const renders={resumen:renderResumen,novedades:renderNovedades,cantidad:renderCantidad,percapita:renderPercapita,tiempos:renderTiempos,ventas:renderVentas,novcancel:renderNovCancel};
+  if(renders[id])renders[id]();
+  toast('Datos actualizados','success');
+}
+
+// ═══════════════════════════════════════════════
+// GLOBAL SEARCH
+// ═══════════════════════════════════════════════
+document.getElementById('gSearch').addEventListener('input',function(){
+  const q=this.value.trim().toLowerCase();
+  if(!q)return;
+  var sections=['novedades','cantidad','percapita','tiempos','ventas','novcancel'];
+  for(var si=0;si<sections.length;si++){
+    var s=sections[si];
+    var found=D[s].some(function(r){return Object.values(r).join(' ').toLowerCase().indexOf(q)!==-1;});
+    if(found){var btn=document.querySelector('.nav-it[onclick*="'+s+'"]');if(btn){go(s,btn);toast('Mostrando resultados en: '+s,'info');}return;}
+  }
+  toast('Sin resultados para: '+q,'warn');
 });
 
-function handleSearchResult(type) {
-  const map = {Mensajero:'mensajeros', Novedad:'novedades', 'Operación':'operacion'};
-  showSection(map[type] || 'dashboard');
-  document.getElementById('searchDropdown').classList.remove('active');
-}
-
-// ═══════════════════════════════════
-// AI REPORT GENERATION
-// ═══════════════════════════════════
-function generateAIReport() {
-  const totalEntregas = DATA.mensajeros.reduce((s,r) => s + (parseInt(getFirstField(r,['ENTREGAS','Entregas','CANTIDAD','Cantidad']))||0), 0);
-  const ciudades = [...new Set(DATA.mensajeros.map(r=>getFirstField(r,['CIUDAD','Ciudad'])).filter(Boolean))];
-  const totalNovedades = DATA.novedades.length;
-  const totalDesvinc = DATA.administrativo.reduce((s,r) => s + (parseInt(getFirstField(r,['TOTAL','Total']))||0), 0);
-  const tipoMap = {};
-  DATA.novedades.forEach(r => {
-    const t = getFirstField(r,['TIPIFICACION','TIPIFICACIÓN','Tipificación']) || 'General';
-    tipoMap[t] = (tipoMap[t]||0)+1;
-  });
-  const topNovedad = Object.entries(tipoMap).sort((a,b)=>b[1]-a[1])[0];
-
-  const aiContent = document.getElementById('aiContent');
-  const aiMetrics = document.getElementById('aiMetrics');
-
-  const txt = `
-    Durante el período analizado, <strong>CAFAM DOMICILIOS</strong> evidencia un
-    <span class="highlight">cumplimiento operativo del 94%</span>, posicionándose por encima del benchmark sectorial
-    del 88%. Se registran un total de <strong>${totalEntregas.toLocaleString('es-CO')} entregas efectivas</strong>
-    distribuidas en <strong>${ciudades.length} ciudades de cobertura</strong>, destacándose
-    <span class="highlight">${ciudades.slice(0,3).join(', ')}</span> como los mercados de mayor volumen operacional.
-    <br><br>
-    El indicador de productividad por mensajero se mantiene en <strong>87%</strong>, con un tiempo promedio de
-    entrega de <strong>45 minutos</strong>, reflejando eficiencia logística sostenida. Se identificaron
-    <strong>${totalNovedades} novedades</strong> en el período${topNovedad ? `, siendo <span class="highlight">"${topNovedad[0]}"</span> la tipificación más recurrente con ${topNovedad[1]} registros` : ''}.
-    <br><br>
-    En el frente administrativo, se documentaron <strong>${totalDesvinc} desvinculaciones totales</strong>
-    (renuncias y terminaciones de contrato), con una tasa de rotación del
-    <span class="highlight">8.3%</span>, dentro del rango esperado para operaciones logísticas de este volumen.
-    <br><br>
-    <strong>Recomendaciones Ejecutivas:</strong> Se sugiere fortalecer los planes de retención de personal en
-    ciudades con mayor rotación, optimizar las rutas en puntos de venta con tiempo promedio superior a 60 minutos,
-    e implementar protocolos de seguimiento para las novedades recurrentes con el fin de reducir su incidencia en
-    un <span class="highlight">15% en el próximo trimestre</span>.
-  `;
-
-  aiContent.innerHTML = txt;
-
-  const metrics = [
-    {val:'94%', label:'Cumplimiento Global'},
-    {val:'87%', label:'Productividad'},
-    {val:ciudades.length, label:'Ciudades'},
-    {val:totalEntregas.toLocaleString('es-CO'), label:'Entregas'},
-    {val:totalNovedades, label:'Novedades'},
-    {val:`${totalDesvinc}`, label:'Desvinculaciones'},
-  ];
-
-  aiMetrics.innerHTML = metrics.map(m =>
-    `<div class="ai-metric-item">
-      <div class="ai-metric-val">${m.val}</div>
-      <div class="ai-metric-label">${m.label}</div>
-    </div>`
-  ).join('');
-}
-
-// ═══════════════════════════════════
-// EXPORT FUNCTIONS
-// ═══════════════════════════════════
-function exportCSV() {
-  const data = FILTERED.mensajeros.length ? FILTERED.mensajeros : DATA.mensajeros;
-  if (!data.length) { showToast('Sin datos para exportar', 'warning'); return; }
-  const headers = Object.keys(data[0]);
-  let csv = headers.join(',') + '\n';
-  data.forEach(row => { csv += headers.map(h => `"${(row[h]||'').replace(/"/g,'""')}"`).join(',') + '\n'; });
-  downloadFile('cafam_mensajeros_' + new Date().toISOString().slice(0,10) + '.csv', 'text/csv', csv);
-  showToast('CSV exportado correctamente', 'success');
-}
-
-function exportTableCSV(tableId, name) {
-  const table = document.getElementById(tableId);
-  if (!table) return;
-  let csv = '';
-  const rows = table.querySelectorAll('tr');
-  rows.forEach(row => {
-    const cells = row.querySelectorAll('th, td');
-    csv += Array.from(cells).map(c => `"${c.textContent.trim().replace(/"/g,'""')}"`).join(',') + '\n';
-  });
-  downloadFile(`cafam_${name}_${new Date().toISOString().slice(0,10)}.csv`, 'text/csv', csv);
-  showToast(`CSV de ${name} exportado`, 'success');
-}
-
-function downloadFile(filename, type, content) {
-  const blob = new Blob([content], {type});
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = filename;
-  a.click();
-  URL.revokeObjectURL(a.href);
-}
-
-function exportPDF() {
-  showToast('Generando PDF ejecutivo...', 'info');
-  const { jsPDF } = window.jspdf;
-  const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
-
-  // Header
-  doc.setFillColor(5, 12, 26);
-  doc.rect(0, 0, 210, 297, 'F');
-  doc.setFillColor(37, 99, 235);
-  doc.rect(0, 0, 210, 35, 'F');
-  doc.setTextColor(255, 255, 255);
-  doc.setFontSize(20); doc.setFont('helvetica','bold');
-  doc.text('CAFAM DOMICILIOS', 20, 18);
-  doc.setFontSize(10); doc.setFont('helvetica','normal');
-  doc.text('Informe Ejecutivo Operacional', 20, 26);
-  doc.text(new Date().toLocaleDateString('es-CO', {year:'numeric',month:'long',day:'numeric'}), 150, 18);
-
-  // KPIs section
-  doc.setTextColor(100, 160, 250);
-  doc.setFontSize(13); doc.setFont('helvetica','bold');
-  doc.text('INDICADORES CLAVE DE DESEMPEÑO', 20, 50);
-
-  const totalEntregas = DATA.mensajeros.reduce((s,r)=>s+(parseInt(getFirstField(r,['ENTREGAS','Entregas','CANTIDAD','Cantidad']))||0),0);
-  const kpiData = [
-    ['Total Entregas', totalEntregas.toLocaleString('es-CO')],
-    ['Mensajeros Activos', DATA.mensajeros.length],
-    ['Novedades Registradas', DATA.novedades.length],
-    ['Ciudades de Cobertura', new Set(DATA.mensajeros.map(r=>getFirstField(r,['CIUDAD','Ciudad'])).filter(Boolean)).size],
-    ['Cumplimiento Operativo', '94%'],
-    ['Productividad Promedio', '87%'],
-  ];
-
-  doc.setFont('helvetica','normal'); doc.setFontSize(10);
-  kpiData.forEach(([label, val], i) => {
-    const x = i%2 === 0 ? 20 : 110;
-    const y = 60 + Math.floor(i/2)*12;
-    doc.setTextColor(148, 163, 184); doc.text(label + ':', x, y);
-    doc.setTextColor(96, 165, 250); doc.setFont('helvetica','bold');
-    doc.text(String(val), x+55, y);
-    doc.setFont('helvetica','normal');
-  });
-
-  // AI Summary
-  doc.setTextColor(100, 160, 250);
-  doc.setFontSize(13); doc.setFont('helvetica','bold');
-  doc.text('RESUMEN EJECUTIVO INTELIGENTE', 20, 100);
-  doc.setTextColor(148, 163, 184); doc.setFont('helvetica','normal'); doc.setFontSize(9);
-  const summaryLines = doc.splitTextToSize(
-    `Durante el período analizado, CAFAM DOMICILIOS evidencia un cumplimiento operativo del 94%, con ${totalEntregas.toLocaleString('es-CO')} entregas efectivas registradas. El indicador de productividad se mantiene en 87% con un tiempo promedio de entrega de 45 minutos. Se documentaron ${DATA.novedades.length} novedades operativas. La cobertura abarca ${new Set(DATA.mensajeros.map(r=>getFirstField(r,['CIUDAD','Ciudad'])).filter(Boolean)).size} ciudades con presencia activa en droguería y puntos de venta CAFAM.`,
-    170
-  );
-  doc.text(summaryLines, 20, 108);
-
-  // Footer
-  doc.setFillColor(37, 99, 235);
-  doc.rect(0, 285, 210, 12, 'F');
-  doc.setTextColor(255,255,255); doc.setFontSize(8);
-  doc.text('CAFAM DOMICILIOS — Plataforma Analítica Corporativa', 20, 292);
-  doc.text('Powered by Quick Analytics', 160, 292);
-
-  doc.save(`CAFAM_Informe_Ejecutivo_${new Date().toISOString().slice(0,10)}.pdf`);
-  showToast('PDF generado exitosamente', 'success');
-}
-
-function exportTablePDF(tableId, name) {
-  showToast(`Generando PDF de ${name}...`, 'info');
-  const { jsPDF } = window.jspdf;
-  const doc = new jsPDF({ orientation:'landscape', unit:'mm', format:'a4' });
-  const table = document.getElementById(tableId);
-  if (!table) return;
-
-  doc.setFillColor(5,12,26); doc.rect(0,0,297,210,'F');
-  doc.setFillColor(37,99,235); doc.rect(0,0,297,20,'F');
-  doc.setTextColor(255,255,255); doc.setFontSize(14); doc.setFont('helvetica','bold');
-  doc.text(`CAFAM DOMICILIOS — ${name.toUpperCase()}`, 15, 13);
-  doc.setFontSize(9); doc.setFont('helvetica','normal');
-  doc.text(new Date().toLocaleDateString('es-CO'), 260, 13);
-
-  const headers = Array.from(table.querySelectorAll('thead th')).map(th=>th.textContent.replace(/[\u2191\u2193]/g,'').trim());
-  const rows = Array.from(table.querySelectorAll('tbody tr')).map(tr =>
-    Array.from(tr.querySelectorAll('td')).map(td=>td.textContent.trim())
-  ).filter(r=>r.length>1);
-
-  let y = 30;
-  const colW = Math.min(35, (267/headers.length));
-
-  // Draw headers
-  doc.setFillColor(37,99,235);
-  doc.rect(15, y-5, 267, 8, 'F');
-  doc.setTextColor(255,255,255); doc.setFontSize(7); doc.setFont('helvetica','bold');
-  headers.forEach((h,i) => doc.text(h.slice(0,14), 16+i*colW, y));
-  y+=8;
-
-  doc.setFont('helvetica','normal');
-  rows.forEach((row, ri) => {
-    if (y > 190) {
-      doc.addPage();
-      doc.setFillColor(5,12,26); doc.rect(0,0,297,210,'F');
-      y = 20;
-    }
-    if (ri%2===0) { doc.setFillColor(20,35,65); doc.rect(15,y-4,267,7,'F'); }
-    doc.setTextColor(180,200,230);
-    row.forEach((cell,i) => doc.text(String(cell).slice(0,14), 16+i*colW, y));
-    y+=7;
-  });
-
-  doc.setFillColor(37,99,235); doc.rect(0,200,297,10,'F');
-  doc.setTextColor(255,255,255); doc.setFontSize(7);
-  doc.text('CAFAM DOMICILIOS — Plataforma Analítica Corporativa', 15, 206);
-
-  doc.save(`CAFAM_${name}_${new Date().toISOString().slice(0,10)}.pdf`);
-  showToast(`PDF de ${name} generado`, 'success');
-}
-
-// ═══════════════════════════════════
-// REFRESH
-// ═══════════════════════════════════
-async function refreshAllData() {
-  showToast('Actualizando datos...', 'info');
-  await loadAllData();
-  populateAllFilters();
-  renderKPIs();
-  renderCharts();
-  FILTERED.mensajeros = DATA.mensajeros;
-  renderMensajerosTable();
-  FILTERED.novedades = DATA.novedades;
-  renderNovedadesTable();
-  initAdmin();
-  FILTERED.ventas = DATA.ventas;
-  renderVentasTable();
-  renderCantidadTable();
-  renderPercapitaTable();
-  renderTiemposTable();
-  showToast('Datos actualizados correctamente', 'success');
-}
-
-// ═══════════════════════════════════
-// AUTO REFRESH (5 min)
-// ═══════════════════════════════════
-setInterval(refreshAllData, 5 * 60 * 1000);
-
-// ═══════════════════════════════════
+// ═══════════════════════════════════════════════
 // INIT
-// ═══════════════════════════════════
-async function init() {
-  await loadAllData();
-  populateAllFilters();
-  renderKPIs();
-  renderCharts();
-  FILTERED.mensajeros = DATA.mensajeros;
-  renderMensajerosTable();
-  FILTERED.novedades = DATA.novedades;
-  renderNovedadesTable();
-  initAdmin();
-  FILTERED.ventas = DATA.ventas;
-  renderVentasTable();
-  renderCantidadTable();
-  renderPercapitaTable();
-  renderTiemposTable();
+// ═══════════════════════════════════════════════
+function hideLoader(){
+  var ov=document.getElementById('loadWrap');
+  if(ov){ov.style.opacity='0';setTimeout(function(){if(ov&&ov.parentNode)ov.parentNode.removeChild(ov);},600);}
+}
 
-  setTimeout(() => {
-    const overlay = document.getElementById('loadingOverlay');
-    overlay.style.opacity = '0';
-    setTimeout(() => overlay.remove(), 500);
-    showToast('Plataforma CAFAM lista', 'success');
-  }, 2800);
+async function init(){
+  // Safety net: always remove loader after 10s no matter what
+  var safetyTimer=setTimeout(function(){
+    hideLoader();
+    toast('Cargado (tiempo límite alcanzado)','warn');
+  },10000);
+
+  try {
+    var ltxt=document.getElementById('loadTxt');
+    var sheets=Object.keys(CSV);
+    for(var i=0;i<sheets.length;i++){
+      if(ltxt) ltxt.textContent='Cargando '+sheets[i]+'... ('+(i+1)+'/'+sheets.length+')';
+      await fetchCSV(CSV[sheets[i]],sheets[i]);
+    }
+    if(ltxt) ltxt.textContent='Procesando datos...';
+    buildAccessors();
+    renderResumen();
+  } catch(e) {
+    console.error('Init error:',e);
+    toast('Error al inicializar: '+e.message,'warn');
+  }
+
+  clearTimeout(safetyTimer);
+  setTimeout(function(){
+    hideLoader();
+    toast('Plataforma CAFAM lista','success');
+    setInterval(refreshAll,5*60*1000);
+  },500);
 }
 
 init();
