@@ -731,17 +731,17 @@ function renderNovedades(){
   const mesArr=sortObj(byMes,false).reverse();
   makeChart('cNovMes','line',mesArr.map(e=>e[0]),[lineDS('Novedades',mesArr.map(e=>e[1]),'#ef4444',true)]);
 
-  // TOP TIPOS DE NOVEDAD
-const byTipo = sumGroup(rows,r=>A.nov.tipo(r),r=>1);
-const top4 = topN(byTipo,4);
+  // TOP 4 basado SOLO en TIPO
+const byTipo = sumGroup(rows, r => A.nov.tipo(r), r => 1);
+const top4 = topN(byTipo, 4);
 
-// MODELO OPERATIVO
-const byModelo = sumGroup(rows,r=>A.nov.modelo(r),r=>1);
+// MODELO separado
+const fijo = sum(rows, r =>
+  A.nov.modelo(r).toLowerCase().includes('plant') ? 1 : 0
+);
 
-const fijo = sum(rows,r=>
-  A.nov.modelo(r).toLowerCase().includes('planta')
-  || A.nov.modelo(r).toLowerCase().includes('fija')
-  ? 1 : 0
+const colabo = sum(rows, r =>
+  A.nov.modelo(r).toLowerCase().includes('cola') ? 1 : 0
 );
 
 const colabo = sum(rows,r=>
