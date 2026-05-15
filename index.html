@@ -367,8 +367,12 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--t1);min-hei
     <div class="cc"><div class="cc-ttl"><i class="fas fa-trophy"></i> Top 5 Puntos — Per Cápita Más Alto</div><div class="cc-sub">Puntos con mayor costo operativo</div><canvas id="cPcTop" height="180"></canvas></div>
   </div>
   <div class="g2">
-    <div class="cc"><div class="cc-ttl"><i class="fas fa-hospital"></i> Per Cápita por Drogería</div><div class="cc-sub">Costo promedio por punto</div><canvas id="cPcDrog" height="180"></canvas></div>
-    <div class="cc"><div class="cc-ttl"><i class="fas fa-users"></i> Planta Fija vs Colaborativo</div><div class="cc-sub">Comparativa de costo por tipo</div><canvas id="cPcTipoM" height="180"></canvas></div>
+    <div class="cc"><div class="cc-ttl"><i class="fas fa-hospital"></i> Per Cápita por Drogería</div><div class="cc-sub">Ranking de puntos por costo promedio</div><canvas id="cPcDrog" height="180"></canvas></div>
+    <div class="cc"><div class="cc-ttl"><i class="fas fa-map-marker-alt"></i> Costo Total por Ciudad</div><div class="cc-sub">Distribución del costo operativo</div><canvas id="cPcCiudad" height="180"></canvas></div>
+  </div>
+  <div class="g2">
+    <div class="cc"><div class="cc-ttl"><i class="fas fa-users"></i> Planta Fija vs Colaborativo</div><div class="cc-sub">Per cápita y costo por tipo de mensajero</div><canvas id="cPcTipoM" height="180"></canvas></div>
+    <div class="cc"><div class="cc-ttl"><i class="fas fa-chart-line"></i> Entregas por Tipo de Gestión</div><div class="cc-sub">Domicilios vs Transferencias</div><canvas id="cPcGestion" height="180"></canvas></div>
   </div>
   <div id="pcAnalysis"></div>
 </div>
@@ -720,15 +724,59 @@ function buildAccessors(){
   };
 
     A.pc={
-    mes:dFld(D.percapita,'mes','month'),
-    ciudad:r=>fld(r,...Object.keys(r).filter(k=>k.toLowerCase().includes('ciudad'))||['ciudad']),
-    drog:r=>fld(r,...Object.keys(r).filter(k=>k.toLowerCase().includes('drog')||k.toLowerCase().includes('punto'))||['drog']),
-    tipoM:r=>fld(r,...Object.keys(r).filter(k=>k.toLowerCase().includes('tipo')&&(k.toLowerCase().includes('mens')||k.toLowerCase().includes('plant')||k.toLowerCase().includes('cola')))||['tipo']),
-    costo:r=>num(fld(r,...Object.keys(r).filter(k=>k.toLowerCase().includes('costo')||k.toLowerCase().includes('valor'))||['costo'])),
-    percapita:r=>num(fld(r,...Object.keys(r).filter(k=>k.toLowerCase().includes('percap')||k.toLowerCase().includes('per cap'))||['percapita'])),
-    entregas:r=>num(fld(r,...Object.keys(r).filter(k=>k.toLowerCase().includes('entrega')||k.toLowerCase().includes('cantidad'))||['entregas']))
+    // TIPO = tipo de mensajero (Planta Fija / Colaborativo) — columna A
+    tipoM: function(r){
+      var v = r['TIPO'] || r['Tipo'] || r['tipo'] || '';
+      if(!v){ var k=Object.keys(r).find(function(k){var l=k.toLowerCase();return l==='tipo'||l.indexOf('tipo mens')!==-1||l.indexOf('planta')!==-1||l.indexOf('cola')!==-1;}); v=k?r[k]:''; }
+      return String(v).trim();
+    },
+    // CIUDAD — columna B
+    ciudad: function(r){
+      return String(r['CIUDAD']||r['Ciudad']||r['ciudad']||'').trim();
+    },
+    // MES — columna C
+    mes: function(r){
+      return String(r['MES']||r['Mes']||r['mes']||'').trim();
+    },
+    // DROGUERIA NOMBRE CORTO — columna I (preferido) | DROGUERIA — columna D
+    drog: function(r){
+      var v = r['DROGUERIA NOMBRE CORTO']||r['DROGUERIA']||r['Drogueria']||r['drogueria']||'';
+      if(!v){ var k=Object.keys(r).find(function(k){return k.toLowerCase().indexOf('drog')!==-1;}); v=k?r[k]:''; }
+      return String(v).trim();
+    },
+    // GESTIÓN — columna E (tipo de servicio: Domicilio / Transferencia)
+    tipo: function(r){
+      var v = r['GESTIÓN']||r['GESTION']||r['Gestión']||r['gestion']||'';
+      if(!v){ var k=Object.keys(r).find(function(k){return k.toLowerCase().indexOf('gesti')!==-1;}); v=k?r[k]:''; }
+      return String(v).trim();
+    },
+    // CANT ENTREGAS — columna F
+    entregas: function(r){
+      var v = r['CANT ENTREGAS']||r['CANTIDAD ENTREGAS']||r['Cant Entregas']||r['cant entregas']||'';
+      if(v!==''&&v!==undefined){ var n=parseFloat(String(v).replace(/[^0-9.-]/g,'')); if(!isNaN(n)) return n; }
+      var k=Object.keys(r).find(function(k){var l=k.toLowerCase();return (l.indexOf('cant')!==-1||l.indexOf('entrega')!==-1)&&l.indexOf('per')===-1;});
+      return k?parseFloat(String(r[k]).replace(/[^0-9.-]/g,''))||0:0;
+    },
+    // COSTO — columna G
+    costo: function(r){
+      var v = r['COSTO']||r['Costo']||r['costo']||'';
+      if(v!==''&&v!==undefined){ var n=parseFloat(String(v).replace(/[^0-9.-]/g,'')); if(!isNaN(n)) return n; }
+      var k=Object.keys(r).find(function(k){return k.toLowerCase().indexOf('costo')!==-1||k.toLowerCase().indexOf('valor')!==-1;});
+      return k?parseFloat(String(r[k]).replace(/[^0-9.-]/g,''))||0:0;
+    },
+    // PER CAPITA — columna H
+    percapita: function(r){
+      var v = r['PER CAPITA']||r['Per Capita']||r['per capita']||r['PER CÁPITA']||r['Per Cápita']||'';
+      if(v!==''&&v!==undefined){ var n=parseFloat(String(v).replace(/[^0-9.,]/g,'').replace(',','.')); if(!isNaN(n)) return n; }
+      var k=Object.keys(r).find(function(k){return k.toLowerCase().indexOf('per')!==-1&&k.toLowerCase().indexOf('cap')!==-1;});
+      if(k){ var n2=parseFloat(String(r[k]).replace(/[^0-9.,]/g,'').replace(',','.')); if(!isNaN(n2)) return n2; }
+      // Calcular: costo / entregas si no existe la columna
+      var co=A.pc.costo(r); var en=A.pc.entregas(r);
+      return (co>0&&en>0)?co/en:0;
+    }
   };
-  A.ti={
+
+    A.ti={
     mes:dFld(D.tiempos,'mes','month'),
     ciudad:r=>fld(r,...Object.keys(r).filter(k=>k.toLowerCase().includes('ciudad'))||['ciudad']),
     drog:r=>fld(r,...Object.keys(r).filter(k=>k.toLowerCase().includes('drog')||k.toLowerCase().includes('punto'))||['drog']),
@@ -954,65 +1002,175 @@ function renderCantidad(){
 // RENDER PER CÁPITA
 // ═══════════════════════════════════════════════
 function renderPercapita(){
-  const rows=applyRowFilter(D.percapita,A.pc,{mes:gv('pfMes'),ciudad:gv('pfCiudad'),drog:gv('pfDrog')});
+  var rows=applyRowFilter(D.percapita,A.pc,{mes:gv('pfMes'),ciudad:gv('pfCiudad'),drog:gv('pfDrog')});
   popFilters(D.percapita,A.pc,[['pfMes',A.pc.mes],['pfCiudad',A.pc.ciudad],['pfDrog',A.pc.drog]]);
 
-  const pcByDrog={};const costoByDrog={};const entByDrog={};
-  rows.forEach(r=>{const d=A.pc.drog(r)||'N/D';const pc=A.pc.percapita(r);const co=A.pc.costo(r);const en=A.pc.entregas(r);if(!pcByDrog[d]){pcByDrog[d]=[];costoByDrog[d]=0;entByDrog[d]=0;}if(pc>0)pcByDrog[d].push(pc);costoByDrog[d]+=co;entByDrog[d]+=en;});
-  const avgPcByDrog={};Object.keys(pcByDrog).forEach(k=>{const arr=pcByDrog[k];avgPcByDrog[k]=arr.length?arr.reduce((s,v)=>s+v,0)/arr.length:0;});
-  const topPC=sortObj(avgPcByDrog);const botPC=sortObj(avgPcByDrog,false);
+  if(!rows.length){
+    document.getElementById('pcKPIs').innerHTML='<div style="color:#f59e0b;font-size:12px;padding:10px">Sin datos para los filtros seleccionados</div>';
+    return;
+  }
 
-  const pcByMes={};const costoFijo=[];const costoColabo=[];
-  rows.forEach(r=>{const m=A.pc.mes(r)||'N/D';if(!pcByMes[m])pcByMes[m]=[];const pc=A.pc.percapita(r);if(pc>0)pcByMes[m].push(pc);const tm=A.pc.tipoM(r).toLowerCase();if(tm.includes('fij')||tm.includes('plant'))costoFijo.push(A.pc.costo(r));else if(tm.includes('cola'))costoColabo.push(A.pc.costo(r));});
-  const avgPcByMes={};Object.keys(pcByMes).forEach(k=>{const arr=pcByMes[k];avgPcByMes[k]=arr.length?arr.reduce((s,v)=>s+v,0)/arr.length:0;});
+  // ── Agrupar PC por drogería (promedio) ──────────────────
+  var pcByDrog={};
+  rows.forEach(function(r){
+    var d=A.pc.drog(r)||'N/D';
+    var pc=A.pc.percapita(r);
+    if(!pcByDrog[d]) pcByDrog[d]=[];
+    if(pc>0) pcByDrog[d].push(pc);
+  });
+  var avgPcByDrog={};
+  Object.keys(pcByDrog).forEach(function(k){
+    var arr=pcByDrog[k];
+    avgPcByDrog[k]=arr.length?arr.reduce(function(s,v){return s+v;},0)/arr.length:0;
+  });
+  var topPC=sortObj(avgPcByDrog);       // mayor primero
+  var botPC=sortObj(avgPcByDrog,false); // menor primero
 
-  const globalPC=Object.values(avgPcByDrog).filter(v=>v>0);
-  const globalPCAvg=globalPC.length?globalPC.reduce((s,v)=>s+v,0)/globalPC.length:0;
-  const totalCosto=sum(rows,r=>A.pc.costo(r));
-  const avgCFijo=costoFijo.length?costoFijo.reduce((s,v)=>s+v,0)/costoFijo.length:0;
-  const avgCColabo=costoColabo.length?costoColabo.reduce((s,v)=>s+v,0)/costoColabo.length:0;
+  // ── PC por mes (promedio) ───────────────────────────────
+  var pcByMes={};
+  rows.forEach(function(r){
+    var m=A.pc.mes(r)||'N/D';
+    var pc=A.pc.percapita(r);
+    if(!pcByMes[m]) pcByMes[m]=[];
+    if(pc>0) pcByMes[m].push(pc);
+  });
+  var avgPcByMes={};
+  Object.keys(pcByMes).forEach(function(k){
+    var arr=pcByMes[k];
+    avgPcByMes[k]=arr.length?arr.reduce(function(s,v){return s+v;},0)/arr.length:0;
+  });
 
+  // ── Costo y entregas por ciudad ─────────────────────────
+  var costoByCity={};var entByCity={};
+  rows.forEach(function(r){
+    var c=A.pc.ciudad(r)||'N/D';
+    costoByCity[c]=(costoByCity[c]||0)+A.pc.costo(r);
+    entByCity[c]=(entByCity[c]||0)+A.pc.entregas(r);
+  });
+
+  // ── Planta Fija vs Colaborativo ─────────────────────────
+  var fijoPC=[]; var colaboPC=[]; var fijoCosto=0; var colaboCosto=0;
+  var fijoEnt=0; var colaboEnt=0;
+  rows.forEach(function(r){
+    var tm=A.pc.tipoM(r).toLowerCase();
+    var pc=A.pc.percapita(r);
+    var co=A.pc.costo(r);
+    var en=A.pc.entregas(r);
+    var esFijo=tm.indexOf('fij')!==-1||tm.indexOf('plant')!==-1;
+    var esColabo=tm.indexOf('cola')!==-1;
+    if(esFijo){ if(pc>0)fijoPC.push(pc); fijoCosto+=co; fijoEnt+=en; }
+    else if(esColabo){ if(pc>0)colaboPC.push(pc); colaboCosto+=co; colaboEnt+=en; }
+  });
+  var avgFijoPC=fijoPC.length?fijoPC.reduce(function(s,v){return s+v;},0)/fijoPC.length:0;
+  var avgColaboPC=colaboPC.length?colaboPC.reduce(function(s,v){return s+v;},0)/colaboPC.length:0;
+
+  // ── Métricas globales ───────────────────────────────────
+  var globalArr=Object.values(avgPcByDrog).filter(function(v){return v>0;});
+  var globalPCAvg=globalArr.length?globalArr.reduce(function(s,v){return s+v;},0)/globalArr.length:0;
+  var totalCosto=sum(rows,function(r){return A.pc.costo(r);});
+  var totalEnt=sum(rows,function(r){return A.pc.entregas(r);});
+
+  // ══ KPIs ═══════════════════════════════════════════════
   document.getElementById('pcKPIs').innerHTML=[
-    kpiCard('fas fa-coins','Per Cápita Global Prom.',cop(globalPCAvg),'promedio todos los puntos','ne','#f59e0b'),
-    kpiCard('fas fa-arrow-up','PC Más Alto',topPC[0]?topPC[0][0]:'—',topPC[0]?cop(topPC[0][1]):'—','dn','#ef4444'),
-    kpiCard('fas fa-arrow-down','PC Más Bajo',botPC[0]?botPC[0][0]:'—',botPC[0]?cop(botPC[0][1]):'—','up','#10b981'),
+    kpiCard('fas fa-coins','Per Cápita Global Prom.',cop(globalPCAvg),'promedio general','ne','#f59e0b'),
+    kpiCard('fas fa-arrow-up','PC Más Alto',topPC[0]?topPC[0][0].slice(0,18):'—',topPC[0]?cop(topPC[0][1]):'—','dn','#ef4444'),
+    kpiCard('fas fa-arrow-down','PC Más Bajo',botPC[0]?botPC[0][0].slice(0,18):'—',botPC[0]?cop(botPC[0][1]):'—','up','#10b981'),
     kpiCard('fas fa-dollar-sign','Costo Total',cop(totalCosto),'período seleccionado','ne','#8b5cf6'),
-    kpiCard('fas fa-id-badge','PC Planta Fija',cop(avgCFijo),'costo prom. fijo','ne','#2563eb'),
-    kpiCard('fas fa-handshake','PC Colaborativo',cop(avgCColabo),'costo prom. colabo.','ne','#06b6d4'),
+    kpiCard('fas fa-id-badge','PC Planta Fija',cop(avgFijoPC),'per cápita prom.','ne','#2563eb'),
+    kpiCard('fas fa-handshake','PC Colaborativo',cop(avgColaboPC),'per cápita prom.','ne','#06b6d4'),
   ].join('');
 
-  // PC por mes
-  const mesArr=Object.entries(avgPcByMes);
-  makeChart('cPcMes','line',mesArr.map(e=>e[0]),[lineDS('Per Cápita Prom.',mesArr.map(e=>e[1]),'#f59e0b',false)]);
+  // ══ GRÁFICAS ════════════════════════════════════════════
 
-  // Top 5 PC más alto
-  const top5=topPC.slice(0,5);
-  makeChart('cPcTop','bar',top5.map(e=>e[0].slice(0,20)),[barDS('Per Cápita',top5.map(e=>e[1]),'#ef4444')]);
+  // 1) Línea de tendencia PC por mes
+  var mesKeys=Object.keys(avgPcByMes).sort();
+  makeChart('cPcMes','line',mesKeys,
+    [lineDS('Per Cápita Prom.',mesKeys.map(function(k){return avgPcByMes[k];}), '#f59e0b', false)]
+  );
 
-  // PC por drogería (todos)
-  const drogArr=sortObj(avgPcByDrog).slice(0,12);
-  makeChart('cPcDrog','bar',drogArr.map(e=>e[0].slice(0,18)),[barDS('Per Cápita',drogArr.map(e=>e[1]),'#f59e0b')]);
+  // 2) Top 5 droguerías con PC más alto
+  var top5=topPC.slice(0,5);
+  makeChart('cPcTop','bar',
+    top5.map(function(e){return e[0].slice(0,22);}),
+    [barDS('Per Cápita',top5.map(function(e){return e[1];}), '#ef4444')]
+  );
 
-  // Planta vs Colabo
-  makeChart('cPcTipoM','doughnut',['Planta Fija','Colaborativo'],[{data:[avgCFijo,avgCColabo],backgroundColor:['#2563ebbb','#06b6d4bb'],borderColor:['#3b82f6','#22d3ee'],borderWidth:1.5,hoverOffset:5}]);
+  // 3) PC por drogería — todas (ordenado mayor→menor)
+  var drogArr=topPC.slice(0,14);
+  makeChart('cPcDrog','bar',
+    drogArr.map(function(e){return e[0].slice(0,18);}),
+    [barDS('Per Cápita',drogArr.map(function(e){return e[1];}), '#f59e0b')]
+  );
 
-  document.getElementById('pcAnalysis').innerHTML=`
-    <div class="ac"><div class="ac-ttl"><i class="fas fa-brain"></i> Análisis de Per Cápita — Alertas y Oportunidades</div><div class="ac-body">
-      <strong>Per Cápita promedio global:</strong> <span class="hi">${cop(globalPCAvg)}</span> por entrega.<br><br>
-      <strong>🔴 Top 5 puntos más costosos:</strong><br>
-      ${topPC.slice(0,5).map((e,i)=>`${i+1}. <span class="bad">${e[0]}</span>: ${cop(e[1])} por entrega`).join('<br>')}<br><br>
-      <strong>🟢 Top 5 puntos más eficientes:</strong><br>
-      ${botPC.slice(0,5).map((e,i)=>`${i+1}. <span class="ok">${e[0]}</span>: ${cop(e[1])} por entrega`).join('<br>')}<br><br>
-      <strong>⚠ Puntos en alerta</strong> (PC superior al promedio global en +30%):<br>
-      ${topPC.filter(e=>e[1]>globalPCAvg*1.3).slice(0,4).map(e=>`<span class="bad">${e[0]}</span>: ${cop(e[1])} (${((e[1]/globalPCAvg-1)*100).toFixed(0)}% sobre el promedio)`).join('<br>')||'<span class="ok">Ninguno fuera de rango</span>'}
-    </div></div>
-    <div class="plan"><div class="plan-ttl"><i class="fas fa-clipboard-list"></i> Plan de Acción — Per Cápita</div>
-      ${[['Auditar puntos con PC superior al 130% del promedio','Revisar rutas, volúmenes y tiempos en puntos de alto costo.'],
-         ['Evaluar modelo de contratación','Comparar costo real entre planta fija y colaborativo por punto.'],
-         ['Incrementar volumen en puntos de alto PC','Aumentar entregas para diluir costo fijo mensual.'],
-         ['Renegociar condiciones en puntos críticos','Presentar análisis al cliente para ajuste de modelo de servicio.']].map((p,i)=>
-        `<div class="plan-item"><div class="plan-num">${i+1}</div><div class="plan-content"><div class="plan-title">${p[0]}</div><div class="plan-desc">${p[1]}</div></div></div>`).join('')}
-    </div>`;
+  // 4) Planta Fija vs Colaborativo — PC y Costo
+  makeChart('cPcTipoM','bar',
+    ['Planta Fija','Colaborativo'],
+    [
+      barDS('Per Cápita Prom.',  [avgFijoPC,   avgColaboPC],   '#2563eb', 'g'),
+      barDS('Costo Total (miles)',[fijoCosto/1000, colaboCosto/1000], '#06b6d4', 'g')
+    ]
+  );
+
+  // 5) Costo por ciudad
+  var ciudArr=sortObj(costoByCity);
+  makeChart('cPcCiudad','bar',
+    ciudArr.map(function(e){return e[0];}),
+    [barDS('Costo Total',ciudArr.map(function(e){return e[1];}), '#8b5cf6')]
+  );
+
+  // 6) Entregas por tipo de gestión (Domicilio / Transferencia)
+  var byGestion={};
+  rows.forEach(function(r){
+    var g=A.pc.tipo(r)||'Sin tipo';
+    byGestion[g]=(byGestion[g]||0)+A.pc.entregas(r);
+  });
+  var gArr=sortObj(byGestion);
+  makeChart('cPcGestion','doughnut',
+    gArr.map(function(e){return e[0];}),
+    [{data:gArr.map(function(e){return e[1];}),
+      backgroundColor:['#2563ebbb','#06b6d4bb','#8b5cf6bb','#10b981bb'],
+      borderColor:['#3b82f6','#22d3ee','#a855f7','#34d399'],
+      borderWidth:1.5,hoverOffset:5}]
+  );
+
+  // ══ ANÁLISIS INTELIGENTE ════════════════════════════════
+  var alerta=topPC.filter(function(e){return e[1]>globalPCAvg*1.3;});
+  var eficientes=botPC.slice(0,5);
+
+  document.getElementById('pcAnalysis').innerHTML=
+    '<div class="ac"><div class="ac-ttl"><i class="fas fa-brain"></i> Análisis de Per Cápita — Alertas y Oportunidades</div><div class="ac-body">'+
+    '<strong>Per Cápita promedio global:</strong> <span class="hi">'+cop(globalPCAvg)+'</span> por entrega. '+
+    'Total de servicios analizados: <span class="hi">'+totalEnt.toLocaleString('es-CO')+'</span> · Costo total: <span class="hi">'+cop(totalCosto)+'</span><br><br>'+
+    '<strong>🔴 Top 5 puntos más costosos:</strong><br>'+
+    topPC.slice(0,5).map(function(e,i){
+      var pct=globalPCAvg>0?((e[1]/globalPCAvg-1)*100).toFixed(0):0;
+      return (i+1)+'. <span class="bad">'+e[0]+'</span>: '+cop(e[1])+' por entrega <span class="warn">(+'+pct+'% sobre promedio)</span>';
+    }).join('<br>')+'<br><br>'+
+    '<strong>🟢 Top 5 puntos más eficientes:</strong><br>'+
+    eficientes.map(function(e,i){
+      return (i+1)+'. <span class="ok">'+e[0]+'</span>: '+cop(e[1])+' por entrega';
+    }).join('<br>')+'<br><br>'+
+    (alerta.length>0?
+      '<strong>⚠ PUNTOS EN ALERTA CRÍTICA</strong> (PC >30% sobre el promedio):<br>'+
+      alerta.slice(0,5).map(function(e){
+        return '<span class="bad">'+e[0]+'</span>: '+cop(e[1])+' — recomendado revisar volumen y modelo de contratación.';
+      }).join('<br>')+'<br><br>':
+      '<span class="ok">✓ Ningún punto supera el 130% del promedio global.</span><br><br>'
+    )+
+    '<strong>Planta Fija:</strong> PC prom. <span class="hi">'+cop(avgFijoPC)+'</span> · Costo total: '+cop(fijoCosto)+'<br>'+
+    '<strong>Colaborativo:</strong> PC prom. <span class="hi">'+cop(avgColaboPC)+'</span> · Costo total: '+cop(colaboCosto)+
+    '</div></div>'+
+    '<div class="plan"><div class="plan-ttl"><i class="fas fa-clipboard-list"></i> Plan de Acción — Per Cápita</div>'+
+    ['Auditar los 5 puntos con PC más alto|Revisar el volumen de entregas, número de mensajeros y costo del contrato. Un per cápita alto indica que el costo por servicio es elevado respecto al mercado.',
+     'Evaluar modelo de contratación por punto|Comparar si planta fija o colaborativo es más eficiente por drogería. Si el PC de fijo es mayor, considerar migrar a colaborativo en puntos de bajo volumen.',
+     'Incrementar volumen en puntos de alto PC|El per cápita se reduce al aumentar la cantidad de entregas. Gestionar con el cliente acciones comerciales para subir el volumen en puntos costosos.',
+     'Renegociar tarifas en puntos críticos|Presentar al cliente el análisis comparativo de PC para justificar ajuste de tarifa o modelo de servicio.',
+     'Replicar modelo de puntos eficientes|Analizar qué tienen en común los 5 puntos con menor PC (volumen, zona, tipo mensajero) y replicar ese modelo.']
+    .map(function(p,i){
+      var parts=p.split('|');
+      return '<div class="plan-item"><div class="plan-num">'+(i+1)+'</div><div class="plan-content"><div class="plan-title">'+parts[0]+'</div><div class="plan-desc">'+parts[1]+'</div></div></div>';
+    }).join('')+
+    '</div>';
 }
 
 // ═══════════════════════════════════════════════
