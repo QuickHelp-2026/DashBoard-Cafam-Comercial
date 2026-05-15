@@ -679,15 +679,78 @@ function buildAccessors(){
   };
   A.can={
     mes:dFld(D.cantidad,'mes','month'),
-    ciudad:r=>fld(r,...Object.keys(r).filter(k=>k.toLowerCase().includes('ciudad'))||['ciudad']),
-    drog:r=>fld(r,...Object.keys(r).filter(k=>k.toLowerCase().includes('drog')||k.toLowerCase().includes('punto'))||['drog']),
-    tipo:r=>fld(r,...Object.keys(r).filter(k=>k.toLowerCase().includes('gesti')||k.toLowerCase().includes('tipo'))||['tipo']),
-    tipoM:r=>fld(r,...Object.keys(r).filter(k=>k.toLowerCase().includes('mensajero')||k.toLowerCase().includes('planta')||k.toLowerCase().includes('colabo'))||['tipo mensajero']),
-    efectiva:r=>num(fld(r,...Object.keys(r).filter(k =>k.toLowerCase().includes('entregado')),'ENTREGADO')),
-    cancelada:r=>num(fld(r,...Object.keys(r).filter(k=>k.toLowerCase().includes('cancel'))||['cancelada'])),
-    total:r=>num(fld(r,...Object.keys(r).filter(k=>k.toLowerCase().includes('total')||k.toLowerCase().includes('cantidad'))||['total'])),
-    fecha:r=>fld(r,...Object.keys(r).filter(k=>k.toLowerCase().includes('fecha'))||['fecha']),
-    mensajeros:r=>num(fld(r,...Object.keys(r).filter(k=>k.toLowerCase().includes('mensajero')&&k.toLowerCase().includes('cant'))||['cant mensajero','mensajeros']))
+    // Ciudad — busca columna que contenga 'ciudad'
+    ciudad:function(r){
+      var keys=Object.keys(r);
+      var k=keys.find(function(k){return k.toLowerCase().indexOf('ciudad')!==-1;});
+      return k?fld(r,k):'';
+    },
+    // Drogería / Punto de venta
+    drog:function(r){
+      var keys=Object.keys(r);
+      var k=keys.find(function(k){return k.toLowerCase().indexOf('drog')!==-1||k.toLowerCase().indexOf('punto')!==-1;});
+      return k?fld(r,k):'';
+    },
+    // Tipo de gestión (domicilio/transferencia)
+    tipo:function(r){
+      var keys=Object.keys(r);
+      var k=keys.find(function(k){return k.toLowerCase().indexOf('gesti')!==-1||k.toLowerCase().indexOf('tipo')!==-1;});
+      return k?fld(r,k):'';
+    },
+    // Tipo mensajero (planta fija / colaborativo)
+    tipoM:function(r){
+      var keys=Object.keys(r);
+      var k=keys.find(function(k){
+        var kl=k.toLowerCase();
+        return (kl.indexOf('mensajero')!==-1&&kl.indexOf('tipo')!==-1)||(kl.indexOf('planta')!==-1)||(kl.indexOf('colabo')!==-1);
+      });
+      return k?fld(r,k):'';
+    },
+    // ENTREGADO = columna I = servicios efectivamente entregados
+    efectiva:function(r){
+      // Busca primero columna 'ENTREGADO', luego 'entregado', luego 'efectiv'
+      var v=fld(r,'ENTREGADO','Entregado','entregado');
+      if(v!=='')return num(v);
+      var keys=Object.keys(r);
+      var k=keys.find(function(k){return k.toLowerCase().indexOf('entregado')!==-1||k.toLowerCase().indexOf('efectiv')!==-1;});
+      return k?num(fld(r,k)):0;
+    },
+    // CANCELADO = servicios no efectivos
+    cancelada:function(r){
+      var v=fld(r,'CANCELADO','Cancelado','cancelado','NO ENTREGADO','No entregado');
+      if(v!=='')return num(v);
+      var keys=Object.keys(r);
+      var k=keys.find(function(k){return k.toLowerCase().indexOf('cancel')!==-1||k.toLowerCase().indexOf('no entregado')!==-1;});
+      return k?num(fld(r,k)):0;
+    },
+    // TOTAL = suma de entregas (entregado + cancelado)
+    total:function(r){
+      var v=fld(r,'TOTAL','Total','total','CANTIDAD','Cantidad');
+      if(v!==''&&num(v)>0)return num(v);
+      // Si no hay columna total, sumar efectiva + cancelada
+      var ef=A.can.efectiva(r);
+      var ca=A.can.cancelada(r);
+      if(ef>0||ca>0)return ef+ca;
+      // Último recurso: buscar cualquier columna numérica que diga 'total' o 'cantidad'
+      var keys=Object.keys(r);
+      var k=keys.find(function(k){return k.toLowerCase().indexOf('total')!==-1||k.toLowerCase().indexOf('cantidad')!==-1;});
+      return k?num(fld(r,k)):0;
+    },
+    // Fecha para tendencia semanal
+    fecha:function(r){
+      var keys=Object.keys(r);
+      var k=keys.find(function(k){return k.toLowerCase().indexOf('fecha')!==-1;});
+      return k?fld(r,k):'';
+    },
+    // Cantidad de mensajeros en el punto
+    mensajeros:function(r){
+      var keys=Object.keys(r);
+      var k=keys.find(function(k){
+        var kl=k.toLowerCase();
+        return kl.indexOf('mensajero')!==-1&&(kl.indexOf('cant')!==-1||kl.indexOf('num')!==-1||kl.indexOf('#')!==-1);
+      });
+      return k?num(fld(r,k)):0;
+    }
   };
   A.pc={
     mes:dFld(D.percapita,'mes','month'),
@@ -821,16 +884,23 @@ function renderCantidad(){
   const rows=applyRowFilter(D.cantidad,A.can,{mes:gv('cfMes'),ciudad:gv('cfCiudad'),drog:gv('cfDrog'),tipo:gv('cfTipo'),tipoM:gv('cfTipoM')});
   popFilters(D.cantidad,A.can,[['cfMes',A.can.mes],['cfCiudad',A.can.ciudad],['cfDrog',A.can.drog],['cfTipo',A.can.tipo],['cfTipoM',A.can.tipoM]]);
 
-  const totEf=sum(rows,r=>A.can.efectiva(r));
+  // totEf = suma de columna ENTREGADO (col I) — NO usar total como fallback
+  const totEf=sum(rows,function(r){return A.can.efectiva(r);});
   const totCan=sum(rows,r=>A.can.cancelada(r));
-  const totTot=totEf+totCan||totEf;
-  const cumpl=totTot?((totEf/totTot)*100).toFixed(1):0;
+  // totTot = total real de servicios = entregados + cancelados
+  const totTot=sum(rows,function(r){return A.can.total(r);});
+  // Si total no tiene datos, sumar ef + can
+  const totTotReal=(totTot>0?totTot:(totEf+totCan))||1;
+  const cumpl=totTotReal?((totEf/totTotReal)*100).toFixed(1):0;
 
-  const byDrog=sumGroup(rows,r=>A.can.drog(r),r=>A.can.efectiva(r));
-const byCiudad=sumGroup(rows,r=>A.can.ciudad(r),r=>A.can.efectiva(r));
-const byMes=sumGroup(rows,r=>A.can.mes(r),r=>A.can.efectiva(r));
-const byTipo=sumGroup(rows,r=>A.can.tipo(r),r=>A.can.efectiva(r));
-const byTipoM=sumGroup(rows,r=>A.can.tipoM(r),r=>A.can.efectiva(r));
+  // Agrupar por ENTREGADO (col I) = entregas efectivas reales
+  const byDrog=sumGroup(rows,function(r){return A.can.drog(r);},function(r){return A.can.efectiva(r);});
+  const byDrogTotal=sumGroup(rows,function(r){return A.can.drog(r);},function(r){return A.can.total(r);});
+  const topD=sortObj(byDrog);const botD=sortObj(byDrog,false);
+  const byCiudad=sumGroup(rows,function(r){return A.can.ciudad(r);},function(r){return A.can.efectiva(r);});
+  const byMes=sumGroup(rows,function(r){return A.can.mes(r);},function(r){return A.can.efectiva(r);});
+  const byTipo=sumGroup(rows,function(r){return A.can.tipo(r);},function(r){return A.can.efectiva(r);});
+  const byTipoM=sumGroup(rows,function(r){return A.can.tipoM(r);},function(r){return A.can.efectiva(r);});
 
   // Análisis mensajeros por punto
   const mensMap=sumGroup(rows,r=>A.can.drog(r),r=>A.can.mensajeros(r));
@@ -839,9 +909,9 @@ const byTipoM=sumGroup(rows,r=>A.can.tipoM(r),r=>A.can.efectiva(r));
   const subserv=sortObj(entPMens).filter(e=>e[1]>80);
 
   document.getElementById('canKPIs').innerHTML=[
-    kpiCard('fas fa-box','Total Entregas',totEf.toLocaleString('es-CO'),'efectivas','up','#2563eb'),
-    kpiCard('fas fa-check-circle','Efectivas',totEf.toLocaleString('es-CO'),`${cumpl}% cumpl.`,'up','#10b981'),
-    kpiCard('fas fa-times-circle','Canceladas',totCan.toLocaleString('es-CO'),'del total','dn','#ef4444'),
+    kpiCard('fas fa-layer-group','Total Servicios',totTotReal.toLocaleString('es-CO'),'total período','ne','#2563eb'),
+    kpiCard('fas fa-check-circle','Entregados (Efectivos)',totEf.toLocaleString('es-CO'),cumpl+'% cumpl.','up','#10b981'),
+    kpiCard('fas fa-times-circle','Cancelados',totCan.toLocaleString('es-CO'),((totTotReal>0?(totCan/totTotReal)*100:0).toFixed(1))+'% del total','dn','#ef4444'),
     kpiCard('fas fa-percent','Cumplimiento',cumpl+'%','meta 95%',parseFloat(cumpl)>=95?'up':'dn','#8b5cf6'),
     kpiCard('fas fa-hospital','Mayor Volumen',topD[0]?topD[0][0]:'—',topD[0]?topD[0][1].toLocaleString('es-CO')+' entregas':'—','up','#06b6d4'),
     kpiCard('fas fa-arrow-down','Menor Volumen',botD[0]?botD[0][0]:'—',botD[0]?botD[0][1].toLocaleString('es-CO')+' entregas':'—','ne','#f59e0b'),
@@ -849,13 +919,13 @@ const byTipoM=sumGroup(rows,r=>A.can.tipoM(r),r=>A.can.efectiva(r));
 
   // Por mes
   const mesArr=Object.entries(byMes);
-  const byMesEf=sumGroup(rows,r=>A.can.mes(r),r=>A.can.efectiva(r));
-  const byMesCan=sumGroup(rows,r=>A.can.mes(r),r=>A.can.cancelada(r));
+  const byMesEf=sumGroup(rows,function(r){return A.can.mes(r);},function(r){return A.can.efectiva(r);});
+  const byMesCan=sumGroup(rows,function(r){return A.can.mes(r);},function(r){return A.can.cancelada(r);});
   makeChart('cCanMes','bar',mesArr.map(e=>e[0]),[barDS('Efectivas',mesArr.map(e=>byMesEf[e[0]]||0),'#10b981','s'),barDS('Canceladas',mesArr.map(e=>byMesCan[e[0]]||0),'#ef4444','s')],{extra:{plugins:{legend:{display:true}}}});
 
   // Día de semana
   const diasCnt=Array(7).fill(0);
-  rows.forEach(r=>{const d=parseDate(A.can.fecha(r));if(d)diasCnt[d.getDay()]+=(A.can.total(r)||A.can.efectiva(r));});
+  rows.forEach(r=>{const d=parseDate(A.can.fecha(r));if(d)diasCnt[d.getDay()]+=(A.can.efectiva(r));});
   makeChart('cCanDia','line',DIAS,[lineDS('Entregas',diasCnt,'#2563eb',true)]);
 
   // Top droguería
@@ -877,10 +947,11 @@ const byTipoM=sumGroup(rows,r=>A.can.tipoM(r),r=>A.can.efectiva(r));
   document.getElementById('canAnalysis').innerHTML=`
     <div class="g2">
       <div class="ac"><div class="ac-ttl"><i class="fas fa-brain"></i> Análisis Operativo — Entregas</div><div class="ac-body">
-        <strong>Cumplimiento general: <span class="${parseFloat(cumpl)>=95?'ok':'bad'}">${cumpl}%</span></strong> (Meta: 95%).<br>
-        <strong>Droguerías líder:</strong> <span class="ok">${topD.slice(0,3).map(e=>`${e[0]} (${e[1].toLocaleString('es-CO')})`).join(' · ')}</span><br>
-        <strong>Droguerías de menor volumen:</strong> <span class="warn">${botD.slice(0,3).map(e=>`${e[0]} (${e[1].toLocaleString('es-CO')})`).join(' · ')}</span><br><br>
-        <strong>Canceladas totales:</strong> <span class="bad">${totCan.toLocaleString('es-CO')}</span> representan el <span class="bad">${totTot?((totCan/totTot)*100).toFixed(1):0}%</span> de la operación total.
+        <strong>Total servicios:</strong> <span class="hi">${totTotReal.toLocaleString('es-CO')}</span> · <strong>Entregados:</strong> <span class="ok">${totEf.toLocaleString('es-CO')}</span> · <strong>Cancelados:</strong> <span class="bad">${totCan.toLocaleString('es-CO')}</span><br>
+        <strong>Cumplimiento general: <span class="${parseFloat(cumpl)>=95?'ok':'bad'}">${cumpl}%</span></strong> (Meta: 95%).<br><br>
+        <strong>Droguerías con más entregas efectivas:</strong> <span class="ok">${topD.slice(0,3).map(e=>`${e[0]} (${e[1].toLocaleString('es-CO')})`).join(' · ')}</span><br>
+        <strong>Droguerías de menor volumen efectivo:</strong> <span class="warn">${botD.slice(0,3).map(e=>`${e[0]} (${e[1].toLocaleString('es-CO')})`).join(' · ')}</span><br><br>
+        <strong>Cancelados totales:</strong> <span class="bad">${totCan.toLocaleString('es-CO')}</span> representan el <span class="bad">${totTotReal>0?((totCan/totTotReal)*100).toFixed(1):0}%</span> de la operación total.
       </div></div>
       <div class="ac"><div class="ac-ttl"><i class="fas fa-users"></i> Análisis de Mensajeros por Punto</div><div class="ac-body">
         <strong>Puntos con posible sobre-costo</strong> (menos de 30 entregas/mensajero):<br><span class="warn">${sobrecost.slice(0,4).map(e=>`${e[0]} (${e[1].toFixed(0)} ent/mens)`).join('<br>')|| 'Sin datos suficientes'}</span><br><br>
@@ -1183,17 +1254,18 @@ function renderResumen(){
 
   popFilters(D.cantidad,A.can,[['rfCiudad',A.can.ciudad],['rfDrog',A.can.drog]]);
 
-  const totEnt=sum(fCan,r=>A.can.total(r)||A.can.efectiva(r));
+  const totEnt=sum(fCan,function(r){return A.can.efectiva(r)+A.can.cancelada(r);});
+  const totEfRes=sum(fCan,function(r){return A.can.efectiva(r);});
   const totEf=sum(fCan,r=>A.can.efectiva(r)||A.can.total(r));
   const totCan2=sum(fCan,r=>A.can.cancelada(r));
-  const cumpl=totEnt?((totEf/totEnt)*100).toFixed(1):0;
+  const cumpl=totEnt?((totEfRes/totEnt)*100).toFixed(1):0;
   const totVen=sum(fVen,r=>A.ven.efectivo(r)||A.ven.total(r));
   const totPerd=sum(fVen,r=>A.ven.cancelado(r));
   const totNov=fNov.length+fNc.length;
 
-  const byDrogEnt=sumGroup(fCan,r=>A.can.drog(r),r=>A.can.total(r)||A.can.efectiva(r));
+  const byDrogEnt=sumGroup(fCan,r=>A.can.drog(r),r=>A.can.efectiva(r));
   const topDEnt=sortObj(byDrogEnt);const botDEnt=sortObj(byDrogEnt,false);
-  const byCiudEnt=sumGroup(fCan,r=>A.can.ciudad(r),r=>A.can.total(r)||A.can.efectiva(r));
+  const byCiudEnt=sumGroup(fCan,r=>A.can.ciudad(r),r=>A.can.efectiva(r));
 
   document.getElementById('resKPIs').innerHTML=[
     kpiCard('fas fa-box','Total Entregas',totEnt.toLocaleString('es-CO'),'período total','ne','#2563eb'),
@@ -1220,8 +1292,8 @@ function renderResumen(){
 
   const topDNov=sortObj(byDrogNov);
 
-  const bestMes=sortObj(sumGroup(fCan,r=>A.can.mes(r),r=>A.can.total(r)||A.can.efectiva(r)))[0];
-  const worstMes=sortObj(sumGroup(fCan,r=>A.can.mes(r),r=>A.can.total(r)||A.can.efectiva(r)),false)[0];
+  const bestMes=sortObj(sumGroup(fCan,r=>A.can.mes(r),r=>A.can.efectiva(r)))[0];
+  const worstMes=sortObj(sumGroup(fCan,r=>A.can.mes(r),r=>A.can.efectiva(r)),false)[0];
 
   document.getElementById('resumenUpdate').textContent=`Última actualización: ${new Date().toLocaleString('es-CO')}`;
 
