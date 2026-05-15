@@ -521,12 +521,20 @@ const COLS=['#2563eb','#06b6d4','#8b5cf6','#10b981','#f59e0b','#ef4444','#ec4899
 // ═══════════════════════════════════════════════
 function gv(id){const e=document.getElementById(id);return e?e.value.trim().toLowerCase():'';}
 function num(v){if(v===null || v===undefined) return 0;return Number(String(v).replace(/\$/g,'').replace(/\s/g,'').replace(/\./g,'').replace(/,/g,'.')) || 0;}
-function cop(v){return new Intl.NumberFormat('es-CO',{style:'currency',currency:'COP',minimumFractionDigits:0}).format(v||0);}
+function cop(v){
+  var n=v||0;
+  if(isNaN(n)) return '$0';
+  try{
+    return new Intl.NumberFormat('es-CO',{style:'currency',currency:'COP',minimumFractionDigits:0}).format(n);
+  }catch(e){
+    return '$'+Math.round(n).toLocaleString('es-CO');
+  }
+}
 function pct(a,b){return b?((a/b)*100).toFixed(1)+'%':'—';}
 function fld(row){var keys=Array.prototype.slice.call(arguments,1);for(var ki=0;ki<keys.length;ki++){var k=keys[ki];var v=row[k];if(v!==undefined&&v!==null&&String(v).trim()!=='')return String(v).trim();}return '';}
-function sum(arr,fn){return arr.reduce((s,r)=>s+(fn(r)||0),0);}
+function sum(arr,fn){if(!arr||!arr.length)return 0;return arr.reduce(function(s,r){return s+(fn(r)||0);},0);}
 function groupBy(arr,fn){const m={};arr.forEach(r=>{const k=fn(r)||'N/D';m[k]=(m[k]||[]); m[k].push(r);});return m;}
-function sumGroup(arr,keyFn,valFn){const m={};arr.forEach(r=>{const k=keyFn(r)||'N/D';m[k]=(m[k]||0)+num(valFn(r));});return m;}
+function sumGroup(arr,keyFn,valFn){var m={};if(!arr||!arr.length)return m;arr.forEach(function(r){var k=keyFn(r)||'N/D';m[k]=(m[k]||0)+(valFn(r)||0);});return m;}
 function sortObj(obj,desc){if(desc===undefined)desc=true;return Object.entries(obj).sort(function(a,b){return desc?b[1]-a[1]:a[1]-b[1];});}
 function topN(obj,n,desc){if(desc===undefined)desc=true;return sortObj(obj,desc).slice(0,n);}
 function parseDate(s){if(!s)return null;const p=String(s).split(/[\/\-]/);if(p.length===3){const[a,b,c]=p;const yr=a.length===4?parseInt(a):parseInt(c),mo=a.length===4?parseInt(b)-1:parseInt(b)-1,dy=a.length===4?parseInt(c):parseInt(a);const d=new Date(yr,mo,dy);return isNaN(d)?null:d;}return null;}
@@ -568,7 +576,25 @@ function makeChart(id,type,labels,datasets,opts){
 function barDS(label,data,color,stack){var ds={label:label,data:data,backgroundColor:color+'bb',borderColor:color,borderWidth:1.5,borderRadius:4};if(stack)ds.stack=stack;return ds;}
 function lineDS(label,data,color,fill){var f=(fill===undefined)?false:fill;return{label:label,data:data,borderColor:color,backgroundColor:color+'22',borderWidth:2.5,fill:f,tension:.4,pointBackgroundColor:color,pointRadius:3};}
 
-function fillSelect(id,values,currentVal){const el=document.getElementById(id);if(!el)return;const sorted=[...new Set(values)].filter(Boolean).sort();const first=el.options[0];el.innerHTML='';el.appendChild(first);sorted.forEach(v=>{const o=document.createElement('option');o.value=v;o.textContent=v;el.appendChild(o);});if(currentVal)el.value=currentVal;}
+function fillSelect(id,values,currentVal){
+  var el=document.getElementById(id);
+  if(!el) return;
+  var cur=currentVal||el.value||'';
+  var seen={};
+  var sorted=values.filter(function(v){
+    if(!v||seen[v]) return false;
+    seen[v]=true; return true;
+  }).sort();
+  var first=el.options[0];
+  el.innerHTML='';
+  el.appendChild(first);
+  sorted.forEach(function(v){
+    var o=document.createElement('option');
+    o.value=v; o.textContent=v;
+    el.appendChild(o);
+  });
+  if(cur) el.value=cur;
+}
 
 // ═══════════════════════════════════════════════
 // CLOCK
@@ -741,8 +767,62 @@ function getField(r, normalizedName) {
 
 function getNum(r, normalizedName) {
   var v = getField(r, normalizedName);
+  return parseColNum(v);
+}
+function parseColNum(v) {
   if(!v||v==='') return 0;
-  var n = parseFloat(v.replace(/[^0-9.,-]/g,'').replace(',','.'));
+  var s = String(v).trim();
+  // Skip time format HH:MM:SS
+  if(/^\d{1,2}:\d{2}(:\d{2})?$/.test(s)) return 0;
+  // Remove currency symbols
+  s = s.replace(/[$]/g,'').trim();
+  if(s===''||s==='-') return 0;
+
+  var dotCount   = (s.match(/\./g)||[]).length;
+  var commaCount = (s.match(/,/g)||[]).length;
+  var n;
+
+  if(dotCount > 1) {
+    // 11.404.924 → dots are thousands separators (Colombian)
+    s = s.replace(/\./g,''); // remove all dots
+    s = s.replace(',','.');   // comma → decimal (if any)
+    n = parseFloat(s);
+
+  } else if(commaCount > 1) {
+    // 1,400,000.00 → commas are thousands separators (US)
+    s = s.replace(/,/g,'');
+    n = parseFloat(s);
+
+  } else if(dotCount === 1 && commaCount === 1) {
+    // Need to detect which is which:
+    var dotPos   = s.indexOf('.');
+    var commaPos = s.indexOf(',');
+    if(commaPos < dotPos) {
+      // 150,400.00 → comma=thousands, dot=decimal (US format)
+      s = s.replace(/,/g,'');
+      n = parseFloat(s);
+    } else {
+      // 1.234,56 → dot=thousands, comma=decimal (European/Colombian)
+      s = s.replace(/\./g,'').replace(',','.');
+      n = parseFloat(s);
+    }
+
+  } else if(dotCount === 0 && commaCount === 1) {
+    // 1234,56 → comma=decimal
+    s = s.replace(',','.');
+    n = parseFloat(s);
+
+  } else if(dotCount === 1 && commaCount === 0) {
+    // 19.200 (3 digits after dot) → thousands separator
+    var afterDot = s.split('.')[1]||'';
+    if(afterDot.length === 3) {
+      s = s.replace('.',''); // 19.200 → 19200
+    }
+    n = parseFloat(s);
+
+  } else {
+    n = parseFloat(s);
+  }
   return isNaN(n) ? 0 : n;
 }
 
@@ -788,19 +868,10 @@ function buildAccessors(){
     },
     tipo:     function(r){return getField(r,'GESTION')||getField(r,'GESTIÓN');},
     entregas: function(r){return getNum(r,'CANT ENTREGAS');},
-    costo:    function(r){
-      var v=getField(r,'COSTO');
-      if(!v)return 0;
-      // Remove $ and thousands separator (.), keep decimal separator (,→.)
-      var n=parseFloat(v.replace(/\$/g,'').replace(/\./g,'').replace(',','.'));
-      return isNaN(n)?0:n;
-    },
+    costo:    function(r){ return parseColNum(getField(r,'COSTO')); },
     percapita:function(r){
-      var v=getField(r,'PER CAPITA');
-      if(v){
-        var n=parseFloat(v.replace(/\$/g,'').replace(/\./g,'').replace(',','.'));
-        if(!isNaN(n)&&n>0)return n;
-      }
+      var pc=parseColNum(getField(r,'PER CAPITA'));
+      if(pc>0) return pc;
       var co=A.pc.costo(r); var en=A.pc.entregas(r);
       return (co>0&&en>0)?Math.round(co/en):0;
     }
@@ -867,17 +938,19 @@ function buildAccessors(){
       var vals=Object.keys(r).filter(function(k){return k!=='__colMap';});
       return String(r[vals[6]]||'').trim();
     },
-    // TOTAL VENTA = col I — format: $150,400.00
+    // TOTAL VENTA = col I — format: $150,400.00 (comma=thousands, dot=decimal)
     valor: function(r){
       var v=getField(r,'TOTAL VENTA');
       if(v){
-        var n=parseFloat(v.replace(/\$/g,'').replace(/,/g,''));
+        // $150,400.00 → remove $ → 150,400.00 → remove commas → 150400.00
+        var s=String(v).replace(/\$/g,'').replace(/,/g,'').trim();
+        var n=parseFloat(s);
         if(!isNaN(n)&&n>0) return n;
       }
-      // fallback: scan for large $ value
+      // fallback: scan for $ column
       var keys=Object.keys(r).filter(function(k){return k!=='__colMap';});
       for(var i=0;i<keys.length;i++){
-        var k=keys[i]; var raw=String(r[k]||'');
+        var raw=String(r[keys[i]]||'');
         if(raw.indexOf('$')!==-1){
           var n2=parseFloat(raw.replace(/\$/g,'').replace(/,/g,''));
           if(!isNaN(n2)&&n2>=100) return n2;
@@ -934,11 +1007,16 @@ function buildAccessors(){
 // FILTER HELPERS
 // ═══════════════════════════════════════════════
 function applyRowFilter(rows,acc,filters){
-  return rows.filter(r=>{
-    for(const[key,val]of Object.entries(filters)){
-      if(!val)continue;
-      const rv=(acc[key]?acc[key](r):fld(r,key)||'').toLowerCase();
-      if(!rv.includes(val.toLowerCase()))return false;
+  if(!rows||!rows.length) return [];
+  return rows.filter(function(r){
+    var keys=Object.keys(filters);
+    for(var i=0;i<keys.length;i++){
+      var key=keys[i];
+      var val=filters[key];
+      if(!val) continue;
+      var rv='';
+      try{ rv=acc[key]?String(acc[key](r)||'').toLowerCase():''; }catch(e){ rv=''; }
+      if(rv.indexOf(val.toLowerCase())===-1) return false;
     }
     return true;
   });
