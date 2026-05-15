@@ -94,13 +94,13 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--t1);min-hei
 .fbtn-pdf{background:linear-gradient(135deg,#7c3aed,#6d28d9);color:#fff;}
 
 /* KPI GRID */
-.kgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:14px;margin-bottom:20px;}
-.kc{background:var(--card);border:1px solid var(--brd);border-radius:var(--r);padding:18px;position:relative;overflow:hidden;transition:all .3s;cursor:default;backdrop-filter:blur(10px);}
+.kgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px;margin-bottom:18px;}
+.kc{background:var(--card);border:1px solid var(--brd);border-radius:var(--r);padding:14px 16px;position:relative;overflow:hidden;transition:all .3s;cursor:default;backdrop-filter:blur(10px);min-width:0;}
 .kc::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--b1),var(--cy));opacity:0;transition:opacity .3s;}
 .kc:hover{border-color:var(--brdhi);transform:translateY(-2px);box-shadow:var(--sdw),var(--glow);}
 .kc:hover::before{opacity:1;}
-.kc-ico{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:16px;margin-bottom:12px;}
-.kc-val{font-size:24px;font-weight:800;background:linear-gradient(135deg,var(--t1),var(--b4));-webkit-background-clip:text;-webkit-text-fill-color:transparent;line-height:1;}
+.kc-ico{width:34px;height:34px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:14px;margin-bottom:10px;}
+.kc-val{font-size:18px;font-weight:800;background:linear-gradient(135deg,var(--t1),var(--b4));-webkit-background-clip:text;-webkit-text-fill-color:transparent;line-height:1.1;word-break:break-all;}
 .kc-lbl{font-size:10px;color:var(--t2);margin-top:3px;font-weight:500;text-transform:uppercase;letter-spacing:.5px;}
 .kc-tr{display:flex;align-items:center;gap:3px;font-size:10px;font-weight:600;margin-top:8px;}
 .kc-tr.up{color:var(--green);}
@@ -109,7 +109,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--t1);min-hei
 .kc-bg{position:absolute;right:-8px;bottom:-8px;font-size:56px;opacity:.04;}
 
 /* CHART CARD */
-.cc{background:var(--card);border:1px solid var(--brd);border-radius:var(--r);padding:20px;backdrop-filter:blur(10px);transition:border-color .3s;height:100%;}
+.cc{background:var(--card);border:1px solid var(--brd);border-radius:var(--r);padding:16px 18px;backdrop-filter:blur(10px);transition:border-color .3s;height:100%;}
 .cc:hover{border-color:var(--brdhi);}
 .cc-ttl{font-size:13px;font-weight:700;margin-bottom:3px;display:flex;align-items:center;gap:7px;}
 .cc-ttl i{color:var(--cy2);}
@@ -160,6 +160,13 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--t1);min-hei
 .bdg-warn{background:rgba(245,158,11,.15);color:var(--amber);border:1px solid rgba(245,158,11,.3);}
 .bdg-bad{background:rgba(239,68,68,.15);color:var(--red);border:1px solid rgba(239,68,68,.3);}
 .bdg-info{background:rgba(59,130,246,.15);color:var(--b4);border:1px solid rgba(59,130,246,.3);}
+
+/* ACTIVE FILTER TAGS */
+.active-tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px;}
+.atag{background:rgba(37,99,235,.2);border:1px solid rgba(37,99,235,.45);color:#60a5fa;
+  font-size:10px;font-weight:700;padding:3px 10px;border-radius:20px;display:flex;align-items:center;gap:5px;}
+.atag-x{cursor:pointer;opacity:.7;transition:opacity .2s;}
+.atag-x:hover{opacity:1;}
 
 /* PLAN DE ACCION */
 .plan{background:rgba(8,20,50,.9);border:1px solid rgba(6,182,212,.25);border-radius:var(--r);padding:20px;}
@@ -360,6 +367,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--t1);min-hei
       <div class="fg"><label class="flbl">Drogería</label><select class="fc" id="pfDrog" onchange="renderPercapita()"><option value="">Todas</option></select></div>
       <button class="fbtn fbtn-s" style="align-self:flex-end" onclick="clearF(['pfMes','pfCiudad','pfDrog'],renderPercapita)"><i class="fas fa-xmark"></i> Limpiar</button>
     </div>
+    <div class="active-tags" id="pfActiveTags"></div>
   </div>
   <div class="kgrid" id="pcKPIs"></div>
   <div class="g2">
@@ -396,6 +404,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--t1);min-hei
       <div class="fg"><label class="flbl">Tipo Mensajero</label><select class="fc" id="tfTipoM" onchange="renderTiempos()"><option value="">Todos</option></select></div>
       <button class="fbtn fbtn-s" style="align-self:flex-end" onclick="clearF(['tfMes','tfCiudad','tfDrog','tfTipoM'],renderTiempos)"><i class="fas fa-xmark"></i> Limpiar</button>
     </div>
+    <div class="active-tags" id="tfActiveTags"></div>
   </div>
   <div class="kgrid" id="tiKPIs"></div>
   <div class="g2">
@@ -489,6 +498,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--t1);min-hei
 // GLOBAL DATA STORE
 // ═══════════════════════════════════════════════
 const CSV={
+  base:'https://docs.google.com/spreadsheets/d/e/2PACX-1vQNfxBykrkeBy4J4jvi2-nDNkMfDMbm-jbwgmBz9FjNUIBQGk257yuU1PH_QmXi0rV0AervZoNyJ9XO/pub?gid=1510401293&single=true&output=csv',
   novedades:'https://docs.google.com/spreadsheets/d/e/2PACX-1vQNfxBykrkeBy4J4jvi2-nDNkMfDMbm-jbwgmBz9FjNUIBQGk257yuU1PH_QmXi0rV0AervZoNyJ9XO/pub?gid=1091468477&single=true&output=csv',
   cantidad:'https://docs.google.com/spreadsheets/d/e/2PACX-1vQNfxBykrkeBy4J4jvi2-nDNkMfDMbm-jbwgmBz9FjNUIBQGk257yuU1PH_QmXi0rV0AervZoNyJ9XO/pub?gid=0&single=true&output=csv',
   percapita:'https://docs.google.com/spreadsheets/d/e/2PACX-1vQNfxBykrkeBy4J4jvi2-nDNkMfDMbm-jbwgmBz9FjNUIBQGk257yuU1PH_QmXi0rV0AervZoNyJ9XO/pub?gid=276501764&single=true&output=csv',
@@ -496,7 +506,7 @@ const CSV={
   ventas:'https://docs.google.com/spreadsheets/d/e/2PACX-1vQNfxBykrkeBy4J4jvi2-nDNkMfDMbm-jbwgmBz9FjNUIBQGk257yuU1PH_QmXi0rV0AervZoNyJ9XO/pub?gid=41915920&single=true&output=csv',
   novcancel:'https://docs.google.com/spreadsheets/d/e/2PACX-1vQNfxBykrkeBy4J4jvi2-nDNkMfDMbm-jbwgmBz9FjNUIBQGk257yuU1PH_QmXi0rV0AervZoNyJ9XO/pub?gid=1615312577&single=true&output=csv'
 };
-let D={novedades:[],cantidad:[],percapita:[],tiempos:[],ventas:[],novcancel:[]};
+let D={base:[],novedades:[],cantidad:[],percapita:[],tiempos:[],ventas:[],novcancel:[]};
 let CHARTS={};
 const DIAS=['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
 const COLS=['#2563eb','#06b6d4','#8b5cf6','#10b981','#f59e0b','#ef4444','#ec4899','#14b8a6','#f97316','#a855f7','#84cc16','#0ea5e9'];
@@ -543,6 +553,10 @@ function makeChart(id,type,labels,datasets,opts){
       scales:scales
     }
   };
+  if(isPie){
+    config.options.layout={padding:10};
+    canvas.style.maxHeight='220px';
+  }
   CHARTS[id]=new Chart(ctx,config);
   return CHARTS[id];
 }
@@ -777,33 +791,123 @@ function buildAccessors(){
   };
 
     A.ti={
-    mes:dFld(D.tiempos,'mes','month'),
-    ciudad:r=>fld(r,...Object.keys(r).filter(k=>k.toLowerCase().includes('ciudad'))||['ciudad']),
-    drog:r=>fld(r,...Object.keys(r).filter(k=>k.toLowerCase().includes('drog')||k.toLowerCase().includes('punto'))||['drog']),
-    tipoM:r=>fld(r,...Object.keys(r).filter(k=>k.toLowerCase().includes('tipo')&&(k.toLowerCase().includes('mens')||k.toLowerCase().includes('plant')||k.toLowerCase().includes('cola')))||['tipo mensajero']),
-    tipoG:r=>fld(r,...Object.keys(r).filter(k=>k.toLowerCase().includes('gesti'))||['tipo gestion']),
-    tiempo:r=>num(fld(r,...Object.keys(r).filter(k=>k.toLowerCase().includes('tiempo')||k.toLowerCase().includes('promedio')||k.toLowerCase().includes('minuto'))||['tiempo'])),
-    tiempoDom:r=>num(fld(r,...Object.keys(r).filter(k=>k.toLowerCase().includes('domicilio')&&k.toLowerCase().includes('tiempo'))||['tiempo domicilio'])),
-    tiempoTrans:r=>num(fld(r,...Object.keys(r).filter(k=>k.toLowerCase().includes('transf')&&k.toLowerCase().includes('tiempo'))||['tiempo transferencia']))
+    mes:     function(r){return String(r['MES']||r['Mes']||'').trim();},
+    ciudad:  function(r){return String(r['CIUDAD']||r['Ciudad']||'').trim();},
+    drog:    function(r){return String(r['DROGUERIA NOMBRE CORTO']||r['DROGUERIA']||'').trim();},
+    tipoM:   function(r){return String(r['TIPO MENSAJERO']||r['TIPO MENSJAERO']||r['Tipo Mensajero']||'').trim();},
+    tipoG:   function(r){return String(r['TIPO GESTIÓN']||r['TIPO GESTION']||r['Tipo Gestión']||'').trim();},
+    semana:  function(r){return String(r['SEMANA']||r['DÍA']||r['DIA']||'').trim();},
+    fecha:   function(r){return String(r['fecha_cierre']||r['FECHA']||'').trim();},
+    // Convierte HH:MM:SS o decimal a minutos
+    _toMin:  function(v){
+      if(!v||v==='')return 0;
+      var s=String(v).trim();
+      if(s.indexOf(':')!==-1){
+        var p=s.split(':');
+        var h=parseInt(p[0])||0;var m=parseInt(p[1])||0;var sec=parseInt(p[2])||0;
+        return h*60+m+sec/60;
+      }
+      var n=parseFloat(s.replace(/[^0-9.]/g,''));return isNaN(n)?0:n;
+    },
+    // Convierte minutos a formato HH:MM
+    _minToHHMM: function(mins){
+      if(!mins||mins<=0)return '00:00';
+      var h=Math.floor(mins/60);var m=Math.round(mins%60);
+      return (h<10?'0':'')+h+':'+(m<10?'0':'')+m;
+    },
+    tiempoRuta:     function(r){return this._toMin(r['TIEMPO RUTA']||r['Tiempo Ruta']||'');},
+    tiempoEntrega:  function(r){return this._toMin(r['TIEMPO ENTREGA']||r['Tiempo Entrega']||'');},
+    tiempoTotal:    function(r){
+      var v=r['TIEMPO TOTAL']||r['Tiempo Total']||'';
+      if(v&&String(v).trim()!=='')return this._toMin(v);
+      return this.tiempoRuta(r)+this.tiempoEntrega(r);
+    }
   };
-  A.ven={
-    mes:dFld(D.ventas,'mes','month'),
-    ciudad:r=>fld(r,...Object.keys(r).filter(k=>k.toLowerCase().includes('ciudad'))||['ciudad']),
-    drog:r=>fld(r,...Object.keys(r).filter(k=>k.toLowerCase().includes('drog')||k.toLowerCase().includes('punto'))||['drog']),
-    tipo:r=>fld(r,...Object.keys(r).filter(k=>k.toLowerCase().includes('gesti')||k.toLowerCase().includes('tipo'))||['tipo']),
-    total:r=>num(fld(r,...Object.keys(r).filter(k=>k.toLowerCase().includes('total')||k.toLowerCase().includes('venta'))||['total'])),
-    efectivo:r=>num(fld(r,...Object.keys(r).filter(k=>k.toLowerCase().includes('efectiv'))||['efectivo'])),
-    cancelado:r=>num(fld(r,...Object.keys(r).filter(k=>k.toLowerCase().includes('cancel'))||['cancelado'])),
-    fecha:r=>fld(r,...Object.keys(r).filter(k=>k.toLowerCase().includes('fecha'))||['fecha'])
+
+    A.ven={
+    mes:    function(r){return String(r['MES']||r['Mes']||r['mes']||'').trim();},
+    ciudad: function(r){return String(r['CIUDAD']||r['Ciudad']||'').trim();},
+    drog:   function(r){
+      return String(r['DROGUERIA NOMBRE CORTO']||r['DROGUERIA']||r['Drogueria']||'').trim();
+    },
+    tipo:   function(r){
+      return String(r['TIPO GESTIÓN']||r['TIPO GESTION']||r['Tipo Gestión']||r['GESTION']||'').trim();
+    },
+    semana: function(r){return String(r['SEMANA']||r['DÍA']||'').trim();},
+    fecha:  function(r){return String(r['fecha_cierre']||r['FECHA']||r['Fecha']||'').trim();},
+    // TOTAL = valor total del servicio (entregado + cancelado)
+    total:  function(r){
+      var exactos=['TOTAL','Total','VALOR TOTAL','Valor Total','VALOR','Valor'];
+      for(var i=0;i<exactos.length;i++){
+        var v=r[exactos[i]];
+        if(v!==undefined&&v!==''&&v!==null){var n=parseFloat(String(v).replace(/[^0-9.-]/g,''));if(!isNaN(n)&&n>0)return n;}
+      }
+      var k=Object.keys(r).find(function(k){var l=k.toLowerCase();return l==='total'||l==='valor total'||(l.indexOf('valor')!==-1&&l.indexOf('total')!==-1);});
+      return k?parseFloat(String(r[k]).replace(/[^0-9.-]/g,''))||0:0;
+    },
+    // ENTREGADO = valor de servicios efectivamente entregados
+    efectivo: function(r){
+      var exactos=['ENTREGADO','Entregado','VALOR ENTREGADO','Valor Entregado','EFECTIVO','Efectivo','VALOR EFECTIVO'];
+      for(var i=0;i<exactos.length;i++){
+        var v=r[exactos[i]];
+        if(v!==undefined&&v!==''&&v!==null){var n=parseFloat(String(v).replace(/[^0-9.-]/g,''));if(!isNaN(n))return n;}
+      }
+      var k=Object.keys(r).find(function(k){var l=k.toLowerCase();return l.indexOf('entregado')!==-1||l.indexOf('efectiv')!==-1;});
+      if(k)return parseFloat(String(r[k]).replace(/[^0-9.-]/g,''))||0;
+      // fallback: col index 8 (common position)
+      var vals=Object.values(r); var n2=parseFloat(String(vals[8]||'').replace(/[^0-9.-]/g,'')); return isNaN(n2)?0:n2;
+    },
+    // CANCELADO = valor perdido por cancelaciones
+    cancelado: function(r){
+      var exactos=['CANCELADO','Cancelado','VALOR CANCELADO','Valor Cancelado','CANCELACION','NO ENTREGADO','No Entregado'];
+      for(var i=0;i<exactos.length;i++){
+        var v=r[exactos[i]];
+        if(v!==undefined&&v!==''&&v!==null){var n=parseFloat(String(v).replace(/[^0-9.-]/g,''));if(!isNaN(n))return n;}
+      }
+      var k=Object.keys(r).find(function(k){var l=k.toLowerCase();return l.indexOf('cancel')!==-1||l.indexOf('no entregado')!==-1;});
+      if(k)return parseFloat(String(r[k]).replace(/[^0-9.-]/g,''))||0;
+      // fallback: total - efectivo
+      var tot=A.ven.total(r); var ef=A.ven.efectivo(r);
+      return (tot>ef&&tot>0)?tot-ef:0;
+    }
   };
-  A.nc={
-    mes:dFld(D.novcancel,'mes','month'),
-    ciudad:r=>fld(r,...Object.keys(r).filter(k=>k.toLowerCase().includes('ciudad'))||['ciudad']),
-    drog:r=>fld(r,...Object.keys(r).filter(k=>k.toLowerCase().includes('drog')||k.toLowerCase().includes('punto'))||['drog']),
-    tipo:r=>fld(r,...Object.keys(r).filter(k=>k.toLowerCase().includes('tipo')||k.toLowerCase().includes('novedad'))||['tipo']),
-    tipoM:r=>fld(r,...Object.keys(r).filter(k=>k.toLowerCase().includes('mensajero')||k.toLowerCase().includes('planta')||k.toLowerCase().includes('colabo'))||['tipo mensajero']),
-    resp:r=>fld(r,...Object.keys(r).filter(k=>k.toLowerCase().includes('resp')||k.toLowerCase().includes('quick')||k.toLowerCase().includes('cafam'))||['responsable'])
-  };
+
+    A.nc={
+    mes:    function(r){return String(r['MES']||r['Mes']||'').trim();},
+    semana: function(r){return String(r['SEMANA']||r['DÍA']||'').trim();},
+    ciudad: function(r){return String(r['CIUDAD']||r['Ciudad']||'').trim();},
+    tipoM:  function(r){return String(r['TIPO MENSAJERO']||r['Tipo Mensajero']||'').trim();},
+    drog:   function(r){return String(r['DROGUERIA NOMBRE CORTO']||r['DROGUERIA']||'').trim();},
+    tipo:   function(r){return String(r['TIPO GESTIÓN']||r['TIPO GESTION']||'').trim();},
+    // Total novedades columna TOTAL
+    total:  function(r){
+      var v=r['TOTAL']||r['Total']||'';
+      if(v!==''&&v!==undefined){var n=parseFloat(String(v).replace(/[^0-9.-]/g,''));if(!isNaN(n))return n;}
+      // Sumar todas las columnas de tipo
+      var tipos=["CANCELACION POR GUIA DUPLICADA", "CANCELACION POR GUIA SIN COBERTURA", "CANCELACION POR ZONA ROJA", "CLIENTE CANCELA POR DEMORA EN LA ENTREGA", "CLIENTE COMPRO POR OTRO CANAL", "CLIENTE COMPRO PRODUCTO EN OTRA CADENA", "CLIENTE NO CONTESTA", "CLIENTE NO LO PUEDE ESPERAR", "CLIENTE NO LO REQUIERE POR CAMBIO DE FORMULA MEDICA", "CLIENTE NO TIENE DINERO PARA PAGAR", "CLIENTE YA NO DESEA EL DOMICILIO", "ERROR ASESOR", "ERROR DE SISTEMAS", "ERROR DEL CLIENTE EN SOLICITUD DE PRODUCTO", "MEDICAMENTOS NO DISPONIBLES", "NO SE ENCUENTRA EL USUARIO"];
+      var s=0;tipos.forEach(function(t){var vt=r[t];if(vt)s+=parseFloat(String(vt).replace(/[^0-9.-]/g,''))||0;});
+      return s;
+    },
+    // Todas las columnas de tipo de novedad
+    TIPOS: ["CANCELACION POR GUIA DUPLICADA", "CANCELACION POR GUIA SIN COBERTURA", "CANCELACION POR ZONA ROJA", "CLIENTE CANCELA POR DEMORA EN LA ENTREGA", "CLIENTE COMPRO POR OTRO CANAL", "CLIENTE COMPRO PRODUCTO EN OTRA CADENA", "CLIENTE NO CONTESTA", "CLIENTE NO LO PUEDE ESPERAR", "CLIENTE NO LO REQUIERE POR CAMBIO DE FORMULA MEDICA", "CLIENTE NO TIENE DINERO PARA PAGAR", "CLIENTE YA NO DESEA EL DOMICILIO", "ERROR ASESOR", "ERROR DE SISTEMAS", "ERROR DEL CLIENTE EN SOLICITUD DE PRODUCTO", "MEDICAMENTOS NO DISPONIBLES", "NO SE ENCUENTRA EL USUARIO"],
+    QUICK_TIPOS: ["CANCELACION POR GUIA DUPLICADA", "CANCELACION POR GUIA SIN COBERTURA", "CANCELACION POR ZONA ROJA", "CLIENTE NO CONTESTA", "NO SE ENCUENTRA EL USUARIO", "ERROR ASESOR", "ERROR DE SISTEMAS"],
+    // Valor de un tipo específico
+    tipoVal: function(r,tipo){
+      var v=r[tipo];if(!v)return 0;
+      return parseFloat(String(v).replace(/[^0-9.-]/g,''))||0;
+    },
+    // Responsabilidad Quick
+    quick: function(r){
+      var s=0;
+      var qt=["CANCELACION POR GUIA DUPLICADA", "CANCELACION POR GUIA SIN COBERTURA", "CANCELACION POR ZONA ROJA", "CLIENTE NO CONTESTA", "NO SE ENCUENTRA EL USUARIO", "ERROR ASESOR", "ERROR DE SISTEMAS"];
+      qt.forEach(function(t){s+=A.nc.tipoVal(r,t);});
+      return s;
+    },
+    // Responsabilidad Cafam/Cliente
+    cafam: function(r){
+      return A.nc.total(r)-A.nc.quick(r);
+    }
+  };;
 }
 
 // ═══════════════════════════════════════════════
@@ -1004,6 +1108,7 @@ function renderCantidad(){
 function renderPercapita(){
   var rows=applyRowFilter(D.percapita,A.pc,{mes:gv('pfMes'),ciudad:gv('pfCiudad'),drog:gv('pfDrog')});
   popFilters(D.percapita,A.pc,[['pfMes',A.pc.mes],['pfCiudad',A.pc.ciudad],['pfDrog',A.pc.drog]]);
+  showActiveTags('pfActiveTags',['pfMes','pfCiudad','pfDrog'],['Mes','Ciudad','Drogería']);
 
   if(!rows.length){
     document.getElementById('pcKPIs').innerHTML='<div style="color:#f59e0b;font-size:12px;padding:10px">Sin datos para los filtros seleccionados</div>';
@@ -1061,14 +1166,14 @@ function renderPercapita(){
     if(esFijo){ if(pc>0)fijoPC.push(pc); fijoCosto+=co; fijoEnt+=en; }
     else if(esColabo){ if(pc>0)colaboPC.push(pc); colaboCosto+=co; colaboEnt+=en; }
   });
-  var avgFijoPC=fijoPC.length?fijoPC.reduce(function(s,v){return s+v;},0)/fijoPC.length:0;
-  var avgColaboPC=colaboPC.length?colaboPC.reduce(function(s,v){return s+v;},0)/colaboPC.length:0;
+  var avgFijoPC=fijoEnt>0?fijoCosto/fijoEnt:0;
+  var avgColaboPC=colaboEnt>0?colaboCosto/colaboEnt:0;
 
   // ── Métricas globales ───────────────────────────────────
-  var globalArr=Object.values(avgPcByDrog).filter(function(v){return v>0;});
-  var globalPCAvg=globalArr.length?globalArr.reduce(function(s,v){return s+v;},0)/globalArr.length:0;
   var totalCosto=sum(rows,function(r){return A.pc.costo(r);});
   var totalEnt=sum(rows,function(r){return A.pc.entregas(r);});
+  // Per cápita real = Costo Total / Total Entregas
+  var globalPCAvg=totalEnt>0?totalCosto/totalEnt:0;
 
   // ══ KPIs ═══════════════════════════════════════════════
   document.getElementById('pcKPIs').innerHTML=[
@@ -1177,208 +1282,336 @@ function renderPercapita(){
 // RENDER TIEMPOS
 // ═══════════════════════════════════════════════
 function renderTiempos(){
-  const rows=applyRowFilter(D.tiempos,A.ti,{mes:gv('tfMes'),ciudad:gv('tfCiudad'),drog:gv('tfDrog'),tipoM:gv('tfTipoM')});
+  var rows=applyRowFilter(D.tiempos,A.ti,{mes:gv('tfMes'),ciudad:gv('tfCiudad'),drog:gv('tfDrog'),tipoM:gv('tfTipoM')});
   popFilters(D.tiempos,A.ti,[['tfMes',A.ti.mes],['tfCiudad',A.ti.ciudad],['tfDrog',A.ti.drog],['tfTipoM',A.ti.tipoM]]);
+  showActiveTags('tfActiveTags',['tfMes','tfCiudad','tfDrog','tfTipoM'],['Mes','Ciudad','Drogería','Tipo Mensajero']);
 
-  // Solo domicilios (excluir transferencias)
-  const domRows=rows.filter(r=>!A.ti.tipoG(r).toLowerCase().includes('transf'));
-  const transRows=rows.filter(r=>A.ti.tipoG(r).toLowerCase().includes('transf'));
+  if(!rows.length){document.getElementById('tiKPIs').innerHTML='<div style="color:#f59e0b;font-size:12px;padding:10px">Sin datos</div>';return;}
 
-  const avgTi=(arr)=>{const v=arr.map(r=>A.ti.tiempo(r)).filter(v=>v>0);return v.length?v.reduce((s,x)=>s+x,0)/v.length:0;};
-  const globalDom=avgTi(domRows);
-  const globalTrans=avgTi(transRows);
-  const globalTotal=avgTi(rows);
+  // ── Solo domicilios para tiempo entrega (excluir transferencias)
+  var domRows=rows.filter(function(r){return A.ti.tipoG(r).toLowerCase().indexOf('transf')===-1;});
+  var transRows=rows.filter(function(r){return A.ti.tipoG(r).toLowerCase().indexOf('transf')!==-1;});
 
-  const tiByDrog={};rows.forEach(r=>{const d=A.ti.drog(r)||'N/D';if(!tiByDrog[d])tiByDrog[d]=[];const t=A.ti.tiempo(r);if(t>0)tiByDrog[d].push(t);});
-  const avgByDrog={};Object.keys(tiByDrog).forEach(k=>{const a=tiByDrog[k];avgByDrog[k]=a.length?a.reduce((s,v)=>s+v,0)/a.length:0;});
-  const topD=sortObj(avgByDrog);const botD=sortObj(avgByDrog,false);
+  function avgMin(arr,fn){
+    var v=arr.map(fn).filter(function(x){return x>0;});
+    return v.length?v.reduce(function(s,x){return s+x;},0)/v.length:0;
+  }
 
-  const tiByMes={};rows.forEach(r=>{const m=A.ti.mes(r)||'N/D';if(!tiByMes[m])tiByMes[m]=[];const t=A.ti.tiempo(r);if(t>0)tiByMes[m].push(t);});
-  const avgByMes={};Object.keys(tiByMes).forEach(k=>{const a=tiByMes[k];avgByMes[k]=a.length?a.reduce((s,v)=>s+v,0)/a.length:0;});
+  var globalDom=avgMin(domRows,function(r){return A.ti.tiempoTotal(r);});
+  var globalTrans=avgMin(transRows,function(r){return A.ti.tiempoTotal(r);});
+  var globalTotal=avgMin(rows,function(r){return A.ti.tiempoTotal(r);});
+  var globalRuta=avgMin(rows,function(r){return A.ti.tiempoRuta(r);});
+  var globalEnt=avgMin(rows,function(r){return A.ti.tiempoEntrega(r);});
 
-  const tiByTipoM={fijo:[],colabo:[]};
-  rows.forEach(r=>{const tm=A.ti.tipoM(r).toLowerCase();const t=A.ti.tiempo(r);if(t<=0)return;if(tm.includes('fij')||tm.includes('plant'))tiByTipoM.fijo.push(t);else if(tm.includes('cola'))tiByTipoM.colabo.push(t);});
-  const avgFijo=tiByTipoM.fijo.length?tiByTipoM.fijo.reduce((s,v)=>s+v,0)/tiByTipoM.fijo.length:0;
-  const avgColabo=tiByTipoM.colabo.length?tiByTipoM.colabo.reduce((s,v)=>s+v,0)/tiByTipoM.colabo.length:0;
+  // ── Por drogería
+  var tiByDrog={};
+  rows.forEach(function(r){
+    var d=A.ti.drog(r)||'N/D';
+    var t=A.ti.tiempoTotal(r);
+    if(!tiByDrog[d])tiByDrog[d]=[];
+    if(t>0)tiByDrog[d].push(t);
+  });
+  var avgByDrog={};
+  Object.keys(tiByDrog).forEach(function(k){
+    var a=tiByDrog[k];
+    avgByDrog[k]=a.length?a.reduce(function(s,v){return s+v;},0)/a.length:0;
+  });
+  var topD=sortObj(avgByDrog);
+  var botD=sortObj(avgByDrog,false);
 
+  // ── Por mes
+  var tiByMes={};
+  rows.forEach(function(r){
+    var m=A.ti.mes(r)||'N/D';
+    var t=A.ti.tiempoTotal(r);
+    if(!tiByMes[m])tiByMes[m]=[];
+    if(t>0)tiByMes[m].push(t);
+  });
+  var avgByMes={};
+  Object.keys(tiByMes).forEach(function(k){
+    var a=tiByMes[k];
+    avgByMes[k]=a.length?a.reduce(function(s,v){return s+v;},0)/a.length:0;
+  });
+
+  // ── Por tipo mensajero
+  var fijoMin=[]; var colaboMin=[];
+  rows.forEach(function(r){
+    var tm=A.ti.tipoM(r).toLowerCase();
+    var t=A.ti.tiempoTotal(r);
+    if(t<=0)return;
+    if(tm.indexOf('fij')!==-1||tm.indexOf('plant')!==-1) fijoMin.push(t);
+    else if(tm.indexOf('cola')!==-1) colaboMin.push(t);
+  });
+  var avgFijo=fijoMin.length?fijoMin.reduce(function(s,v){return s+v;},0)/fijoMin.length:0;
+  var avgColabo=colaboMin.length?colaboMin.reduce(function(s,v){return s+v;},0)/colaboMin.length:0;
+
+  var hm=A.ti._minToHHMM.bind(A.ti);
+
+  // ══ KPIs (en formato HH:MM)
   document.getElementById('tiKPIs').innerHTML=[
-    kpiCard('fas fa-clock','T. Prom. Domicilios',globalDom.toFixed(1)+' min','solo domicilios','ne','#2563eb'),
-    kpiCard('fas fa-truck','T. Prom. Transferencias',globalTrans.toFixed(1)+' min','transferencias','ne','#8b5cf6'),
-    kpiCard('fas fa-stopwatch','T. Prom. Total',globalTotal.toFixed(1)+' min','todos los tipos','ne','#06b6d4'),
-    kpiCard('fas fa-arrow-up','Mayor Tiempo',topD[0]?topD[0][0]:'—',topD[0]?topD[0][1].toFixed(0)+' min':'—','dn','#ef4444'),
-    kpiCard('fas fa-arrow-down','Menor Tiempo',botD[0]?botD[0][0]:'—',botD[0]?botD[0][1].toFixed(0)+' min':'—','up','#10b981'),
-    kpiCard('fas fa-id-badge','T. Planta Fija',avgFijo.toFixed(1)+' min','promedio fijos','ne','#f59e0b'),
+    kpiCard('fas fa-clock','T. Dom. Prom.',hm(globalDom),'HH:MM - domicilios','ne','#2563eb'),
+    kpiCard('fas fa-truck','T. Transfer. Prom.',hm(globalTrans),'HH:MM - transferencias','ne','#8b5cf6'),
+    kpiCard('fas fa-stopwatch','T. Ruta Prom.',hm(globalRuta),'tiempo en ruta','ne','#06b6d4'),
+    kpiCard('fas fa-box-open','T. Entrega Prom.',hm(globalEnt),'tiempo en entrega','ne','#10b981'),
+    kpiCard('fas fa-arrow-up','Mayor Tiempo',topD[0]?topD[0][0].slice(0,16):'—',topD[0]?hm(topD[0][1]):'—','dn','#ef4444'),
+    kpiCard('fas fa-arrow-down','Menor Tiempo',botD[0]?botD[0][0].slice(0,16):'—',botD[0]?hm(botD[0][1]):'—','up','#10b981'),
   ].join('');
 
-  // Por mes (domicilios)
-  const mesArr=Object.entries(avgByMes);
-  makeChart('cTiMes','line',mesArr.map(e=>e[0]),[lineDS('T. Prom. (min)',mesArr.map(e=>e[1]),'#2563eb',false)]);
+  // ══ GRÁFICAS ══
+  // 1) Tendencia por mes (HH:MM en labels, minutos en data)
+  var mesKeys=Object.keys(avgByMes).sort();
+  makeChart('cTiMes','line',mesKeys,
+    [lineDS('T. Prom. (min)',mesKeys.map(function(k){return avgByMes[k];}), '#2563eb', false)]
+  );
 
-  // Top 5 mayor tiempo
-  const top5=topD.slice(0,5);
-  makeChart('cTiTop','bar',top5.map(e=>e[0].slice(0,18)),[barDS('Tiempo (min)',top5.map(e=>e[1]),'#ef4444')]);
+  // 2) Top 5 mayor tiempo
+  var top5=topD.slice(0,5);
+  makeChart('cTiTop','bar',
+    top5.map(function(e){return e[0].slice(0,20);}),
+    [barDS('Minutos',top5.map(function(e){return e[1];}), '#ef4444')]
+  );
 
-  // Por drogería
-  const drogArr=topD.slice(0,12);
-  makeChart('cTiDrog','bar',drogArr.map(e=>e[0].slice(0,18)),[barDS('T. Prom. (min)',drogArr.map(e=>e[1]),'#3b82f6')]);
+  // 3) Por drogería (top 12)
+  var drogArr=topD.slice(0,12);
+  makeChart('cTiDrog','bar',
+    drogArr.map(function(e){return e[0].slice(0,18);}),
+    [barDS('Minutos',drogArr.map(function(e){return e[1];}), '#3b82f6')]
+  );
 
-  // Tipo mensajero
-  makeChart('cTiTipoM','bar',['Planta Fija','Colaborativo'],[barDS('T. Prom. (min)',[avgFijo,avgColabo],'#06b6d4')]);
+  // 4) Planta Fija vs Colaborativo
+  makeChart('cTiTipoM','bar',
+    ['Planta Fija','Colaborativo'],
+    [barDS('T. Prom. (min)',[avgFijo,avgColabo], '#06b6d4')]
+  );
 
-  document.getElementById('tiAnalysis').innerHTML=`
-    <div class="ac"><div class="ac-ttl"><i class="fas fa-brain"></i> Análisis de Tiempos</div><div class="ac-body">
-      <strong>Tiempo promedio global domicilios:</strong> <span class="hi">${globalDom.toFixed(1)} min</span><br>
-      <strong>Tiempo promedio transferencias:</strong> <span class="hi">${globalTrans.toFixed(1)} min</span><br><br>
-      <strong>🔴 Top 5 puntos con mayor tiempo:</strong><br>
-      ${topD.slice(0,5).map((e,i)=>`${i+1}. <span class="bad">${e[0]}</span>: ${e[1].toFixed(0)} min`).join('<br>')}<br><br>
-      <strong>🟢 Top 5 puntos más rápidos:</strong><br>
-      ${botD.slice(0,5).map((e,i)=>`${i+1}. <span class="ok">${e[0]}</span>: ${e[1].toFixed(0)} min`).join('<br>')}
-    </div></div>
-    <div class="plan"><div class="plan-ttl"><i class="fas fa-clipboard-list"></i> Plan de Acción — Tiempos</div>
-      ${[['Intervención inmediata en puntos críticos de tiempo','Revisar rutas, zonas de cobertura y disponibilidad del mensajero en los 5 puntos más lentos.'],
-         ['Análisis de causa raíz de demoras','Identificar si el tiempo excesivo corresponde a congestión, distancia o procesos internos de la drogería.'],
-         ['Estandarizar procesos en puntos lentos','Implementar protocolo de preparación de pedido antes de la llegada del mensajero.'],
-         ['Comparar rendimiento fijo vs colaborativo','Si el colaborativo es más lento, reforzar capacitación o reasignar zonas.'],
-         ['Establecer SLA por zona','Definir tiempo máximo por tipo de zona (urbana: 35 min, periférica: 60 min).']].map((p,i)=>
-        `<div class="plan-item"><div class="plan-num">${i+1}</div><div class="plan-content"><div class="plan-title">${p[0]}</div><div class="plan-desc">${p[1]}</div></div></div>`).join('')}
-    </div>`;
+  // ══ ANÁLISIS ══
+  var alerta=topD.filter(function(e){return e[1]>globalTotal*1.3;});
+  document.getElementById('tiAnalysis').innerHTML=
+    '<div class="ac"><div class="ac-ttl"><i class="fas fa-brain"></i> Análisis de Tiempos</div><div class="ac-body">'+
+    '<strong>Tiempo promedio domicilios:</strong> <span class="hi">'+hm(globalDom)+'</span> '+
+    '&nbsp;|&nbsp; <strong>Transferencias:</strong> <span class="hi">'+hm(globalTrans)+'</span><br>'+
+    '<strong>Tiempo ruta:</strong> <span class="hi">'+hm(globalRuta)+'</span> '+
+    '&nbsp;|&nbsp; <strong>Tiempo entrega:</strong> <span class="hi">'+hm(globalEnt)+'</span><br><br>'+
+    '<strong>🔴 Top 5 puntos con mayor tiempo:</strong><br>'+
+    topD.slice(0,5).map(function(e,i){return (i+1)+'. <span class="bad">'+e[0]+'</span>: '+hm(e[1]);}).join('<br>')+'<br><br>'+
+    '<strong>🟢 Top 5 puntos más rápidos:</strong><br>'+
+    botD.slice(0,5).map(function(e,i){return (i+1)+'. <span class="ok">'+e[0]+'</span>: '+hm(e[1]);}).join('<br>')+'<br><br>'+
+    (alerta.length?'<strong>⚠ Puntos críticos</strong> (>30% sobre promedio):<br>'+
+    alerta.slice(0,4).map(function(e){return '<span class="bad">'+e[0]+'</span>: '+hm(e[1]);}).join('<br>')+'<br><br>':'')+'</div></div>'+
+    '<div class="plan"><div class="plan-ttl"><i class="fas fa-clipboard-list"></i> Plan de Acción — Tiempos</div>'+
+    ['Intervención en puntos críticos|Revisar rutas, zonas de cobertura y disponibilidad del mensajero en los 5 puntos más lentos.',
+     'Análisis de causa raíz|Identificar si la demora es por tráfico, distancia, procesos internos de la drogería o cliente.',
+     'Estandarizar tiempo de alistamiento|Implementar protocolo de preparación de pedido antes de llegada del mensajero.',
+     'Comparar fijo vs colaborativo|Si un tipo es más lento, reforzar capacitación o reasignar zonas.',
+     'Establecer SLA por zona|Urbana: max 35 min · Periférica: max 60 min · Transferencia: max 20 min.']
+    .map(function(p,i){var pt=p.split('|');
+      return '<div class="plan-item"><div class="plan-num">'+(i+1)+'</div><div class="plan-content"><div class="plan-title">'+pt[0]+'</div><div class="plan-desc">'+pt[1]+'</div></div></div>';
+    }).join('')+'</div>';
 }
 
 // ═══════════════════════════════════════════════
 // RENDER VENTAS
 // ═══════════════════════════════════════════════
 function renderVentas(){
-  const rows=applyRowFilter(D.ventas,A.ven,{mes:gv('vfMes'),ciudad:gv('vfCiudad'),drog:gv('vfDrog')});
+  var rows=applyRowFilter(D.ventas,A.ven,{mes:gv('vfMes'),ciudad:gv('vfCiudad'),drog:gv('vfDrog')});
   popFilters(D.ventas,A.ven,[['vfMes',A.ven.mes],['vfCiudad',A.ven.ciudad],['vfDrog',A.ven.drog]]);
 
-  const totTotal=sum(rows,r=>A.ven.total(r));
-  const totEf=sum(rows,r=>A.ven.efectivo(r)||A.ven.total(r));
-  const totCan=sum(rows,r=>A.ven.cancelado(r));
+  if(!rows.length){document.getElementById('venKPIs').innerHTML='<div style="color:#f59e0b;font-size:12px;padding:10px">Sin datos</div>';return;}
 
-  const byDrogEf=sumGroup(rows,r=>A.ven.drog(r),r=>A.ven.efectivo(r)||A.ven.total(r));
-  const byDrogCan=sumGroup(rows,r=>A.ven.drog(r),r=>A.ven.cancelado(r));
-  const topEf=sortObj(byDrogEf);const topPerd=sortObj(byDrogCan);
+  var totTotal  = sum(rows,function(r){return A.ven.total(r);});
+  var totEf     = sum(rows,function(r){return A.ven.efectivo(r);});
+  var totCan    = sum(rows,function(r){return A.ven.cancelado(r);});
+  // Si no hay columna cancelado pero sí total y efectivo, inferir
+  if(totCan===0&&totTotal>totEf&&totTotal>0) totCan=totTotal-totEf;
+  var pctPerd   = totTotal>0?((totCan/totTotal)*100).toFixed(1):0;
 
-  const byMesEf=sumGroup(rows,r=>A.ven.mes(r),r=>A.ven.efectivo(r)||A.ven.total(r));
-  const byMesCan=sumGroup(rows,r=>A.ven.mes(r),r=>A.ven.cancelado(r));
-  const byTipo=sumGroup(rows,r=>A.ven.tipo(r),r=>A.ven.efectivo(r)||A.ven.total(r));
-  const byCiudad=sumGroup(rows,r=>A.ven.ciudad(r),r=>A.ven.efectivo(r)||A.ven.total(r));
+  var byDrogEf  = sumGroup(rows,function(r){return A.ven.drog(r);},function(r){return A.ven.efectivo(r);});
+  var byDrogCan = sumGroup(rows,function(r){return A.ven.drog(r);},function(r){return A.ven.cancelado(r)||Math.max(0,A.ven.total(r)-A.ven.efectivo(r));});
+  var byMesEf   = sumGroup(rows,function(r){return A.ven.mes(r);},function(r){return A.ven.efectivo(r);});
+  var byMesCan  = sumGroup(rows,function(r){return A.ven.mes(r);},function(r){return A.ven.cancelado(r)||Math.max(0,A.ven.total(r)-A.ven.efectivo(r));});
+  var byTipo    = sumGroup(rows,function(r){return A.ven.tipo(r)||'Sin tipo';},function(r){return A.ven.efectivo(r);});
+  var byCiudad  = sumGroup(rows,function(r){return A.ven.ciudad(r);},function(r){return A.ven.efectivo(r);});
 
-  const diasVen=Array(7).fill(0);
-  rows.forEach(r=>{const d=parseDate(A.ven.fecha(r));if(d)diasVen[d.getDay()]+=(A.ven.efectivo(r)||A.ven.total(r));});
+  var topEf     = sortObj(byDrogEf);
+  var topPerd   = sortObj(byDrogCan);
 
+  // Tendencia semanal
+  var diasVen=Array(7).fill(0);
+  rows.forEach(function(r){
+    var ds=A.ven.semana(r).toLowerCase();
+    var idx=-1;
+    if(ds.indexOf('lun')!==-1)idx=1; else if(ds.indexOf('mar')!==-1)idx=2;
+    else if(ds.indexOf('mié')!==-1||ds.indexOf('mie')!==-1)idx=3;
+    else if(ds.indexOf('jue')!==-1)idx=4; else if(ds.indexOf('vie')!==-1)idx=5;
+    else if(ds.indexOf('sáb')!==-1||ds.indexOf('sab')!==-1)idx=6;
+    else if(ds.indexOf('dom')!==-1)idx=0;
+    if(idx>=0)diasVen[idx]+=A.ven.efectivo(r);
+    else{var d=parseDate(A.ven.fecha(r));if(d)diasVen[d.getDay()]+=A.ven.efectivo(r);}
+  });
+
+  // KPIs
   document.getElementById('venKPIs').innerHTML=[
     kpiCard('fas fa-dollar-sign','Valor Total Ventas',cop(totTotal),'período seleccionado','ne','#2563eb'),
-    kpiCard('fas fa-check-circle','Valor Efectivo',cop(totEf),'servicios entregados','up','#10b981'),
-    kpiCard('fas fa-times-circle','Valor Perdido',cop(totCan),'servicios cancelados','dn','#ef4444'),
-    kpiCard('fas fa-trophy','Mayor Venta',topEf[0]?topEf[0][0]:'—',topEf[0]?cop(topEf[0][1]):'—','up','#f59e0b'),
-    kpiCard('fas fa-exclamation-triangle','Mayor Pérdida',topPerd[0]?topPerd[0][0]:'—',topPerd[0]?cop(topPerd[0][1]):'—','dn','#8b5cf6'),
-    kpiCard('fas fa-percent','% Pérdida',totTotal?((totCan/totTotal)*100).toFixed(1)+'%':'0%','del total','dn','#ef4444'),
+    kpiCard('fas fa-check-circle','Valor Entregado',cop(totEf),'servicios efectivos','up','#10b981'),
+    kpiCard('fas fa-times-circle','Valor Cancelado',cop(totCan),'valor perdido','dn','#ef4444'),
+    kpiCard('fas fa-percent','% Pérdida',pctPerd+'%','sobre el total',parseFloat(pctPerd)<5?'up':'dn','#8b5cf6'),
+    kpiCard('fas fa-trophy','Mayor Venta',topEf[0]?topEf[0][0].slice(0,16):'—',topEf[0]?cop(topEf[0][1]):'—','up','#f59e0b'),
+    kpiCard('fas fa-exclamation-triangle','Mayor Pérdida',topPerd[0]?topPerd[0][0].slice(0,16):'—',topPerd[0]?cop(topPerd[0][1]):'—','dn','#ef4444'),
   ].join('');
 
-  // Por mes
-  const mesKeys=[...new Set([...Object.keys(byMesEf),...Object.keys(byMesCan)])];
-  makeChart('cVenMes','bar',mesKeys,[barDS('Efectivo',mesKeys.map(k=>byMesEf[k]||0),'#10b981','s'),barDS('Perdido',mesKeys.map(k=>byMesCan[k]||0),'#ef4444','s')],{extra:{plugins:{legend:{display:true}}}});
+  // Gráficas
+  var mesKeys=[...new Set([...Object.keys(byMesEf),...Object.keys(byMesCan)])].sort();
+  makeChart('cVenMes','bar',mesKeys,[
+    barDS('Entregado',mesKeys.map(function(k){return byMesEf[k]||0;}), '#10b981','s'),
+    barDS('Cancelado',mesKeys.map(function(k){return byMesCan[k]||0;}), '#ef4444','s')
+  ]);
 
-  // Día de semana
-  makeChart('cVenDia','bar',DIAS,[barDS('Valor Venta',diasVen,'#2563eb')]);
+  makeChart('cVenDia','bar',DIAS,[barDS('Valor Entregado',diasVen,'#2563eb')]);
 
-  // Por drogería
-  const topEfArr=topEf.slice(0,10);
-  makeChart('cVenDrog','bar',topEfArr.map(e=>e[0].slice(0,18)),[barDS('Valor Efectivo',topEfArr.map(e=>e[1]),'#10b981')]);
+  var topEfArr=topEf.slice(0,10);
+  makeChart('cVenDrog','bar',
+    topEfArr.map(function(e){return e[0].slice(0,18);}),
+    [barDS('Entregado',topEfArr.map(function(e){return e[1];}), '#10b981')]
+  );
 
-  // Por tipo (dom vs trans)
-  const tipoArr=sortObj(byTipo);
-  makeChart('cVenTipo','doughnut',tipoArr.map(e=>e[0]),[{data:tipoArr.map(e=>e[1]),backgroundColor:COLS,borderColor:COLS.map(c=>c+'cc'),borderWidth:1.5,hoverOffset:5}]);
+  var tipoArr=sortObj(byTipo);
+  makeChart('cVenTipo','doughnut',
+    tipoArr.map(function(e){return e[0];}),
+    [{data:tipoArr.map(function(e){return e[1];}),backgroundColor:['#2563ebbb','#06b6d4bb','#8b5cf6bb','#10b981bb'],borderColor:['#3b82f6','#22d3ee','#a855f7','#34d399'],borderWidth:1.5,hoverOffset:4}]
+  );
 
-  // Por ciudad
-  const ciudArr=sortObj(byCiudad);
-  makeChart('cVenCiud','bar',ciudArr.map(e=>e[0]),[barDS('Valor',ciudArr.map(e=>e[1]),'#06b6d4')]);
+  var ciudArr=sortObj(byCiudad);
+  makeChart('cVenCiud','bar',
+    ciudArr.map(function(e){return e[0];}),
+    [barDS('Valor Entregado',ciudArr.map(function(e){return e[1];}), '#06b6d4')]
+  );
 
-  // Pérdidas por drogería
-  const perdArr=topPerd.slice(0,8);
-  makeChart('cVenPerd','bar',perdArr.map(e=>e[0].slice(0,18)),[barDS('Valor Perdido',perdArr.map(e=>e[1]),'#ef4444')]);
+  var perdArr=topPerd.slice(0,8);
+  makeChart('cVenPerd','bar',
+    perdArr.map(function(e){return e[0].slice(0,18);}),
+    [barDS('Valor Cancelado',perdArr.map(function(e){return e[1];}), '#ef4444')]
+  );
 
-  document.getElementById('venAnalysis').innerHTML=`
-    <div class="ac"><div class="ac-ttl"><i class="fas fa-brain"></i> Análisis de Ventas</div><div class="ac-body">
-      <strong>Valor total:</strong> <span class="hi">${cop(totTotal)}</span> · <strong>Efectivo:</strong> <span class="ok">${cop(totEf)}</span> · <strong>Perdido:</strong> <span class="bad">${cop(totCan)}</span> (${totTotal?((totCan/totTotal)*100).toFixed(1):0}% de pérdida)<br><br>
-      <strong>🏆 Puntos más rentables:</strong> ${topEf.slice(0,3).map(e=>`<span class="ok">${e[0]}</span>: ${cop(e[1])}`).join(' · ')}<br>
-      <strong>🔴 Puntos con mayor pérdida:</strong> ${topPerd.slice(0,3).map(e=>`<span class="bad">${e[0]}</span>: ${cop(e[1])}`).join(' · ')}<br><br>
-      <strong>Plan de acción:</strong> Priorizar recuperación de ventas en los 3 puntos con mayor valor cancelado. Analizar causas de cancelación (rechazo cliente, stock, tiempo de espera) e implementar mejoras específicas.
-    </div></div>`;
+  document.getElementById('venAnalysis').innerHTML=
+    '<div class="ac"><div class="ac-ttl"><i class="fas fa-brain"></i> Análisis de Ventas</div><div class="ac-body">'+
+    '<strong>Valor total:</strong> <span class="hi">'+cop(totTotal)+'</span><br>'+
+    '<strong>Entregado (efectivo):</strong> <span class="ok">'+cop(totEf)+'</span> &nbsp;|&nbsp; '+
+    '<strong>Cancelado (pérdida):</strong> <span class="bad">'+cop(totCan)+'</span> ('+pctPerd+'%)<br><br>'+
+    '<strong>🏆 Puntos más rentables:</strong> '+topEf.slice(0,3).map(function(e){return '<span class="ok">'+e[0]+'</span>: '+cop(e[1]);}).join(' · ')+'<br>'+
+    '<strong>🔴 Puntos con mayor pérdida:</strong> '+topPerd.slice(0,3).map(function(e){return '<span class="bad">'+e[0]+'</span>: '+cop(e[1]);}).join(' · ')+'<br><br>'+
+    '<strong>Plan de acción:</strong> Priorizar recuperación de ventas en los 3 puntos con mayor valor cancelado. Analizar causas de cancelación e implementar mejoras específicas por punto.'+
+    '</div></div>';
 }
 
 // ═══════════════════════════════════════════════
 // RENDER NOV CANCELACION
 // ═══════════════════════════════════════════════
 function renderNovCancel(){
-  const rows=applyRowFilter(D.novcancel,A.nc,{mes:gv('ncfMes'),ciudad:gv('ncfCiudad'),drog:gv('ncfDrog')});
+  var rows=applyRowFilter(D.novcancel,A.nc,{mes:gv('ncfMes'),ciudad:gv('ncfCiudad'),drog:gv('ncfDrog')});
   popFilters(D.novcancel,A.nc,[['ncfMes',A.nc.mes],['ncfCiudad',A.nc.ciudad],['ncfDrog',A.nc.drog]]);
 
-  const fijo=rows.filter(r=>{const t=A.nc.tipoM(r).toLowerCase();return t.includes('fij')||t.includes('plant');});
-  const colabo=rows.filter(r=>A.nc.tipoM(r).toLowerCase().includes('cola'));
-  const quick=rows.filter(r=>A.nc.resp(r).toLowerCase().includes('quick'));
-  const cafam=rows.filter(r=>A.nc.resp(r).toLowerCase().includes('cafam'));
+  if(!rows.length){document.getElementById('ncKPIs').innerHTML='<div style="color:#f59e0b;font-size:12px;padding:10px">Sin datos</div>';return;}
 
-  const byTipo=sumGroup(rows,r=>A.nc.tipo(r),r=>1);
-  const byDrog=sumGroup(rows,r=>A.nc.drog(r),r=>1);
-  const byMes=sumGroup(rows,r=>A.nc.mes(r),r=>1);
-  const byCiudad=sumGroup(rows,r=>A.nc.ciudad(r),r=>1);
-  const topD=sortObj(byDrog);const botD=sortObj(byDrog,false);
+  var fijo=rows.filter(function(r){var t=A.nc.tipoM(r).toLowerCase();return t.indexOf('fij')!==-1||t.indexOf('plant')!==-1;});
+  var colabo=rows.filter(function(r){return A.nc.tipoM(r).toLowerCase().indexOf('cola')!==-1;});
 
+  var totalNov=sum(rows,function(r){return A.nc.total(r)||1;});
+  var totalQuick=sum(rows,function(r){return A.nc.quick(r);});
+  var totalCafam=sum(rows,function(r){return A.nc.cafam(r);});
+  var fijoTotal=sum(fijo,function(r){return A.nc.total(r)||1;});
+  var colaboTotal=sum(colabo,function(r){return A.nc.total(r)||1;});
+
+  var byDrog=sumGroup(rows,function(r){return A.nc.drog(r);},function(r){return A.nc.total(r)||1;});
+  var byCiudad=sumGroup(rows,function(r){return A.nc.ciudad(r);},function(r){return A.nc.total(r)||1;});
+  var byMes=sumGroup(rows,function(r){return A.nc.mes(r);},function(r){return A.nc.total(r)||1;});
+  var topD=sortObj(byDrog); var botD=sortObj(byDrog,false);
+
+  // Agrupar por tipo de novedad (todas las 16 columnas)
+  var byTipo={};
+  A.nc.TIPOS.forEach(function(tipo){
+    var s=sum(rows,function(r){return A.nc.tipoVal(r,tipo);});
+    if(s>0) byTipo[tipo]=s;
+  });
+  var tipoArr=sortObj(byTipo);
+
+  var pct=function(a,b){return b>0?((a/b)*100).toFixed(1)+'%':'0%';};
+
+  // KPIs
   document.getElementById('ncKPIs').innerHTML=[
-    kpiCard('fas fa-ban','Total Novedades Cancel.',rows.length.toLocaleString('es-CO'),'registradas','ne','#ef4444'),
-    kpiCard('fas fa-id-badge','Planta Fija',fijo.length.toLocaleString('es-CO'),pct(fijo.length,rows.length),'ne','#2563eb'),
-    kpiCard('fas fa-handshake','Colaborativo',colabo.length.toLocaleString('es-CO'),pct(colabo.length,rows.length),'ne','#06b6d4'),
-    kpiCard('fas fa-building','Resp. Quick',quick.length.toLocaleString('es-CO'),pct(quick.length,rows.length),'ne','#8b5cf6'),
-    kpiCard('fas fa-hospital','Resp. Cafam',cafam.length.toLocaleString('es-CO'),pct(cafam.length,rows.length),'ne','#f59e0b'),
-    kpiCard('fas fa-exclamation','Mayor Incidencia',topD[0]?topD[0][0]:'—',topD[0]?topD[0][1]+' novedades':'—','dn','#red'),
+    kpiCard('fas fa-ban','Total Novedades',totalNov.toLocaleString('es-CO'),'registradas','ne','#ef4444'),
+    kpiCard('fas fa-id-badge','Planta Fija',fijoTotal.toLocaleString('es-CO'),pct(fijoTotal,totalNov),'ne','#2563eb'),
+    kpiCard('fas fa-handshake','Colaborativo',colaboTotal.toLocaleString('es-CO'),pct(colaboTotal,totalNov),'ne','#06b6d4'),
+    kpiCard('fas fa-building','Resp. Quick',totalQuick.toLocaleString('es-CO'),pct(totalQuick,totalNov),'ne','#8b5cf6'),
+    kpiCard('fas fa-hospital','Resp. Cafam/Cliente',totalCafam.toLocaleString('es-CO'),pct(totalCafam,totalNov),'ne','#f59e0b'),
+    kpiCard('fas fa-exclamation-triangle','Mayor Incidencia',topD[0]?topD[0][0].slice(0,18):'—',topD[0]?topD[0][1]+' nov.':'—','dn','#ef4444'),
   ].join('');
 
-  // Por tipo
-  const tipoArr=sortObj(byTipo);
-  makeChart('cNcTipo','bar',tipoArr.map(e=>e[0].slice(0,22)),[barDS('Cantidad',tipoArr.map(e=>e[1]),'#ef4444')]);
+  // Gráficas
+  // 1) Todos los tipos de novedad
+  makeChart('cNcTipo','bar',
+    tipoArr.map(function(e){return e[0].length>30?e[0].slice(0,28)+'…':e[0];}),
+    [barDS('Cantidad',tipoArr.map(function(e){return e[1];}), '#ef4444')]
+  );
 
-  // Planta vs Colabo
-  makeChart('cNcTipoM','doughnut',['Planta Fija','Colaborativo'],[{data:[fijo.length,colabo.length],backgroundColor:['#2563ebbb','#06b6d4bb'],borderColor:['#3b82f6','#22d3ee'],borderWidth:1.5,hoverOffset:5}]);
+  // 2) Planta Fija vs Colaborativo
+  makeChart('cNcTipoM','doughnut',
+    ['Planta Fija','Colaborativo'],
+    [{data:[fijoTotal,colaboTotal],backgroundColor:['#2563ebbb','#06b6d4bb'],borderColor:['#3b82f6','#22d3ee'],borderWidth:1.5,hoverOffset:4}]
+  );
 
-  // Por mes
-  const mesArr=Object.entries(byMes);
-  makeChart('cNcMes','line',mesArr.map(e=>e[0]),[lineDS('Novedades',mesArr.map(e=>e[1]),'#ef4444',true)]);
+  // 3) Por mes
+  var mesKeys=Object.keys(byMes).sort();
+  makeChart('cNcMes','line',mesKeys,
+    [lineDS('Novedades',mesKeys.map(function(k){return byMes[k];}), '#ef4444', true)]
+  );
 
-  // Por drogería
-  const topDArr=topD.slice(0,10);
-  makeChart('cNcDrog','bar',topDArr.map(e=>e[0].slice(0,18)),[barDS('Novedades',topDArr.map(e=>e[1]),'#8b5cf6')]);
+  // 4) Top 10 droguerías
+  var topDArr=topD.slice(0,10);
+  makeChart('cNcDrog','bar',
+    topDArr.map(function(e){return e[0].slice(0,18);}),
+    [barDS('Novedades',topDArr.map(function(e){return e[1];}), '#8b5cf6')]
+  );
 
-  // Quick vs Cafam
-  const quickPct=rows.length?((quick.length/rows.length)*100).toFixed(1):0;
-  const cafamPct=rows.length?((cafam.length/rows.length)*100).toFixed(1):0;
-  const otroPct=rows.length?(((rows.length-quick.length-cafam.length)/rows.length)*100).toFixed(1):0;
-  makeChart('cNcResp','doughnut',['Quick','Cafam','Sin clasificar'],[{data:[quick.length,cafam.length,rows.length-quick.length-cafam.length],backgroundColor:['#2563ebbb','#f59e0bbb','#475569bb'],borderColor:['#3b82f6','#fbbf24','#64748b'],borderWidth:1.5,hoverOffset:5}]);
+  // 5) Quick vs Cafam
+  var quickPct=parseFloat(pct(totalQuick,totalNov));
+  var cafamPct=parseFloat(pct(totalCafam,totalNov));
+  makeChart('cNcResp','doughnut',
+    ['Quick ('+pct(totalQuick,totalNov)+')','Cafam/Cliente ('+pct(totalCafam,totalNov)+')'],
+    [{data:[totalQuick,totalCafam],backgroundColor:['#2563ebbb','#f59e0bbb'],borderColor:['#3b82f6','#fbbf24'],borderWidth:1.5,hoverOffset:4}]
+  );
 
-  // Por ciudad
-  const ciudArr=sortObj(byCiudad);
-  makeChart('cNcCiud','bar',ciudArr.map(e=>e[0]),[barDS('Novedades',ciudArr.map(e=>e[1]),'#06b6d4')]);
+  // 6) Por ciudad
+  var ciudArr=sortObj(byCiudad);
+  makeChart('cNcCiud','bar',
+    ciudArr.map(function(e){return e[0];}),
+    [barDS('Novedades',ciudArr.map(function(e){return e[1];}), '#06b6d4')]
+  );
 
-  document.getElementById('ncAnalysis').innerHTML=`
-    <div class="g2">
-      <div class="ac"><div class="ac-ttl"><i class="fas fa-brain"></i> Análisis — Novedades de Cancelación</div><div class="ac-body">
-        <strong>Total:</strong> <span class="bad">${rows.length}</span> novedades de cancelación registradas.<br>
-        <strong>Planta Fija:</strong> <span class="hi">${fijo.length}</span> (${pct(fijo.length,rows.length)}) · <strong>Colaborativo:</strong> <span class="hi">${colabo.length}</span> (${pct(colabo.length,rows.length)})<br><br>
-        <strong>Responsabilidad:</strong><br>
-        · Quick: <span class="${quickPct>50?'bad':'warn'}">${quickPct}%</span> (${quick.length} eventos)<br>
-        · Cafam: <span class="warn">${cafamPct}%</span> (${cafam.length} eventos)<br><br>
-        <strong>🔴 Droguerías críticas:</strong> ${topD.slice(0,3).map(e=>`<span class="bad">${e[0]}</span>: ${e[1]}`).join(' · ')}<br>
-        <strong>🟢 Droguerías con menos incidencias:</strong> ${botD.slice(0,3).map(e=>`<span class="ok">${e[0]}</span>: ${e[1]}`).join(' · ')}
-      </div></div>
-      <div class="plan"><div class="plan-ttl"><i class="fas fa-clipboard-list"></i> Plan de Acción — Mitigación</div>
-        ${[['Protocolo de recuperación inmediata','Para novedades de Quick: activar mensajero de apoyo en los 3 puntos críticos.'],
-           ['Mesa de trabajo con Cafam','Agendar sesión mensual para revisar novedades atribuibles al cliente.'],
-           ['Seguimiento diario en puntos críticos','Monitoreo en tiempo real de los 3 puntos con mayor incidencia.'],
-           ['Capacitación a mensajeros colaborativos','Reforzar protocolos de entrega y manejo de novedades.']].map((p,i)=>
-          `<div class="plan-item"><div class="plan-num">${i+1}</div><div class="plan-content"><div class="plan-title">${p[0]}</div><div class="plan-desc">${p[1]}</div></div></div>`).join('')}
-      </div>
-    </div>`;
+  // Top tipo para análisis
+  var topTipo=tipoArr[0]||['N/D',0];
+  var top2Tipo=tipoArr[1]||['N/D',0];
+
+  document.getElementById('ncAnalysis').innerHTML=
+    '<div class="g2">'+
+    '<div class="ac mb0"><div class="ac-ttl"><i class="fas fa-brain"></i> Análisis — Novedades de Cancelación</div><div class="ac-body">'+
+    '<strong>Total:</strong> <span class="bad">'+totalNov.toLocaleString('es-CO')+'</span> novedades registradas.<br>'+
+    '<strong>Planta Fija:</strong> <span class="hi">'+fijoTotal+'</span> ('+pct(fijoTotal,totalNov)+') '+
+    '&nbsp;|&nbsp; <strong>Colaborativo:</strong> <span class="hi">'+colaboTotal+'</span> ('+pct(colaboTotal,totalNov)+')<br><br>'+
+    '<strong>Responsabilidad Quick:</strong> <span class="bad">'+pct(totalQuick,totalNov)+'</span> ('+totalQuick+' eventos)<br>'+
+    '<strong>Responsabilidad Cafam/Cliente:</strong> <span class="warn">'+pct(totalCafam,totalNov)+'</span> ('+totalCafam+' eventos)<br><br>'+
+    '<strong>🔴 Tipo más frecuente:</strong> <span class="bad">'+topTipo[0]+'</span>: '+topTipo[1]+' casos<br>'+
+    '<strong>2° tipo:</strong> <span class="warn">'+top2Tipo[0]+'</span>: '+top2Tipo[1]+' casos<br><br>'+
+    '<strong>Droguerías críticas:</strong> '+topD.slice(0,3).map(function(e){return '<span class="bad">'+e[0]+'</span>: '+e[1];}).join(' · ')+'<br>'+
+    '<strong>Menos incidencias:</strong> '+botD.slice(0,3).map(function(e){return '<span class="ok">'+e[0]+'</span>: '+e[1];}).join(' · ')+
+    '</div></div>'+
+    '<div class="plan mb0"><div class="plan-ttl"><i class="fas fa-clipboard-list"></i> Plan de Mitigación</div>'+
+    ['Atacar las 3 causas más frecuentes|Crear protocolo específico para cada tipo de novedad recurrente.',
+     'Mesa de trabajo con Cafam (novedades cliente)|Para novedades de responsabilidad Cafam, gestionar con el cliente mejoras en el proceso de solicitud.',
+     'Monitoreo diario en puntos críticos|Implementar seguimiento en tiempo real en los 3 puntos con mayor incidencia.',
+     'Capacitación reforzada a colaborativos|Si colaborativo supera a fijo, reforzar protocolo de entrega y comunicación con el cliente.']
+    .map(function(p,i){var pt=p.split('|');
+      return '<div class="plan-item"><div class="plan-num">'+(i+1)+'</div><div class="plan-content"><div class="plan-title">'+pt[0]+'</div><div class="plan-desc">'+pt[1]+'</div></div></div>';
+    }).join('')+'</div></div>';
 }
 
 // ═══════════════════════════════════════════════
