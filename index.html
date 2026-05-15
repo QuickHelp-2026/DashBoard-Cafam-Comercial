@@ -440,6 +440,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--t1);min-hei
       <div class="fg"><label class="flbl">Drogería</label><select class="fc" id="vfDrog" onchange="renderVentas()"><option value="">Todas</option></select></div>
       <button class="fbtn fbtn-s" style="align-self:flex-end" onclick="clearF(['vfMes','vfCiudad','vfDrog'],renderVentas)"><i class="fas fa-xmark"></i> Limpiar</button>
     </div>
+    <div class="active-tags" id="vfActiveTags"></div>
   </div>
   <div class="kgrid" id="venKPIs"></div>
   <div class="g2">
@@ -742,138 +743,142 @@ function buildAccessors(){
   };
 
     A.pc={
-    // TIPO = tipo de mensajero (Planta Fija / Colaborativo) — columna A
-    tipoM: function(r){
-      var v = r['TIPO'] || r['Tipo'] || r['tipo'] || '';
-      if(!v){ var k=Object.keys(r).find(function(k){var l=k.toLowerCase();return l==='tipo'||l.indexOf('tipo mens')!==-1||l.indexOf('planta')!==-1||l.indexOf('cola')!==-1;}); v=k?r[k]:''; }
-      return String(v).trim();
-    },
-    // CIUDAD — columna B
-    ciudad: function(r){
-      return String(r['CIUDAD']||r['Ciudad']||r['ciudad']||'').trim();
-    },
-    // MES — columna C
-    mes: function(r){
-      return String(r['MES']||r['Mes']||r['mes']||'').trim();
-    },
-    // DROGUERIA NOMBRE CORTO — columna I (preferido) | DROGUERIA — columna D
+    // TIPO = col A (Planta Fija / Colaborativo)
+    tipoM: function(r){ return String(r['TIPO']||'').trim(); },
+    // CIUDAD = col B
+    ciudad: function(r){ return String(r['CIUDAD']||'').trim(); },
+    // MES = col C
+    mes: function(r){ return String(r['MES']||'').trim(); },
+    // DROUERIA = col D (typo in sheet: DROUERIA not DROGUERIA)
     drog: function(r){
-      var v = r['DROGUERIA NOMBRE CORTO']||r['DROGUERIA']||r['Drogueria']||r['drogueria']||'';
-      if(!v){ var k=Object.keys(r).find(function(k){return k.toLowerCase().indexOf('drog')!==-1;}); v=k?r[k]:''; }
-      return String(v).trim();
+      return String(r['DROGUERIA NOMBRE CORTO']||r['DROUERIA']||r['DROGUERIA']||'').trim();
     },
-    // GESTIÓN — columna E (tipo de servicio: Domicilio / Transferencia)
-    tipo: function(r){
-      var v = r['GESTIÓN']||r['GESTION']||r['Gestión']||r['gestion']||'';
-      if(!v){ var k=Object.keys(r).find(function(k){return k.toLowerCase().indexOf('gesti')!==-1;}); v=k?r[k]:''; }
-      return String(v).trim();
-    },
-    // CANT ENTREGAS — columna F
+    // GESTIÓN = col E
+    tipo: function(r){ return String(r['GESTIÓN']||r['GESTION']||'').trim(); },
+    // CANT ENTREGAS = col F
     entregas: function(r){
-      var v = r['CANT ENTREGAS']||r['CANTIDAD ENTREGAS']||r['Cant Entregas']||r['cant entregas']||'';
-      if(v!==''&&v!==undefined){ var n=parseFloat(String(v).replace(/[^0-9.-]/g,'')); if(!isNaN(n)) return n; }
-      var k=Object.keys(r).find(function(k){var l=k.toLowerCase();return (l.indexOf('cant')!==-1||l.indexOf('entrega')!==-1)&&l.indexOf('per')===-1;});
-      return k?parseFloat(String(r[k]).replace(/[^0-9.-]/g,''))||0:0;
+      var v = r['CANT ENTREGAS'];
+      if(v!==undefined&&v!==''){var n=parseFloat(String(v).replace(/[^0-9.-]/g,''));if(!isNaN(n))return n;}
+      return 0;
     },
-    // COSTO — columna G
+    // COSTO = col G
     costo: function(r){
-      var v = r['COSTO']||r['Costo']||r['costo']||'';
-      if(v!==''&&v!==undefined){ var n=parseFloat(String(v).replace(/[^0-9.-]/g,'')); if(!isNaN(n)) return n; }
-      var k=Object.keys(r).find(function(k){return k.toLowerCase().indexOf('costo')!==-1||k.toLowerCase().indexOf('valor')!==-1;});
-      return k?parseFloat(String(r[k]).replace(/[^0-9.-]/g,''))||0:0;
+      var v = r['COSTO'];
+      if(v!==undefined&&v!==''){var n=parseFloat(String(v).replace(/[^0-9.,]/g,'').replace(',','.'));if(!isNaN(n))return n;}
+      return 0;
     },
-    // PER CAPITA — columna H
+    // PER CAPITA = col H
     percapita: function(r){
-      var v = r['PER CAPITA']||r['Per Capita']||r['per capita']||r['PER CÁPITA']||r['Per Cápita']||'';
-      if(v!==''&&v!==undefined){ var n=parseFloat(String(v).replace(/[^0-9.,]/g,'').replace(',','.')); if(!isNaN(n)) return n; }
-      var k=Object.keys(r).find(function(k){return k.toLowerCase().indexOf('per')!==-1&&k.toLowerCase().indexOf('cap')!==-1;});
-      if(k){ var n2=parseFloat(String(r[k]).replace(/[^0-9.,]/g,'').replace(',','.')); if(!isNaN(n2)) return n2; }
-      // Calcular: costo / entregas si no existe la columna
+      var v = r['PER CAPITA'];
+      if(v!==undefined&&v!==''){var n=parseFloat(String(v).replace(/[^0-9.,]/g,'').replace(',','.'));if(!isNaN(n)&&n>0)return n;}
       var co=A.pc.costo(r); var en=A.pc.entregas(r);
       return (co>0&&en>0)?co/en:0;
     }
   };
 
     A.ti={
-    mes:     function(r){return String(r['MES']||r['Mes']||'').trim();},
-    ciudad:  function(r){return String(r['CIUDAD']||r['Ciudad']||'').trim();},
-    drog:    function(r){return String(r['DROGUERIA NOMBRE CORTO']||r['DROGUERIA']||'').trim();},
-    tipoM:   function(r){return String(r['TIPO MENSAJERO']||r['TIPO MENSJAERO']||r['Tipo Mensajero']||'').trim();},
-    tipoG:   function(r){return String(r['TIPO GESTIÓN']||r['TIPO GESTION']||r['Tipo Gestión']||'').trim();},
-    semana:  function(r){return String(r['SEMANA']||r['DÍA']||r['DIA']||'').trim();},
-    fecha:   function(r){return String(r['fecha_cierre']||r['FECHA']||'').trim();},
-    // Convierte HH:MM:SS o decimal a minutos
-    _toMin:  function(v){
-      if(!v||v==='')return 0;
+    mes:    function(r){ return String(r['MES']||'').trim(); },
+    ciudad: function(r){ return String(r['CIUDAD']||'').trim(); },
+    // DROGUERIA NOMBRE CORTO = col G (preferred) | DROGUERIA = col O
+    drog:   function(r){ return String(r['DROGUERIA NOMBRE CORTO']||r['DROGUERIA']||'').trim(); },
+    // TIPO MENSJAERO = col F (typo in sheet: MENSJAERO not MENSAJERO)
+    tipoM:  function(r){ return String(r['TIPO MENSJAERO']||r['TIPO MENSAJERO']||'').trim(); },
+    // TIPO GESTIÓN = col H
+    tipoG:  function(r){ return String(r['TIPO GESTIÓN']||r['TIPO GESTION']||'').trim(); },
+    semana: function(r){ return String(r['SEMANA']||r['DÍA']||'').trim(); },
+    fecha:  function(r){ return String(r['fecha_cierre']||'').trim(); },
+
+    // Parse HH:MM:SS or decimal minutes → total minutes
+    _toMin: function(v){
+      if(!v||String(v).trim()==='')return 0;
       var s=String(v).trim();
       if(s.indexOf(':')!==-1){
         var p=s.split(':');
-        var h=parseInt(p[0])||0;var m=parseInt(p[1])||0;var sec=parseInt(p[2])||0;
+        var h=parseInt(p[0])||0;
+        var m=parseInt(p[1])||0;
+        var sec=parseInt(p[2])||0;
         return h*60+m+sec/60;
       }
-      var n=parseFloat(s.replace(/[^0-9.]/g,''));return isNaN(n)?0:n;
+      var n=parseFloat(s.replace(/[^0-9.]/g,''));
+      return isNaN(n)?0:n;
     },
-    // Convierte minutos a formato HH:MM
+    // Format minutes → HH:MM
     _minToHHMM: function(mins){
       if(!mins||mins<=0)return '00:00';
-      var h=Math.floor(mins/60);var m=Math.round(mins%60);
+      var h=Math.floor(mins/60);
+      var m=Math.round(mins%60);
       return (h<10?'0':'')+h+':'+(m<10?'0':'')+m;
     },
-    tiempoRuta:     function(r){return this._toMin(r['TIEMPO RUTA']||r['Tiempo Ruta']||'');},
-    tiempoEntrega:  function(r){return this._toMin(r['TIEMPO ENTREGA']||r['Tiempo Entrega']||'');},
-    tiempoTotal:    function(r){
-      var v=r['TIEMPO TOTAL']||r['Tiempo Total']||'';
-      if(v&&String(v).trim()!=='')return this._toMin(v);
+    // TIEMPO RUTA = col L
+    tiempoRuta: function(r){ return this._toMin(r['TIEMPO RUTA']||''); },
+    // TIEMPO ENTREGA = col M
+    tiempoEntrega: function(r){ return this._toMin(r['TIEMPO ENTREGA']||''); },
+    // TIEMPO TOTAL = col N
+    tiempoTotal: function(r){
+      var v=r['TIEMPO TOTAL']||'';
+      if(String(v).trim()!=='') return this._toMin(v);
       return this.tiempoRuta(r)+this.tiempoEntrega(r);
     }
   };
 
     A.ven={
-    mes:    function(r){return String(r['MES']||r['Mes']||r['mes']||'').trim();},
-    ciudad: function(r){return String(r['CIUDAD']||r['Ciudad']||'').trim();},
-    drog:   function(r){
-      return String(r['DROGUERIA NOMBRE CORTO']||r['DROGUERIA']||r['Drogueria']||'').trim();
-    },
-    tipo:   function(r){
-      return String(r['TIPO GESTIÓN']||r['TIPO GESTION']||r['Tipo Gestión']||r['GESTION']||'').trim();
-    },
-    semana: function(r){return String(r['SEMANA']||r['DÍA']||'').trim();},
-    fecha:  function(r){return String(r['fecha_cierre']||r['FECHA']||r['Fecha']||'').trim();},
-    // TOTAL = valor total del servicio (entregado + cancelado)
-    total:  function(r){
-      var exactos=['TOTAL','Total','VALOR TOTAL','Valor Total','VALOR','Valor'];
-      for(var i=0;i<exactos.length;i++){
-        var v=r[exactos[i]];
-        if(v!==undefined&&v!==''&&v!==null){var n=parseFloat(String(v).replace(/[^0-9.-]/g,''));if(!isNaN(n)&&n>0)return n;}
+    mes:    function(r){ return String(r['MES']||'').trim(); },
+    ciudad: function(r){ return String(r['CIUDAD']||'').trim(); },
+    semana: function(r){ return String(r['SEMANA']||r['DÍA']||'').trim(); },
+    fecha:  function(r){ return String(r['fecha_cierre']||r['FECHA']||'').trim(); },
+    // DROGUERIA NOMBRE CORTO preferred
+    drog:   function(r){ return String(r['DROGUERIA NOMBRE CORTO']||r['DROGUERIA']||'').trim(); },
+    // TIPO GESTIÓN
+    tipo:   function(r){ return String(r['TIPO GESTIÓN']||r['TIPO GESTION']||'').trim(); },
+    // ESTADO = col G — values: "ENTREGADO", "CANCELACIÓN", etc.
+    estado: function(r){
+      var v=r['ESTADO']||r['Estado']||r['estado']||'';
+      if(!v){
+        // fallback: find by index (col G = index 6)
+        var vals=Object.values(r);
+        v=vals[6]||'';
       }
-      var k=Object.keys(r).find(function(k){var l=k.toLowerCase();return l==='total'||l==='valor total'||(l.indexOf('valor')!==-1&&l.indexOf('total')!==-1);});
-      return k?parseFloat(String(r[k]).replace(/[^0-9.-]/g,''))||0:0;
+      return String(v).trim();
     },
-    // ENTREGADO = valor de servicios efectivamente entregados
-    efectivo: function(r){
-      var exactos=['ENTREGADO','Entregado','VALOR ENTREGADO','Valor Entregado','EFECTIVO','Efectivo','VALOR EFECTIVO'];
-      for(var i=0;i<exactos.length;i++){
-        var v=r[exactos[i]];
-        if(v!==undefined&&v!==''&&v!==null){var n=parseFloat(String(v).replace(/[^0-9.-]/g,''));if(!isNaN(n))return n;}
+    // Valor del servicio — detect which column has the $$ amount
+    valor: function(r){
+      // Try common names first
+      var candidates=['VALOR','Valor','valor','VENTA','Venta','PRECIO','Precio',
+                       'VALOR VENTA','Valor Venta','TOTAL','Total'];
+      for(var i=0;i<candidates.length;i++){
+        var v=r[candidates[i]];
+        if(v!==undefined&&v!==''){var n=parseFloat(String(v).replace(/[^0-9.-]/g,''));if(!isNaN(n)&&n>0)return n;}
       }
-      var k=Object.keys(r).find(function(k){var l=k.toLowerCase();return l.indexOf('entregado')!==-1||l.indexOf('efectiv')!==-1;});
-      if(k)return parseFloat(String(r[k]).replace(/[^0-9.-]/g,''))||0;
-      // fallback: col index 8 (common position)
-      var vals=Object.values(r); var n2=parseFloat(String(vals[8]||'').replace(/[^0-9.-]/g,'')); return isNaN(n2)?0:n2;
+      // Last resort: find first numeric column with large values (>1000)
+      var keys=Object.keys(r);
+      for(var ki=0;ki<keys.length;ki++){
+        var k=keys[ki];
+        var kl=k.toLowerCase();
+        if(kl.indexOf('fecha')!==-1||kl.indexOf('mes')!==-1||kl==='día'||kl==='dia'||kl==='semana') continue;
+        var v2=r[k];
+        if(v2!==undefined&&v2!==''){
+          var n2=parseFloat(String(v2).replace(/[^0-9.-]/g,''));
+          if(!isNaN(n2)&&n2>1000) return n2;
+        }
+      }
+      return 0;
     },
-    // CANCELADO = valor perdido por cancelaciones
-    cancelado: function(r){
-      var exactos=['CANCELADO','Cancelado','VALOR CANCELADO','Valor Cancelado','CANCELACION','NO ENTREGADO','No Entregado'];
-      for(var i=0;i<exactos.length;i++){
-        var v=r[exactos[i]];
-        if(v!==undefined&&v!==''&&v!==null){var n=parseFloat(String(v).replace(/[^0-9.-]/g,''));if(!isNaN(n))return n;}
-      }
-      var k=Object.keys(r).find(function(k){var l=k.toLowerCase();return l.indexOf('cancel')!==-1||l.indexOf('no entregado')!==-1;});
-      if(k)return parseFloat(String(r[k]).replace(/[^0-9.-]/g,''))||0;
-      // fallback: total - efectivo
-      var tot=A.ven.total(r); var ef=A.ven.efectivo(r);
-      return (tot>ef&&tot>0)?tot-ef:0;
-    }
+    // Is this row an ENTREGADO state?
+    isEntregado: function(r){
+      var est=A.ven.estado(r).toUpperCase();
+      return est==='ENTREGADO'||est.indexOf('ENTREGAD')!==-1;
+    },
+    // Is this row a CANCELACIÓN state?
+    isCancelado: function(r){
+      var est=A.ven.estado(r).toUpperCase();
+      return est.indexOf('CANCEL')!==-1;
+    },
+    // Convenience: valor only if entregado, else 0
+    efectivo:  function(r){ return A.ven.isEntregado(r)?A.ven.valor(r):0; },
+    // Convenience: valor only if cancelado, else 0
+    cancelado: function(r){ return A.ven.isCancelado(r)?A.ven.valor(r):0; },
+    // Total: always the valor regardless of state
+    total:     function(r){ return A.ven.valor(r); }
   };
 
     A.nc={
@@ -1419,91 +1424,127 @@ function renderTiempos(){
 function renderVentas(){
   var rows=applyRowFilter(D.ventas,A.ven,{mes:gv('vfMes'),ciudad:gv('vfCiudad'),drog:gv('vfDrog')});
   popFilters(D.ventas,A.ven,[['vfMes',A.ven.mes],['vfCiudad',A.ven.ciudad],['vfDrog',A.ven.drog]]);
+  showActiveTags('vfActiveTags',['vfMes','vfCiudad','vfDrog'],['Mes','Ciudad','Drogería']);
 
-  if(!rows.length){document.getElementById('venKPIs').innerHTML='<div style="color:#f59e0b;font-size:12px;padding:10px">Sin datos</div>';return;}
+  if(!rows.length){
+    document.getElementById('venKPIs').innerHTML='<div style="color:#f59e0b;font-size:12px;padding:10px">Sin datos para los filtros aplicados</div>';
+    return;
+  }
 
-  var totTotal  = sum(rows,function(r){return A.ven.total(r);});
-  var totEf     = sum(rows,function(r){return A.ven.efectivo(r);});
-  var totCan    = sum(rows,function(r){return A.ven.cancelado(r);});
-  // Si no hay columna cancelado pero sí total y efectivo, inferir
-  if(totCan===0&&totTotal>totEf&&totTotal>0) totCan=totTotal-totEf;
-  var pctPerd   = totTotal>0?((totCan/totTotal)*100).toFixed(1):0;
+  // ── Separar por ESTADO (col G) ──────────────────────────
+  var rowsEnt = rows.filter(function(r){ return A.ven.isEntregado(r); });
+  var rowsCan = rows.filter(function(r){ return A.ven.isCancelado(r); });
 
-  var byDrogEf  = sumGroup(rows,function(r){return A.ven.drog(r);},function(r){return A.ven.efectivo(r);});
-  var byDrogCan = sumGroup(rows,function(r){return A.ven.drog(r);},function(r){return A.ven.cancelado(r)||Math.max(0,A.ven.total(r)-A.ven.efectivo(r));});
-  var byMesEf   = sumGroup(rows,function(r){return A.ven.mes(r);},function(r){return A.ven.efectivo(r);});
-  var byMesCan  = sumGroup(rows,function(r){return A.ven.mes(r);},function(r){return A.ven.cancelado(r)||Math.max(0,A.ven.total(r)-A.ven.efectivo(r));});
-  var byTipo    = sumGroup(rows,function(r){return A.ven.tipo(r)||'Sin tipo';},function(r){return A.ven.efectivo(r);});
-  var byCiudad  = sumGroup(rows,function(r){return A.ven.ciudad(r);},function(r){return A.ven.efectivo(r);});
+  var totTotal = sum(rows,    function(r){ return A.ven.valor(r); });
+  var totEf    = sum(rowsEnt, function(r){ return A.ven.valor(r); });
+  var totCan   = sum(rowsCan, function(r){ return A.ven.valor(r); });
+  var pctPerd  = totTotal>0?((totCan/totTotal)*100).toFixed(1):'0';
 
-  var topEf     = sortObj(byDrogEf);
-  var topPerd   = sortObj(byDrogCan);
+  // ── Agrupaciones (solo entregados para venta efectiva) ──
+  var byDrogEf  = sumGroup(rowsEnt, function(r){return A.ven.drog(r);},   function(r){return A.ven.valor(r);});
+  var byDrogCan = sumGroup(rowsCan, function(r){return A.ven.drog(r);},   function(r){return A.ven.valor(r);});
+  var byMesEf   = sumGroup(rowsEnt, function(r){return A.ven.mes(r);},    function(r){return A.ven.valor(r);});
+  var byMesCan  = sumGroup(rowsCan, function(r){return A.ven.mes(r);},    function(r){return A.ven.valor(r);});
+  var byTipo    = sumGroup(rowsEnt, function(r){return A.ven.tipo(r)||'Sin tipo';}, function(r){return A.ven.valor(r);});
+  var byCiudad  = sumGroup(rowsEnt, function(r){return A.ven.ciudad(r);}, function(r){return A.ven.valor(r);});
 
-  // Tendencia semanal
+  // ── Agrupación por ESTADO (para mostrar distribución) ───
+  var byEstado  = sumGroup(rows,    function(r){return A.ven.estado(r)||'Sin estado';}, function(r){return A.ven.valor(r);});
+
+  var topEf   = sortObj(byDrogEf);
+  var topPerd = sortObj(byDrogCan);
+
+  // ── Tendencia semanal ────────────────────────────────────
   var diasVen=Array(7).fill(0);
-  rows.forEach(function(r){
+  rowsEnt.forEach(function(r){
     var ds=A.ven.semana(r).toLowerCase();
     var idx=-1;
-    if(ds.indexOf('lun')!==-1)idx=1; else if(ds.indexOf('mar')!==-1)idx=2;
+    if(ds.indexOf('lun')!==-1)idx=1;
+    else if(ds.indexOf('mar')!==-1)idx=2;
     else if(ds.indexOf('mié')!==-1||ds.indexOf('mie')!==-1)idx=3;
-    else if(ds.indexOf('jue')!==-1)idx=4; else if(ds.indexOf('vie')!==-1)idx=5;
+    else if(ds.indexOf('jue')!==-1)idx=4;
+    else if(ds.indexOf('vie')!==-1)idx=5;
     else if(ds.indexOf('sáb')!==-1||ds.indexOf('sab')!==-1)idx=6;
     else if(ds.indexOf('dom')!==-1)idx=0;
-    if(idx>=0)diasVen[idx]+=A.ven.efectivo(r);
-    else{var d=parseDate(A.ven.fecha(r));if(d)diasVen[d.getDay()]+=A.ven.efectivo(r);}
+    if(idx>=0) diasVen[idx]+=A.ven.valor(r);
+    else { var d=parseDate(A.ven.fecha(r)); if(d) diasVen[d.getDay()]+=A.ven.valor(r); }
   });
 
-  // KPIs
+  // ══ KPIs ═════════════════════════════════════════════════
   document.getElementById('venKPIs').innerHTML=[
-    kpiCard('fas fa-dollar-sign','Valor Total Ventas',cop(totTotal),'período seleccionado','ne','#2563eb'),
-    kpiCard('fas fa-check-circle','Valor Entregado',cop(totEf),'servicios efectivos','up','#10b981'),
-    kpiCard('fas fa-times-circle','Valor Cancelado',cop(totCan),'valor perdido','dn','#ef4444'),
-    kpiCard('fas fa-percent','% Pérdida',pctPerd+'%','sobre el total',parseFloat(pctPerd)<5?'up':'dn','#8b5cf6'),
-    kpiCard('fas fa-trophy','Mayor Venta',topEf[0]?topEf[0][0].slice(0,16):'—',topEf[0]?cop(topEf[0][1]):'—','up','#f59e0b'),
+    kpiCard('fas fa-dollar-sign','Valor Total',         cop(totTotal), 'todos los estados','ne','#2563eb'),
+    kpiCard('fas fa-check-circle','Valor Entregado',    cop(totEf),    rowsEnt.length+' servicios','up','#10b981'),
+    kpiCard('fas fa-times-circle','Valor Cancelado',    cop(totCan),   rowsCan.length+' servicios','dn','#ef4444'),
+    kpiCard('fas fa-percent','% Pérdida',               pctPerd+'%',   'sobre valor total',parseFloat(pctPerd)<5?'up':'dn','#8b5cf6'),
+    kpiCard('fas fa-trophy','Mayor Venta',              topEf[0]?topEf[0][0].slice(0,16):'—',topEf[0]?cop(topEf[0][1]):'—','up','#f59e0b'),
     kpiCard('fas fa-exclamation-triangle','Mayor Pérdida',topPerd[0]?topPerd[0][0].slice(0,16):'—',topPerd[0]?cop(topPerd[0][1]):'—','dn','#ef4444'),
   ].join('');
 
-  // Gráficas
+  // ══ GRÁFICAS ══════════════════════════════════════════════
+
+  // 1) Valor por mes — Entregado vs Cancelado
   var mesKeys=[...new Set([...Object.keys(byMesEf),...Object.keys(byMesCan)])].sort();
   makeChart('cVenMes','bar',mesKeys,[
-    barDS('Entregado',mesKeys.map(function(k){return byMesEf[k]||0;}), '#10b981','s'),
-    barDS('Cancelado',mesKeys.map(function(k){return byMesCan[k]||0;}), '#ef4444','s')
+    barDS('Entregado', mesKeys.map(function(k){return byMesEf[k]||0;}), '#10b981','s'),
+    barDS('Cancelado', mesKeys.map(function(k){return byMesCan[k]||0;}), '#ef4444','s')
   ]);
 
-  makeChart('cVenDia','bar',DIAS,[barDS('Valor Entregado',diasVen,'#2563eb')]);
+  // 2) Día de semana con más ventas (entregadas)
+  makeChart('cVenDia','bar',DIAS,[
+    barDS('Valor Entregado',diasVen,'#2563eb')
+  ]);
 
+  // 3) Top droguerías por valor entregado
   var topEfArr=topEf.slice(0,10);
   makeChart('cVenDrog','bar',
     topEfArr.map(function(e){return e[0].slice(0,18);}),
-    [barDS('Entregado',topEfArr.map(function(e){return e[1];}), '#10b981')]
+    [barDS('Valor Entregado',topEfArr.map(function(e){return e[1];}), '#10b981')]
   );
 
+  // 4) Distribución por tipo de gestión
   var tipoArr=sortObj(byTipo);
   makeChart('cVenTipo','doughnut',
     tipoArr.map(function(e){return e[0];}),
-    [{data:tipoArr.map(function(e){return e[1];}),backgroundColor:['#2563ebbb','#06b6d4bb','#8b5cf6bb','#10b981bb'],borderColor:['#3b82f6','#22d3ee','#a855f7','#34d399'],borderWidth:1.5,hoverOffset:4}]
+    [{data:tipoArr.map(function(e){return e[1];}),
+      backgroundColor:['#2563ebbb','#06b6d4bb','#8b5cf6bb','#10b981bb'],
+      borderColor:['#3b82f6','#22d3ee','#a855f7','#34d399'],
+      borderWidth:1.5,hoverOffset:4}]
   );
 
+  // 5) Valor por ciudad
   var ciudArr=sortObj(byCiudad);
   makeChart('cVenCiud','bar',
     ciudArr.map(function(e){return e[0];}),
     [barDS('Valor Entregado',ciudArr.map(function(e){return e[1];}), '#06b6d4')]
   );
 
+  // 6) Top pérdidas por drogería
   var perdArr=topPerd.slice(0,8);
   makeChart('cVenPerd','bar',
     perdArr.map(function(e){return e[0].slice(0,18);}),
     [barDS('Valor Cancelado',perdArr.map(function(e){return e[1];}), '#ef4444')]
   );
 
+  // ══ ANÁLISIS ══════════════════════════════════════════════
+  // Todos los estados distintos
+  var estadoArr=sortObj(byEstado);
+
   document.getElementById('venAnalysis').innerHTML=
-    '<div class="ac"><div class="ac-ttl"><i class="fas fa-brain"></i> Análisis de Ventas</div><div class="ac-body">'+
-    '<strong>Valor total:</strong> <span class="hi">'+cop(totTotal)+'</span><br>'+
-    '<strong>Entregado (efectivo):</strong> <span class="ok">'+cop(totEf)+'</span> &nbsp;|&nbsp; '+
-    '<strong>Cancelado (pérdida):</strong> <span class="bad">'+cop(totCan)+'</span> ('+pctPerd+'%)<br><br>'+
-    '<strong>🏆 Puntos más rentables:</strong> '+topEf.slice(0,3).map(function(e){return '<span class="ok">'+e[0]+'</span>: '+cop(e[1]);}).join(' · ')+'<br>'+
-    '<strong>🔴 Puntos con mayor pérdida:</strong> '+topPerd.slice(0,3).map(function(e){return '<span class="bad">'+e[0]+'</span>: '+cop(e[1]);}).join(' · ')+'<br><br>'+
-    '<strong>Plan de acción:</strong> Priorizar recuperación de ventas en los 3 puntos con mayor valor cancelado. Analizar causas de cancelación e implementar mejoras específicas por punto.'+
+    '<div class="ac"><div class="ac-ttl"><i class="fas fa-brain"></i> Análisis de Ventas por Estado</div><div class="ac-body">'+
+    '<strong>Valor total (todos los estados):</strong> <span class="hi">'+cop(totTotal)+'</span> — '+rows.length+' registros<br>'+
+    '<strong>✅ Entregado:</strong> <span class="ok">'+cop(totEf)+'</span> ('+rowsEnt.length+' servicios)<br>'+
+    '<strong>❌ Cancelado:</strong> <span class="bad">'+cop(totCan)+'</span> ('+rowsCan.length+' servicios · '+pctPerd+'% del total)<br><br>'+
+    '<strong>Distribución por estado:</strong><br>'+
+    estadoArr.map(function(e){
+      var isCan=e[0].toUpperCase().indexOf('CANCEL')!==-1;
+      var isEnt=e[0].toUpperCase().indexOf('ENTREGAD')!==-1;
+      var cls=isEnt?'ok':isCan?'bad':'warn';
+      return '<span class="'+cls+'">'+e[0]+'</span>: '+cop(e[1])+' ('+((totTotal>0?e[1]/totTotal*100:0).toFixed(1))+'%)';
+    }).join('<br>')+'<br><br>'+
+    '<strong>🏆 Top 3 puntos más rentables:</strong> '+
+    topEf.slice(0,3).map(function(e){return '<span class="ok">'+e[0]+'</span>: '+cop(e[1]);}).join(' · ')+'<br>'+
+    '<strong>🔴 Top 3 con mayor pérdida:</strong> '+
+    topPerd.slice(0,3).map(function(e){return '<span class="bad">'+e[0]+'</span>: '+cop(e[1]);}).join(' · ')+
     '</div></div>';
 }
 
@@ -1810,6 +1851,22 @@ async function init(){
 
     // === DIAGNOSTIC: log ALL sheets column names ===
     var sheets_diag=['percapita','tiempos','ventas','novcancel','cantidad'];
+    // Extra ventas diagnostic
+    if(D.ventas&&D.ventas.length>0){
+      var r0=D.ventas[0];
+      console.log('[CAFAM] Ventas estado col G:', Object.values(r0)[6]);
+      console.log('[CAFAM] Ventas estado(r0):', A.ven.estado(r0));
+      console.log('[CAFAM] Ventas valor(r0):', A.ven.valor(r0));
+      console.log('[CAFAM] Ventas isEntregado(r0):', A.ven.isEntregado(r0));
+    }
+    if(D.percapita&&D.percapita.length>0){
+      var rpc=D.percapita[0];
+      console.log('[CAFAM] PC costo:', A.pc.costo(rpc),'entregas:',A.pc.entregas(rpc),'pc:',A.pc.percapita(rpc),'drog:',A.pc.drog(rpc));
+    }
+    if(D.tiempos&&D.tiempos.length>0){
+      var rti=D.tiempos[0];
+      console.log('[CAFAM] Tiempos TOTAL raw:',rti['TIEMPO TOTAL'],'parsed:',A.ti.tiempoTotal(rti),'min, drog:',A.ti.drog(rti));
+    }
     var diag_lines=['<strong style="color:#22d3ee">DIAGNÓSTICO DE COLUMNAS CSV</strong>'];
     sheets_diag.forEach(function(sh){
       if(D[sh]&&D[sh].length>0){
@@ -1855,6 +1912,22 @@ async function init(){
 
     // === DIAGNOSTIC: log ALL sheets column names ===
     var sheets_diag=['percapita','tiempos','ventas','novcancel','cantidad'];
+    // Extra ventas diagnostic
+    if(D.ventas&&D.ventas.length>0){
+      var r0=D.ventas[0];
+      console.log('[CAFAM] Ventas estado col G:', Object.values(r0)[6]);
+      console.log('[CAFAM] Ventas estado(r0):', A.ven.estado(r0));
+      console.log('[CAFAM] Ventas valor(r0):', A.ven.valor(r0));
+      console.log('[CAFAM] Ventas isEntregado(r0):', A.ven.isEntregado(r0));
+    }
+    if(D.percapita&&D.percapita.length>0){
+      var rpc=D.percapita[0];
+      console.log('[CAFAM] PC costo:', A.pc.costo(rpc),'entregas:',A.pc.entregas(rpc),'pc:',A.pc.percapita(rpc),'drog:',A.pc.drog(rpc));
+    }
+    if(D.tiempos&&D.tiempos.length>0){
+      var rti=D.tiempos[0];
+      console.log('[CAFAM] Tiempos TOTAL raw:',rti['TIEMPO TOTAL'],'parsed:',A.ti.tiempoTotal(rti),'min, drog:',A.ti.drog(rti));
+    }
     var diag_lines=['<strong style="color:#22d3ee">DIAGNÓSTICO DE COLUMNAS CSV</strong>'];
     sheets_diag.forEach(function(sh){
       if(D[sh]&&D[sh].length>0){
