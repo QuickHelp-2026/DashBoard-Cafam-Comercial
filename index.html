@@ -683,7 +683,7 @@ function buildAccessors(){
     drog:r=>fld(r,...Object.keys(r).filter(k=>k.toLowerCase().includes('drog')||k.toLowerCase().includes('punto'))||['drog']),
     tipo:r=>fld(r,...Object.keys(r).filter(k=>k.toLowerCase().includes('gesti')||k.toLowerCase().includes('tipo'))||['tipo']),
     tipoM:r=>fld(r,...Object.keys(r).filter(k=>k.toLowerCase().includes('mensajero')||k.toLowerCase().includes('planta')||k.toLowerCase().includes('colabo'))||['tipo mensajero']),
-    efectiva:r=>num(fld(r,...Object.keys(r).filter(k=>k.toLowerCase().includes('efectiv'))||['efectiva'])),
+    efectiva:r=>num(fld(r,...Object.keys(r).filter(k =>k.toLowerCase().includes('entregado')),'ENTREGADO')),
     cancelada:r=>num(fld(r,...Object.keys(r).filter(k=>k.toLowerCase().includes('cancel'))||['cancelada'])),
     total:r=>num(fld(r,...Object.keys(r).filter(k=>k.toLowerCase().includes('total')||k.toLowerCase().includes('cantidad'))||['total'])),
     fecha:r=>fld(r,...Object.keys(r).filter(k=>k.toLowerCase().includes('fecha'))||['fecha']),
@@ -821,17 +821,16 @@ function renderCantidad(){
   const rows=applyRowFilter(D.cantidad,A.can,{mes:gv('cfMes'),ciudad:gv('cfCiudad'),drog:gv('cfDrog'),tipo:gv('cfTipo'),tipoM:gv('cfTipoM')});
   popFilters(D.cantidad,A.can,[['cfMes',A.can.mes],['cfCiudad',A.can.ciudad],['cfDrog',A.can.drog],['cfTipo',A.can.tipo],['cfTipoM',A.can.tipoM]]);
 
-  const totEf=sum(rows,r=>A.can.efectiva(r)||A.can.total(r));
+  const totEf=sum(rows,r=>A.can.efectiva(r));
   const totCan=sum(rows,r=>A.can.cancelada(r));
   const totTot=totEf+totCan||totEf;
   const cumpl=totTot?((totEf/totTot)*100).toFixed(1):0;
 
-  const byDrog=sumGroup(rows,r=>A.can.drog(r),r=>A.can.total(r)||A.can.efectiva(r));
-  const topD=sortObj(byDrog);const botD=sortObj(byDrog,false);
-  const byCiudad=sumGroup(rows,r=>A.can.ciudad(r),r=>A.can.total(r)||A.can.efectiva(r));
-  const byMes=sumGroup(rows,r=>A.can.mes(r),r=>A.can.total(r)||A.can.efectiva(r));
-  const byTipo=sumGroup(rows,r=>A.can.tipo(r),r=>A.can.total(r)||A.can.efectiva(r));
-  const byTipoM=sumGroup(rows,r=>A.can.tipoM(r),r=>A.can.total(r)||A.can.efectiva(r));
+  const byDrog=sumGroup(rows,r=>A.can.drog(r),r=>A.can.efectiva(r));
+const byCiudad=sumGroup(rows,r=>A.can.ciudad(r),r=>A.can.efectiva(r));
+const byMes=sumGroup(rows,r=>A.can.mes(r),r=>A.can.efectiva(r));
+const byTipo=sumGroup(rows,r=>A.can.tipo(r),r=>A.can.efectiva(r));
+const byTipoM=sumGroup(rows,r=>A.can.tipoM(r),r=>A.can.efectiva(r));
 
   // Análisis mensajeros por punto
   const mensMap=sumGroup(rows,r=>A.can.drog(r),r=>A.can.mensajeros(r));
@@ -850,7 +849,7 @@ function renderCantidad(){
 
   // Por mes
   const mesArr=Object.entries(byMes);
-  const byMesEf=sumGroup(rows,r=>A.can.mes(r),r=>A.can.efectiva(r)||A.can.total(r));
+  const byMesEf=sumGroup(rows,r=>A.can.mes(r),r=>A.can.efectiva(r));
   const byMesCan=sumGroup(rows,r=>A.can.mes(r),r=>A.can.cancelada(r));
   makeChart('cCanMes','bar',mesArr.map(e=>e[0]),[barDS('Efectivas',mesArr.map(e=>byMesEf[e[0]]||0),'#10b981','s'),barDS('Canceladas',mesArr.map(e=>byMesCan[e[0]]||0),'#ef4444','s')],{extra:{plugins:{legend:{display:true}}}});
 
